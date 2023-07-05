@@ -132,18 +132,18 @@ private:
 	// テクスチャ名からテクスチャバッファ作成、コピー
 	ID3D12Resource* CreateTextureFromFile(const char* texPath);
 
-	// ペラポリゴン
-	ComPtr<ID3D12Resource> pera_resource_ = nullptr;
-	ComPtr<ID3D12Resource> pera_resource_2_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> pera_rtv_heap_;
-	ComPtr<ID3D12DescriptorHeap> pera_srv_heap_;
+	// テクスチャを張り付けるポリゴン
+	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
+	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> screen_rtv_heap_;
+	ComPtr<ID3D12DescriptorHeap> sceen_srv_heap_;
 
-	ComPtr<ID3D12Resource> pera_vertex_buffer_ = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW pera_vertex_buffer_view_;
+	ComPtr<ID3D12Resource> screen_vertex_buffer_ = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
 
-	ComPtr<ID3D12PipelineState> pera_pipeline_;
-	ComPtr<ID3D12PipelineState> pera_pipeline_2_;
-	ComPtr<ID3D12RootSignature> pera_root_signature_;
+	ComPtr<ID3D12PipelineState> screen_pipeline_;
+	ComPtr<ID3D12PipelineState> screen_pipeline_2_;
+	ComPtr<ID3D12RootSignature> screen_root_signature_;
 
 	// ぼかし
 	ComPtr<ID3D12Resource> pera_const_buffer_ = nullptr;

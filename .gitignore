@@ -396,3 +396,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# アセット系
+Assets/
+motion/
+normal/
+toon/
