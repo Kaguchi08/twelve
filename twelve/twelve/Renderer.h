@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <vector>
 #include <memory>
+#include "Helper.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -16,7 +17,7 @@ public:
 	void Initialize();
 	void BeforeDraw();
 
-	void Draw();
+	void DrawToBackBuffer();
 
 private:
 	Dx12Wrapper& dx_;

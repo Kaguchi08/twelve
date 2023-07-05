@@ -189,7 +189,7 @@ bool Dx12Wrapper::Clear()
 	return true;
 }
 
-void Dx12Wrapper::Draw()
+void Dx12Wrapper::DrawToBackBuffer()
 {
 	cmd_list_->RSSetViewports(1, view_port_.get());
 	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());

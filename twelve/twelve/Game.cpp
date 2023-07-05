@@ -20,7 +20,8 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 Game::Game() : 
 	hwnd_(nullptr),
-	wind_class_({})
+	wind_class_({}),
+	is_update_actors_(false)
 {
 }
 
@@ -85,6 +86,32 @@ void Game::Shutdown()
 	UnregisterClass(wind_class_.lpszClassName, wind_class_.hInstance);
 }
 
+void Game::AddActor(Actor* actor)
+{
+	if (is_update_actors_) {
+		pending_actors_.emplace_back(actor);
+	}
+	else {
+		actors_.emplace_back(actor);
+	}
+}
+
+void Game::RemoveActor(Actor* actor)
+{
+	auto iter = std::find(actors_.begin(), actors_.end(), actor);
+	if (iter != actors_.end()) {
+		std::iter_swap(iter, actors_.end() - 1);
+		actors_.pop_back();
+	}
+	else {
+		iter = std::find(pending_actors_.begin(), pending_actors_.end(), actor);
+		if (iter != pending_actors_.end()) {
+			std::iter_swap(iter, pending_actors_.end() - 1);
+			pending_actors_.pop_back();
+		}
+	}
+}
+
 SIZE Game::GetWindowSize() const
 {
 	SIZE ret;
@@ -108,12 +135,12 @@ void Game::GenerateOutput()
 	dx12_->PreDrawToPera();
 	mPMDRenderer->BeforeDraw();
 	dx12_->DrawToPera1();
-	mPMDActor->Draw();
+	mPMDActor->DrawToBackBuffer();
 
 	dx12_->DrawToPera2();
 
 	dx12_->Clear();
-	dx12_->Draw();
+	dx12_->DrawToBackBuffer();
 
 	dx12_->EndDraw();
 

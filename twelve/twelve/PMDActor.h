@@ -22,7 +22,7 @@ public:
 	~PMDActor();
 
 	void Update();
-	void Draw();
+	void DrawToBackBuffer();
 	void PlayAnimation();
 
 	void LoadVMDFile(const char* filepath);

@@ -24,19 +24,26 @@ public:
 	void RunLoop();
 	void Shutdown();
 
+	void AddActor(class Actor* actor);
+	void RemoveActor(class Actor* actor);
+
 	// Window
 	SIZE GetWindowSize() const;
 private:
-	void ProcessInput();
-	void UpdateGame();
-	void GenerateOutput();
-
 	WNDCLASSEX wind_class_;
 	HWND hwnd_;
 
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<PMDRenderer> mPMDRenderer;
 	std::shared_ptr<PMDActor> mPMDActor;
+
+	std::vector<class Actor*> actors_;
+	std::vector<class Actor*> pending_actors_;
+	bool is_update_actors_;
+
+	void ProcessInput();
+	void UpdateGame();
+	void GenerateOutput();
 
 	void CreateGameWindow(HWND& hwnd, WNDCLASSEX& wndClass);
 

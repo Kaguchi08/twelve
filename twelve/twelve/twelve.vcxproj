@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Actor.cpp" />
     <ClCompile Include="Dx12Wrapper.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Helper.cpp" />
@@ -178,6 +179,7 @@
     <None Include="Type.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Actor.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Helper.h" />

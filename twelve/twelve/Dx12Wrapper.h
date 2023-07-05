@@ -28,7 +28,7 @@ public:
 
 	bool Clear();
 
-	void Draw();
+	void DrawToBackBuffer();
 
 	void SetCameraSetting();
 

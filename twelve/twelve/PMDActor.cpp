@@ -51,7 +51,7 @@ void PMDActor::Update()
 	MotionUpdate();
 }
 
-void PMDActor::Draw()
+void PMDActor::DrawToBackBuffer()
 {
 	dx12_.GetCommandList()->IASetVertexBuffers(0, 1, &vb_view_);
 	dx12_.GetCommandList()->IASetIndexBuffer(&ib_view_);
