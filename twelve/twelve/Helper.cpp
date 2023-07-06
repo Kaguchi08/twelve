@@ -8,11 +8,11 @@ Helper::~Helper()
 {
 }
 
-std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* texPath)
+std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* tex_path)
 {
 	auto pathIndex = modelPath.rfind('/');
 	auto folderPath = modelPath.substr(0, pathIndex + 1);
-	return folderPath + texPath;
+	return folderPath + tex_path;
 }
 
 std::wstring GetWideStringFromString(const std::string& str)

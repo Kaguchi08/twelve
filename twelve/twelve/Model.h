@@ -23,8 +23,8 @@ struct MaterialForHlsl
 // その他のマテリアルデータ
 struct AdditionalMaterial
 {
-	std::string texPath;
-	int toonIdx;
+	std::string tex_path;
+	int toon_idx;
 	bool edgeFlg;
 };
 

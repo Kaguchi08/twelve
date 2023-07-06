@@ -18,7 +18,7 @@ public:
 	/// <param name="modelPath"></param>
 	/// <param name="texPath"></param>
 	/// <returns></returns>
-extern std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* texPath);
+extern std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* tex_path);
 
 /// <summary>
 /// string(マルチバイト文字列)からwstring(ワイド文字列)を取得する

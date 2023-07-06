@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Renderer::Renderer(Dx12Wrapper& dx)
-	: dx_(dx)
+	: dx12_(dx)
 {
 }
 
@@ -39,7 +39,7 @@ ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) {
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
 
 	ID3D12Resource* tex_buffer = nullptr;
-	auto result = dx_.GetDevice()->CreateCommittedResource(
+	auto result = dx12_.GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
@@ -197,7 +197,7 @@ HRESULT Renderer::CreateModelGraphicsPipeline()
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	gps_desc.pRootSignature = model_root_signature_.Get();
 
-	result = dx_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result)) {
 		assert(0);
@@ -288,7 +288,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 	gps_desc.pRootSignature = screen_root_signature_.Get();
 
-	result = dx_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_.ReleaseAndGetAddressOf())
 	);
@@ -317,7 +317,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 
 	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
 
-	result = dx_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_2_.ReleaseAndGetAddressOf())
 	);
@@ -360,7 +360,7 @@ HRESULT Renderer::CreateModelRootSignature()
 		return result;
 	}
 
-	result = dx_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(model_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(model_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(SUCCEEDED(result));
@@ -442,7 +442,7 @@ HRESULT Renderer::CreateScreenRootSignature()
 		return result;
 	}
 
-	result = dx_.GetDevice()->CreateRootSignature(
+	result = dx12_.GetDevice()->CreateRootSignature(
 		0,
 		root_sig_blob->GetBufferPointer(),
 		root_sig_blob->GetBufferSize(),
