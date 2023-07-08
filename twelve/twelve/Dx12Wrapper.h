@@ -11,6 +11,7 @@
 
 class PMDRenderer;
 class PMDActor;
+struct Model;
 
 using Microsoft::WRL::ComPtr;
 
@@ -36,7 +37,7 @@ public:
 	void ExecuteCommand();
 
 	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
-	ComPtr<ID3D12Resource> GetTextureFromPath(const char* texPath);
+	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
 
 	ComPtr<ID3D12Device> GetDevice() {
 		return dev_.Get();
@@ -52,10 +53,15 @@ public:
 
 	void SetScene();
 
+	// モデルの読み込み
+	std::shared_ptr<Model> LoadModel(const char* filepath);
+
 private:
 	SIZE window_size_;
 
 	HWND hwnd_;
+	std::shared_ptr<class Renderer> renderer_ = nullptr;
+	std::unique_ptr<class ModelLoader> model_loader_;
 
 	// DXGI
 	ComPtr<IDXGIFactory4> dxgi_factory_ = nullptr;
@@ -130,7 +136,7 @@ private:
 	// テクスチャローダテーブルの作成
 	void CreateTextureLoaderTable();
 	// テクスチャ名からテクスチャバッファ作成、コピー
-	ID3D12Resource* CreateTextureFromFile(const char* texPath);
+	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
 
 	// テクスチャを張り付けるポリゴン
 	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
@@ -155,6 +161,9 @@ private:
 
 	// 深度値テクスチャ
 	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
+
+	// 読み込んだ Model のテーブル
+	std::unordered_map<std::string, std::shared_ptr<Model>> model_table_;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();

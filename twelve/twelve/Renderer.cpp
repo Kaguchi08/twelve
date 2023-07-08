@@ -5,7 +5,7 @@
 #include <string>
 #include <algorithm>
 
-Renderer::Renderer(Dx12Wrapper& dx)
+Renderer::Renderer(class Dx12Wrapper& dx)
 	: dx12_(dx)
 {
 }

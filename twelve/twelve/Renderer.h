@@ -9,7 +9,7 @@ using Microsoft::WRL::ComPtr;
 
 class Renderer {
 public:
-	Renderer(Dx12Wrapper& dx);
+	Renderer(class Dx12Wrapper& dx);
 	~Renderer();
 	void Initialize();
 	void BeforeDraw();
@@ -33,6 +33,8 @@ private:
 	// ルートシグネチャ
 	ComPtr<ID3D12RootSignature> model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> screen_root_signature_ = nullptr;
+
+	
 
 	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);
 

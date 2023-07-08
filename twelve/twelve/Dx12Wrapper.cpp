@@ -7,6 +7,9 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include "Game.h"
+#include "Renderer.h"
+#include "ModelLoader.h"
+#include "Model.h"
 
 using namespace Microsoft::WRL;
 // "-" オペランドが使えないため
@@ -28,6 +31,12 @@ Dx12Wrapper::~Dx12Wrapper()
 bool Dx12Wrapper::Initialize() {
 	Game game;
 	window_size_ = game.GetWindowSize();
+
+	renderer_.reset(new Renderer(*this));
+	model_loader_.reset(new ModelLoader(*renderer_));
+
+	// テクスチャローダ関連の初期化
+	CreateTextureLoaderTable();
 
 	ID3D12Debug* debug;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
@@ -54,9 +63,6 @@ bool Dx12Wrapper::Initialize() {
 		assert(0);
 		return false;
 	}
-
-	// テクスチャローダ関連の初期化
-	CreateTextureLoaderTable();
 
 	// 深度
 	if (!CreateDepthBuffer()) {
@@ -281,16 +287,16 @@ void Dx12Wrapper::ExecuteCommand()
 	cmd_list_->Reset(mCmdAllocator.Get(), nullptr);
 }
 
-ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* texPath)
+ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 {
-	auto it = mTextureTable.find(texPath);
+	auto it = mTextureTable.find(tex_path);
 	if (it != mTextureTable.end())
 	{
 		return it->second;
 	}
 	else
 	{
-		return ComPtr<ID3D12Resource>(CreateTextureFromFile(texPath));
+		return ComPtr<ID3D12Resource>(CreateTextureFromFile(tex_path));
 	}
 }
 
@@ -300,6 +306,29 @@ void Dx12Wrapper::SetScene()
 
 	cmd_list_->SetDescriptorHeaps(1, sceneHeaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_heap_->GetGPUDescriptorHandleForHeapStart());
+}
+
+std::shared_ptr<Model> Dx12Wrapper::LoadModel(const char* filepath)
+{
+	auto iter = model_table_.find(filepath);
+	if (iter != model_table_.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		auto model = std::make_shared<Model>();
+		auto result = model_loader_->LoadPMDModel(filepath, model.get());
+
+		if (!result)
+		{
+			assert(0);
+			return nullptr;
+		}
+
+		model_table_[filepath] = model;
+		return model;
+	}
 }
 
 void Dx12Wrapper::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
@@ -621,9 +650,9 @@ void Dx12Wrapper::CreateTextureLoaderTable()
 	};
 }
 
-ID3D12Resource* Dx12Wrapper::CreateTextureFromFile(const char* texPath)
+ID3D12Resource* Dx12Wrapper::CreateTextureFromFile(const char* tex_path)
 {
-	std::string strTexPath = texPath;
+	std::string strTexPath = tex_path;
 	// WICテクスチャのロード
 	DirectX::TexMetadata metadata = {};
 	DirectX::ScratchImage scratchImg = {};

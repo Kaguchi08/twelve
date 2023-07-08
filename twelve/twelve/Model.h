@@ -25,39 +25,39 @@ struct AdditionalMaterial
 {
 	std::string tex_path;
 	int toon_idx;
-	bool edgeFlg;
+	bool edge_flg;
 };
 
 // 全体をまとめたデータ
 struct Material
 {
-	unsigned int indicesNum;
+	unsigned int indices_num;
 	MaterialForHlsl hlsl;
 	AdditionalMaterial additional;
 };
 
 struct BoneNode
 {
-	uint32_t boneIdx;
-	uint32_t boneType;
-	uint32_t parentBone;
-	uint32_t ikParentBone;
-	DirectX::XMFLOAT3 startPos;
+	uint32_t bone_idx;
+	uint32_t bone_type;
+	uint32_t parent_bone;
+	uint32_t ik_parent_bone;
+	DirectX::XMFLOAT3 start_pos;
 	std::vector<BoneNode*> children;
 };
 
 struct PMDIK
 {
-	uint16_t boneIdx;
-	uint16_t targetBoneIdx;
+	uint16_t bone_idx;
+	uint16_t target_bone_idx;
 	uint16_t iterations;
 	float limit;
-	std::vector<uint16_t> nodeIdxes;;
+	std::vector<uint16_t> node_idxes;;
 };
 
 // モーション関連
 struct KeyFrame {
-	unsigned int frameNo;
+	unsigned int frame_no;
 	DirectX::XMVECTOR quaternion;
 	DirectX::XMFLOAT3 offset;
 	DirectX::XMFLOAT2 p1, p2;
@@ -67,7 +67,7 @@ struct KeyFrame {
 		const DirectX::XMFLOAT3& ofst,
 		const DirectX::XMFLOAT2& ip1,
 		const DirectX::XMFLOAT2& ip2) :
-		frameNo(fno),
+		frame_no(fno),
 		quaternion(q),
 		offset(ofst),
 		p1(ip1),
@@ -78,8 +78,8 @@ struct KeyFrame {
 //IKオンオフデータ
 struct VMDIKEnable
 {
-	uint32_t frameNo;
-	std::unordered_map<std::string, bool> ikEnableTable;
+	uint32_t frame_no;
+	std::unordered_map<std::string, bool> ik_enable_table;
 };
 
 // モデル情報をまとめた構造体

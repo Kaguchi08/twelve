@@ -56,15 +56,15 @@ private:
 	// その他のマテリアルデータ
 	struct AdditionalMaterial
 	{
-		std::string texPath;
-		int toonIdx;
-		bool edgeFlg;
+		std::string tex_path;
+		int toon_idx;
+		bool edge_flg;
 	};
 
 	// 全体をまとめたデータ
 	struct Material
 	{
-		unsigned int indicesNum;
+		unsigned int indices_num;
 		MaterialForHlsl hlsl;
 		AdditionalMaterial additional;
 	};
@@ -81,45 +81,45 @@ private:
 
 	// マテリアル関連
 	std::vector<Material> mMaterials;
-	ComPtr<ID3D12Resource> mMaterialBuffer = nullptr;
-	std::vector<ComPtr<ID3D12Resource>> mTextureResources;
-	std::vector<ComPtr<ID3D12Resource>> mSphResources;
-	std::vector<ComPtr<ID3D12Resource>> mSpaResources;
-	std::vector<ComPtr<ID3D12Resource>> mToonResources;
+	ComPtr<ID3D12Resource> material_buffer = nullptr;
+	std::vector<ComPtr<ID3D12Resource>> texture_resources;
+	std::vector<ComPtr<ID3D12Resource>> sph_resources;
+	std::vector<ComPtr<ID3D12Resource>> spa_resources;
+	std::vector<ComPtr<ID3D12Resource>> toon_resources;
 
 	// ボーン関連
 	std::vector<DirectX::XMMATRIX> mBoneMatrices;
 
 	struct BoneNode
 	{
-		uint32_t boneIdx;
-		uint32_t boneType;
-		uint32_t parentBone;
-		uint32_t ikParentBone;
-		DirectX::XMFLOAT3 startPos;
+		uint32_t bone_idx;
+		uint32_t bone_type;
+		uint32_t parent_bone;
+		uint32_t ik_parent_bone;
+		DirectX::XMFLOAT3 start_pos;
 		std::vector<BoneNode*> children;
 	};
 
-	std::map<std::string, BoneNode> mBoneNodeTable;
-	std::vector<std::string> mBoneNameArray;
-	std::vector<BoneNode*> mBoneNodeAddressArray;
+	std::map<std::string, BoneNode> bone_node_table;
+	std::vector<std::string> bone_name_array;
+	std::vector<BoneNode*> bone_node_address_array;
 
 
 	struct PMDIK
 	{
-		uint16_t boneIdx;
-		uint16_t targetBoneIdx;
+		uint16_t bone_idx;
+		uint16_t target_bone_idx;
 		uint16_t iterations;
 		float limit;
-		std::vector<uint16_t> nodeIdxes;;
+		std::vector<uint16_t> node_idxes;;
 	};
 
-	std::vector<PMDIK> mIKData;
+	std::vector<PMDIK> ik_data;
 
 	// マテリアルバッファの作成
 	HRESULT CreateMaterialData();
 
-	ComPtr<ID3D12DescriptorHeap> mMaterialHeap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> material_heap = nullptr;
 
 	// マテリアルとテクスチャのビューを作成
 	HRESULT CreateMaterialAndTextureView();
@@ -135,7 +135,7 @@ private:
 
 	// モーション関連
 	struct KeyFrame {
-		unsigned int frameNo;
+		unsigned int frame_no;
 		DirectX::XMVECTOR quaternion;
 		DirectX::XMFLOAT3 offset;
 		DirectX::XMFLOAT2 p1, p2;
@@ -145,7 +145,7 @@ private:
 				 const DirectX::XMFLOAT3& ofst,
 			     const DirectX::XMFLOAT2& ip1,
 				 const DirectX::XMFLOAT2& ip2) :
-			frameNo(fno), 
+			frame_no(fno), 
 			quaternion(q),
 			offset(ofst),
 			p1(ip1),
@@ -157,7 +157,7 @@ private:
 	unsigned int duration_ = 0;
 
 	DWORD mStartTime;
-	std::vector<uint32_t> mKneeIdxes;
+	std::vector<uint32_t> knee_idxes;
 
 	void MotionUpdate();
 
@@ -181,13 +181,13 @@ private:
 	/// <param name="ik"></param>
 	void SolveLookAt(const PMDIK& ik);
 
-	void IKSolve(int frameNo);
+	void IKSolve(int frame_no);
 
 	//IKオンオフデータ
 	struct VMDIKEnable 
 	{
-		uint32_t frameNo;
-		std::unordered_map<std::string, bool> ikEnableTable;
+		uint32_t frame_no;
+		std::unordered_map<std::string, bool> ik_enable_table;
 	};
 	std::vector<VMDIKEnable> mIKEnableData;
 
