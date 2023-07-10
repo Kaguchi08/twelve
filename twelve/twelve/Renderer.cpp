@@ -1,11 +1,12 @@
 #include "Renderer.h"
 #include "Dx12Wrapper.h"
+#include "ModelComponent.h"
 #include <d3dx12.h>
 #include <d3dcompiler.h>
 #include <string>
 #include <algorithm>
 
-Renderer::Renderer(class Dx12Wrapper& dx)
+Renderer::Renderer(class Dx12Wrapper* dx)
 	: dx12_(dx)
 {
 }
@@ -32,6 +33,20 @@ void Renderer::Initialize()
 
 void Renderer::DrawToBackBuffer()
 {
+	DrawModel();
+}
+
+void Renderer::AddModelComponent(ModelComponent* model)
+{
+	pending_models_.emplace_back(model);
+}
+
+void Renderer::RemoveModelComponent(ModelComponent* model)
+{
+	auto it = std::find(models_.begin(), models_.end(), model);
+	if (it != models_.end()) {
+		models_.erase(it);
+	}
 }
 
 ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) { 
@@ -39,7 +54,7 @@ ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) {
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
 
 	ID3D12Resource* tex_buffer = nullptr;
-	auto result = dx12_.GetDevice()->CreateCommittedResource(
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
@@ -197,7 +212,7 @@ HRESULT Renderer::CreateModelGraphicsPipeline()
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	gps_desc.pRootSignature = model_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result)) {
 		assert(0);
@@ -288,7 +303,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 	gps_desc.pRootSignature = screen_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_.ReleaseAndGetAddressOf())
 	);
@@ -317,7 +332,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 
 	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_2_.ReleaseAndGetAddressOf())
 	);
@@ -360,7 +375,7 @@ HRESULT Renderer::CreateModelRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(model_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(model_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(SUCCEEDED(result));
@@ -442,7 +457,7 @@ HRESULT Renderer::CreateScreenRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(
+	result = dx12_->GetDevice()->CreateRootSignature(
 		0,
 		root_sig_blob->GetBufferPointer(),
 		root_sig_blob->GetBufferSize(),
@@ -455,6 +470,26 @@ HRESULT Renderer::CreateScreenRootSignature()
 	}
 
 	return result;
+}
+
+void Renderer::DrawModel()
+{
+	auto command_list = dx12_->GetCommandList();
+
+	command_list->SetPipelineState(model_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(model_root_signature_.Get());
+
+	// テスト用
+	// モデル追加
+	for (auto& model : pending_models_) {
+		models_.emplace_back(model);
+	}
+
+	pending_models_.clear();
+
+	for (auto& model : models_) {
+		model->Draw();
+	}
 }
 
 bool Renderer::CheckShaderCompileResult(HRESULT result, ID3DBlob* error)
