@@ -32,7 +32,7 @@ bool Dx12Wrapper::Initialize() {
 	Game game;
 	window_size_ = game.GetWindowSize();
 
-	renderer_.reset(new Renderer(*this));
+	renderer_.reset(new Renderer(this));
 	model_loader_.reset(new ModelLoader(*renderer_));
 
 	// テクスチャローダ関連の初期化

@@ -148,6 +148,14 @@ void Game::GenerateOutput()
 	dx12_->GetSwapChain()->Present(0, 0);
 }
 
+void Game::LoadData()
+{
+}
+
+void Game::UnloadData()
+{
+}
+
 void Game::CreateGameWindow(HWND& hwnd, WNDCLASSEX& wndClass)
 {
 	HINSTANCE hInst = GetModuleHandle(nullptr);

@@ -27,6 +27,10 @@ public:
 	void AddActor(class Actor* actor);
 	void RemoveActor(class Actor* actor);
 
+	// Getter
+	std::shared_ptr<Dx12Wrapper> GetDx12() const { return dx12_; }
+	std::shared_ptr<class Renderer> GetRenderer() const { return renderer_; }
+
 	// Window
 	SIZE GetWindowSize() const;
 private:
@@ -34,6 +38,7 @@ private:
 	HWND hwnd_;
 
 	std::shared_ptr<Dx12Wrapper> dx12_;
+	std::shared_ptr<class Renderer> renderer_;
 	std::shared_ptr<PMDRenderer> mPMDRenderer;
 	std::shared_ptr<PMDActor> mPMDActor;
 
@@ -44,6 +49,8 @@ private:
 	void ProcessInput();
 	void UpdateGame();
 	void GenerateOutput();
+	void LoadData();
+	void UnloadData();
 
 	void CreateGameWindow(HWND& hwnd, WNDCLASSEX& wndClass);
 
