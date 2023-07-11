@@ -121,7 +121,7 @@ bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
 
 	DWORD i = 0;
 	for (auto& v : vertices) {
-		model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
+		//model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
 		*(PMDVertex*)vert_map = v;
 		vert_map += vertex_size;
 		i++;
@@ -443,10 +443,10 @@ HRESULT ModelLoader::CreateMaterialAndView(struct Model* model)
 	cbv_desc.BufferLocation = model->material_buffer->GetGPUVirtualAddress();
 	cbv_desc.SizeInBytes = material_buffer_size;
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Texture2D.MipLevels = 1;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(model->material_heap->GetCPUDescriptorHandleForHeapStart());
 	auto inc_size = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -459,49 +459,49 @@ HRESULT ModelLoader::CreateMaterialAndView(struct Model* model)
 
 		if (model->texture_resources[i] == nullptr)
 		{
-			srvDesc.Format = renderer_.white_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srvDesc, handle);
+			srv_desc.Format = renderer_.white_texture_->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
-			srvDesc.Format = model->texture_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->texture_resources[i].Get(), &srvDesc, handle);
+			srv_desc.Format = model->texture_resources[i]->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(model->texture_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->sph_resources[i] == nullptr)
 		{
-			srvDesc.Format = renderer_.white_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srvDesc, handle);
+			srv_desc.Format = renderer_.white_texture_->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
-			srvDesc.Format = model->sph_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->sph_resources[i].Get(), &srvDesc, handle);
+			srv_desc.Format = model->sph_resources[i]->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(model->sph_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->spa_resources[i] == nullptr)
 		{
-			srvDesc.Format = renderer_.black_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.black_texture_.Get(), &srvDesc, handle);
+			srv_desc.Format = renderer_.black_texture_->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(renderer_.black_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
-			srvDesc.Format = model->spa_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->spa_resources[i].Get(), &srvDesc, handle);
+			srv_desc.Format = model->spa_resources[i]->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(model->spa_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->toon_resources[i] == nullptr)
 		{
-			srvDesc.Format = renderer_.grad_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.grad_texture_.Get(), &srvDesc, handle);
+			srv_desc.Format = renderer_.grad_texture_->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(renderer_.grad_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
-			srvDesc.Format = model->toon_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->toon_resources[i].Get(), &srvDesc, handle);
+			srv_desc.Format = model->toon_resources[i]->GetDesc().Format;
+			dx12_.GetDevice()->CreateShaderResourceView(model->toon_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 	}

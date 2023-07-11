@@ -2,6 +2,8 @@
 #include "Dx12Wrapper.h"
 #include "PMDRenderer.h"
 #include "PMDActor.h"
+#include "Renderer.h"
+#include "ModelActor.h"
 #include <tchar.h>
 
 const unsigned int WINDOW_WIDTH = 1280;
@@ -28,11 +30,12 @@ Game::Game() :
 bool Game::Initialize()
 {
 	std::string strModelPath = "../Assets/Model/初音ミク.pmd";
-	//std::string strModelPath = "../Assets/Model/巡音ルカ.pmd";
-	//std::string strModelPath = "../Assets/Model/Kafka/kafka.pmd";
-	//std::string strModelPath = "../Assets/Model/Star_Rail/Seele/seele.pmd";
-	//std::string strModelPath = "../Assets/Model/Star_Rail/Ting Yun/停雲.pmd";
-	//std::string strModelPath = "../Assets/Model/Star_Rail/Stelle/stelle.pmd";
+	//std::string str_model_path = "../Assets/Model/巡音ルカ.pmd";
+	//std::string str_model_path = "../Assets/Model/Kafka/kafka.pmd";
+	//std::string str_model_path = "../Assets/Model/Star_Rail/Seele/seele.pmd";
+	//std::string str_model_path = "../Assets/Model/Star_Rail/Ting Yun/停雲.pmd";
+	//std::string str_model_path = "../Assets/Model/Star_Rail/Stelle/stelle.pmd";
+
 
 	auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
 	CreateGameWindow(hwnd_, wind_class_);
@@ -40,18 +43,23 @@ bool Game::Initialize()
 	dx12_.reset(new Dx12Wrapper(hwnd_));
 	mPMDRenderer.reset(new PMDRenderer(*dx12_));
 
+	renderer_.reset(new Renderer(*dx12_));
+
 	if (!dx12_->Initialize())
 	{
 		return false;
 	}
 
 	mPMDRenderer->Initialize();
+	renderer_->Initialize();
 
 	mPMDActor.reset(new PMDActor(strModelPath.c_str(), *mPMDRenderer));
 	mPMDActor->LoadVMDFile("../motion/squat2.vmd");
 	dx12_->ExecuteCommand();
 
 	mPMDActor->PlayAnimation();
+
+	LoadData();
 
 	return true;
 }
@@ -133,9 +141,11 @@ void Game::GenerateOutput()
 {
 	// 1枚目
 	dx12_->PreDrawToPera();
-	mPMDRenderer->BeforeDraw();
+	//mPMDRenderer->BeforeDraw();
+	renderer_->BeforeDraw();
 	dx12_->DrawToPera1();
-	mPMDActor->DrawToBackBuffer();
+	renderer_->Draw();
+	//mPMDActor->DrawToBackBuffer();
 
 	dx12_->DrawToPera2();
 
@@ -150,6 +160,9 @@ void Game::GenerateOutput()
 
 void Game::LoadData()
 {
+	std::string str_model_path = "../Assets/Model/初音ミク.pmd";
+	model_ = new ModelActor(this);
+	model_->SetModel(str_model_path.c_str());
 }
 
 void Game::UnloadData()

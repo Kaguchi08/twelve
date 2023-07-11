@@ -15,9 +15,9 @@ Actor::~Actor()
 {
 	game_->RemoveActor(this);
 
-	while (!mComponents.empty())
+	while (!components_.empty())
 	{
-		delete mComponents.back();
+		delete components_.back();
 	}
 }
 

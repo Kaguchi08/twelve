@@ -9,17 +9,17 @@ using Microsoft::WRL::ComPtr;
 
 class Renderer {
 public:
-	Renderer(class Dx12Wrapper* dx);
+	Renderer(class Dx12Wrapper& dx);
 	~Renderer();
 	void Initialize();
 	void BeforeDraw();
 
-	void DrawToBackBuffer();
+	void Draw();
 
 	void AddModelComponent(class ModelComponent* model);
 	void RemoveModelComponent(class ModelComponent* model);
 
-	class Dx12Wrapper* GetDx() { return dx12_; }
+	class Dx12Wrapper& GetDx() { return dx12_; }
 
 	// 汎用テクスチャ
 	ComPtr<ID3D12Resource> white_texture_ = nullptr;
@@ -27,7 +27,7 @@ public:
 	ComPtr<ID3D12Resource> grad_texture_ = nullptr;
 
 private:
-	class Dx12Wrapper* dx12_;
+	class Dx12Wrapper& dx12_;
 	// パイプライン
 	ComPtr<ID3D12PipelineState> model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_ = nullptr;
@@ -39,7 +39,7 @@ private:
 
 	// モデル
 	std::vector<class ModelComponent*> models_;
-	std::vector<class ModelConponent*> pending_models_;
+	std::vector<class ModelComponent*> pending_models_;
 	
 
 	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);

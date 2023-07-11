@@ -48,5 +48,5 @@ private:
 	DirectX::XMFLOAT3 position_;
 	DirectX::XMVECTOR rotation_;
 
-	std::vector<class Component*> mComponents;
+	std::vector<class Component*> components_;
 };

@@ -8,7 +8,7 @@
 
 //using namespace DirectX;
 
-ModelComponent::ModelComponent(Actor* owner, const char* fileName, int draw_order) :
+ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
     Component(owner, draw_order)
 {
     dx12_ = owner->GetGame()->GetDx12();
@@ -17,7 +17,7 @@ ModelComponent::ModelComponent(Actor* owner, const char* fileName, int draw_orde
 	renderer_->AddModelComponent(this);
 
     // モデル
-    model_ = dx12_->LoadModel(fileName);
+    model_ = dx12_->LoadModel(file_name);
     bone_matrices_.resize(model_->bone_name_array.size());
     std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
 
@@ -71,7 +71,7 @@ HRESULT ModelComponent::CreateTransformResourceAndView()
 {
 	// GPUバッファの作成
 	auto buffer_size = sizeof(DirectX::XMMATRIX) * (1 + bone_matrices_.size()); // wordl行列 + ボーン行列 * ボーン数
-	AligmentedValue(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT); // 256の倍数にする
+	buffer_size = AligmentedValue(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT); // 256の倍数にする
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);

@@ -46,6 +46,9 @@ private:
 	std::vector<class Actor*> pending_actors_;
 	bool is_update_actors_;
 
+	// テスト用
+	class ModelActor* model_;
+
 	void ProcessInput();
 	void UpdateGame();
 	void GenerateOutput();

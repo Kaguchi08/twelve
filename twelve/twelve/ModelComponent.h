@@ -11,7 +11,7 @@ using Microsoft::WRL::ComPtr;
 
 class ModelComponent : public Component {
 public:
-	ModelComponent(class Actor* owner, const char* fileName, int draw_order = 100);
+	ModelComponent(class Actor* owner, const char* file_name, int draw_order = 100);
 	~ModelComponent();
 
 	void Update(float delta_time) override;
