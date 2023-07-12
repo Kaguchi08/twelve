@@ -119,17 +119,19 @@ bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
 		return false;
 	}
 
+	model->vertices.resize(vert_num);
+
 	DWORD i = 0;
 	for (auto& v : vertices) {
-		//model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
-		*(PMDVertex*)vert_map = v;
+		model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
+		*((PMDVertex*)vert_map) = v;
 		vert_map += vertex_size;
 		i++;
 	}
 	model->vertex_buffer->Unmap(0, nullptr);
 
 	model->vb_view.BufferLocation = model->vertex_buffer->GetGPUVirtualAddress();
-	model->vb_view.SizeInBytes = vertices.size();
+	model->vb_view.SizeInBytes = vertices.size() * vertex_size;
 	model->vb_view.StrideInBytes = vertex_size;
 
 	// インデックスデータの読み込み
