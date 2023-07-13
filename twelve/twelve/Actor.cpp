@@ -1,19 +1,19 @@
 #include "Actor.h"
-#include "Game.h"
+#include "Scene.h"
 
-Actor::Actor(Game* game) :
+Actor::Actor(class Scene* scene) :
 	state_(State::EActive),
 	scale_(1.0f),
 	position_(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)),
 	rotation_(DirectX::XMQuaternionIdentity()),
-	game_(game)
+	scene_(scene)
 {
-	game_->AddActor(this);
+	scene_->AddActor(this);
 }
 
 Actor::~Actor()
 {
-	game_->RemoveActor(this);
+	scene_->RemoveActor(this);
 
 	while (!components_.empty())
 	{

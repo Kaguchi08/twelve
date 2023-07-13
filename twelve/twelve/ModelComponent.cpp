@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "Game.h"
 #include "Actor.h"
+#include "Scene.h"
 #include "Helper.h"
 #include <d3dx12.h>
 #include <d3d12.h>
@@ -11,8 +12,8 @@
 ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
     Component(owner, draw_order)
 {
-    dx12_ = owner->GetGame()->GetDx12();
-    renderer_ = owner->GetGame()->GetRenderer();
+    dx12_ = owner->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner->GetScene()->GetGame()->GetRenderer();
 
 	renderer_->AddModelComponent(this);
 

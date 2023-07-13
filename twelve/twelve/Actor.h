@@ -13,7 +13,7 @@ public:
 		EDead
 	};
 
-	Actor(class Game* game);
+	Actor(class Scene* scene);
 	virtual ~Actor();
 
 	void Update(float deltaTime);
@@ -39,10 +39,10 @@ public:
 	State GetState() const { return state_; }
 	void SetState(State state) { state_ = state; }
 
-	class Game* GetGame() { return game_; }
+	class Scene* GetScene() const { return scene_; }
 private:
 	State state_;
-	class Game* game_;
+	class Scene* scene_;
 
 	float scale_;
 	DirectX::XMFLOAT3 position_;

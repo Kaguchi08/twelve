@@ -106,6 +106,7 @@ bool Dx12Wrapper::Initialize() {
 		return false;
 	}
 
+	// TODO: ‚±‚Ì•Ó’¼‚µ‚½‚¢
 	renderer_.reset(new Renderer(*this));
 	renderer_->Initialize();
 	model_loader_.reset(new ModelLoader(*renderer_));

@@ -5,7 +5,7 @@
 class ModelActor : public Actor
 {
 public:
-	ModelActor(class Game* game);
+	ModelActor(class Scene* scene);
 	~ModelActor();
 	void UpdateActor(float deltaTime) override;
 

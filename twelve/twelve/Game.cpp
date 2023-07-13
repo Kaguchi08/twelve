@@ -3,7 +3,7 @@
 #include "PMDRenderer.h"
 #include "PMDActor.h"
 #include "Renderer.h"
-#include "ModelActor.h"
+#include "GameScene.h"
 #include <tchar.h>
 
 const unsigned int WINDOW_WIDTH = 1280;
@@ -22,8 +22,7 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 Game::Game() : 
 	hwnd_(nullptr),
-	wind_class_({}),
-	is_update_actors_(false)
+	wind_class_({})
 {
 }
 
@@ -59,7 +58,7 @@ bool Game::Initialize()
 
 	mPMDActor->PlayAnimation();
 
-	LoadData();
+	current_scene_ = new GameScene(this);
 
 	return true;
 }
@@ -92,32 +91,6 @@ void Game::RunLoop()
 void Game::Shutdown()
 {
 	UnregisterClass(wind_class_.lpszClassName, wind_class_.hInstance);
-}
-
-void Game::AddActor(Actor* actor)
-{
-	if (is_update_actors_) {
-		pending_actors_.emplace_back(actor);
-	}
-	else {
-		actors_.emplace_back(actor);
-	}
-}
-
-void Game::RemoveActor(Actor* actor)
-{
-	auto iter = std::find(actors_.begin(), actors_.end(), actor);
-	if (iter != actors_.end()) {
-		std::iter_swap(iter, actors_.end() - 1);
-		actors_.pop_back();
-	}
-	else {
-		iter = std::find(pending_actors_.begin(), pending_actors_.end(), actor);
-		if (iter != pending_actors_.end()) {
-			std::iter_swap(iter, pending_actors_.end() - 1);
-			pending_actors_.pop_back();
-		}
-	}
 }
 
 SIZE Game::GetWindowSize() const
@@ -160,9 +133,6 @@ void Game::GenerateOutput()
 
 void Game::LoadData()
 {
-	std::string str_model_path = "../Assets/Model/‰‰¹ƒ~ƒN.pmd";
-	model_ = new ModelActor(this);
-	model_->SetModel(str_model_path.c_str());
 }
 
 void Game::UnloadData()

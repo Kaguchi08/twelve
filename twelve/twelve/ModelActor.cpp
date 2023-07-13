@@ -1,8 +1,8 @@
 #include "ModelActor.h"
 #include "ModelComponent.h"
 
-ModelActor::ModelActor(Game* game) :
-	Actor(game),
+ModelActor::ModelActor(Scene* scene) :
+	Actor(scene),
 	model_(nullptr)
 {
 }

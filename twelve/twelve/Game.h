@@ -24,9 +24,6 @@ public:
 	void RunLoop();
 	void Shutdown();
 
-	void AddActor(class Actor* actor);
-	void RemoveActor(class Actor* actor);
-
 	// Getter
 	std::shared_ptr<Dx12Wrapper> GetDx12() const { return dx12_; }
 	std::shared_ptr<class Renderer> GetRenderer() const { return renderer_; }
@@ -42,12 +39,8 @@ private:
 	std::shared_ptr<PMDRenderer> mPMDRenderer;
 	std::shared_ptr<PMDActor> mPMDActor;
 
-	std::vector<class Actor*> actors_;
-	std::vector<class Actor*> pending_actors_;
-	bool is_update_actors_;
-
-	// テスト用
-	class ModelActor* model_;
+	class Scene* current_scene_ = nullptr;
+	class Scene* next_scene_ = nullptr;
 
 	void ProcessInput();
 	void UpdateGame();

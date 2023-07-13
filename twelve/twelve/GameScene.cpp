@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include "ModelActor.h"
 #include <string>
 
 GameScene::GameScene(Game* game) :
@@ -15,7 +16,10 @@ GameScene::~GameScene()
 
 bool GameScene::Initialize(const char* file_name)
 {
-	return false;
+	model_ = new ModelActor(this);
+	model_->SetModel(file_name);
+
+	return true;
 }
 
 void GameScene::UpdateActor(float deltaTime)
