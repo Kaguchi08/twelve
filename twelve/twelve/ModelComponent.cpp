@@ -41,7 +41,8 @@ void ModelComponent::Update(float delta_time)
 	auto rot = owner_->GetRotation();
 
 	angle_ += 0.001f;
-	position_ += 0.0001f;
+	position_.x += 0.001f;
+	position_.z += 0.001f;
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 }
 

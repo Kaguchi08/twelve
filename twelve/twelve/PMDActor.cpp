@@ -40,6 +40,7 @@ PMDActor::PMDActor(const char* filepath, PMDRenderer& renderer)
 
 PMDActor::~PMDActor()
 {
+
 }
 
 
@@ -101,19 +102,19 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	for (auto& keyFrame : keyFrames)
 	{
 		fread(keyFrame.boneName, sizeof(keyFrame.boneName), 1, fp);
-		fread(&keyFrame.frame_no, 
-			sizeof(keyFrame.frame_no) 
-			+ sizeof(keyFrame.location) 
-			+ sizeof(keyFrame.quaternion) 
-			+ sizeof(keyFrame.bezier), 
-			1, 
+		fread(&keyFrame.frame_no,
+			sizeof(keyFrame.frame_no)
+			+ sizeof(keyFrame.location)
+			+ sizeof(keyFrame.quaternion)
+			+ sizeof(keyFrame.bezier),
+			1,
 			fp
 		);
 	}
 
 #pragma pack(1)
 	//表情データ(頂点モーフデータ)
-	struct VMDMorph 
+	struct VMDMorph
 	{
 		char name[15];//名前(パディングしてしまう)
 		uint32_t frame_no;//フレーム番号
@@ -127,7 +128,7 @@ void PMDActor::LoadVMDFile(const char* filepath)
 
 #pragma pack(1)
 	//カメラ
-	struct VMDCamera 
+	struct VMDCamera
 	{
 		uint32_t frame_no; // フレーム番号
 		float distance; // 距離
@@ -144,7 +145,7 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	fread(cameraData.data(), sizeof(VMDCamera), vmdCameraCount, fp);
 
 	// ライト照明データ
-	struct VMDLight 
+	struct VMDLight
 	{
 		uint32_t frame_no; // フレーム番号
 		XMFLOAT3 rgb; //ライト色
@@ -158,7 +159,7 @@ void PMDActor::LoadVMDFile(const char* filepath)
 
 #pragma pack(1)
 	// セルフ影データ
-	struct VMDSelfShadow 
+	struct VMDSelfShadow
 	{
 		uint32_t frame_no; // フレーム番号
 		uint8_t mode; //影モード(0:影なし、1:モード１、2:モード２)
@@ -187,7 +188,7 @@ void PMDActor::LoadVMDFile(const char* filepath)
 		uint32_t ikBoneCount = 0;
 		fread(&ikBoneCount, sizeof(ikBoneCount), 1, fp);
 		//ループしつつ名前とON/OFF情報を取得
-		for (int i = 0; i < ikBoneCount; ++i) 
+		for (int i = 0; i < ikBoneCount; ++i)
 		{
 			char ikBoneName[20];
 			fread(ikBoneName, _countof(ikBoneName), 1, fp);
@@ -203,12 +204,12 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	for (auto& keyFrame : keyFrames)
 	{
 		key_frames_[keyFrame.boneName].emplace_back(
-			KeyFrame(keyFrame.frame_no, 
-				     DirectX::XMLoadFloat4(&keyFrame.quaternion),
-					 keyFrame.location,
-					 DirectX::XMFLOAT2((float)keyFrame.bezier[3] / 127.0f, (float)keyFrame.bezier[7] / 127.0f),
-				     DirectX::XMFLOAT2((float)keyFrame.bezier[11] / 127.0f, (float)keyFrame.bezier[15] / 127.0f)
-				));
+			KeyFrame(keyFrame.frame_no,
+				DirectX::XMLoadFloat4(&keyFrame.quaternion),
+				keyFrame.location,
+				DirectX::XMFLOAT2((float)keyFrame.bezier[3] / 127.0f, (float)keyFrame.bezier[7] / 127.0f),
+				DirectX::XMFLOAT2((float)keyFrame.bezier[11] / 127.0f, (float)keyFrame.bezier[15] / 127.0f)
+			));
 
 		duration_ = std::max<unsigned int>(duration_, keyFrame.frame_no);
 	}
@@ -216,7 +217,8 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	for (auto& boneMotion : key_frames_)
 	{
 		std::sort(boneMotion.second.begin(), boneMotion.second.end(),
-			[](const KeyFrame& lval, const KeyFrame& rval) {
+			[](const KeyFrame& lval, const KeyFrame& rval)
+			{
 				return lval.frame_no < rval.frame_no;
 			});
 	}
@@ -592,35 +594,43 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 		{
 			auto namePair = SplitFileName(texFileName);
 
-			if (GetExtension(namePair.first) == "sph") {
+			if (GetExtension(namePair.first) == "sph")
+			{
 				texFileName = namePair.second;
 				sphFileName = namePair.first;
 			}
-			else if (GetExtension(namePair.first) == "spa") {
+			else if (GetExtension(namePair.first) == "spa")
+			{
 				texFileName = namePair.second;
 				spaFileName = namePair.first;
 			}
-			else {
+			else
+			{
 				texFileName = namePair.first;
-				if (GetExtension(namePair.second) == "sph") {
+				if (GetExtension(namePair.second) == "sph")
+				{
 					sphFileName = namePair.second;
 				}
-				else if (GetExtension(namePair.second) == "spa") {
+				else if (GetExtension(namePair.second) == "spa")
+				{
 					spaFileName = namePair.second;
 				}
 			}
 		}
 		else
 		{
-			if (GetExtension(pmdMaterials[i].tex_path) == "sph") {
+			if (GetExtension(pmdMaterials[i].tex_path) == "sph")
+			{
 				texFileName = "";
 				sphFileName = pmdMaterials[i].tex_path;
 			}
-			else if (GetExtension(pmdMaterials[i].tex_path) == "spa") {
+			else if (GetExtension(pmdMaterials[i].tex_path) == "spa")
+			{
 				texFileName = "";
 				spaFileName = pmdMaterials[i].tex_path;
 			}
-			else {
+			else
+			{
 				texFileName = pmdMaterials[i].tex_path;
 			}
 		}
@@ -735,12 +745,12 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 	// IKデバッグ用
 	auto getNameFromIdx = [&](uint16_t idx)->std::string
 	{
-		auto it = std::find_if(bone_node_table.begin(), 
-							   bone_node_table.end(), 
-			                   [idx](const std::pair<std::string, BoneNode>& pair)
-							   {
-									return pair.second.bone_idx == idx;
-							   });
+		auto it = std::find_if(bone_node_table.begin(),
+			bone_node_table.end(),
+			[idx](const std::pair<std::string, BoneNode>& pair)
+			{
+				return pair.second.bone_idx == idx;
+			});
 		if (it != bone_node_table.end())
 		{
 			return it->first;
@@ -762,7 +772,7 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 
 		OutputDebugString(oss.str().c_str());
 	}
-	
+
 	return S_OK;
 }
 
@@ -802,10 +812,11 @@ void PMDActor::MotionUpdate()
 		auto node = itBoneNode->second;
 
 		auto keyFrames = boneMotion.second;
-		
-		auto rit = std::find_if(keyFrames.rbegin(), keyFrames.rend(), [frame_no](const KeyFrame& keyFrame) {
-			return keyFrame.frame_no <= frame_no;
-		});
+
+		auto rit = std::find_if(keyFrames.rbegin(), keyFrames.rend(), [frame_no](const KeyFrame& keyFrame)
+			{
+				return keyFrame.frame_no <= frame_no;
+			});
 
 		if (rit == keyFrames.rend())
 		{
@@ -835,8 +846,8 @@ void PMDActor::MotionUpdate()
 
 		auto& pos = node.start_pos;
 		auto mat = DirectX::XMMatrixTranslation(-pos.x, -pos.y, -pos.z)
-					* rotation
-					* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+			* rotation
+			* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 		mBoneMatrices[node.bone_idx] = mat * DirectX::XMMatrixTranslationFromVector(offset);
 	}
 
@@ -846,7 +857,7 @@ void PMDActor::MotionUpdate()
 	IKSolve(frame_no);
 
 	std::copy(mBoneMatrices.begin(), mBoneMatrices.end(), mMappedMatrices + 1);
-}  
+}
 
 void PMDActor::SolveCCDIK(const PMDIK& ik)
 {
@@ -868,7 +879,8 @@ void PMDActor::SolveCCDIK(const PMDIK& ik)
 	//末端ノード
 	auto endPos = DirectX::XMLoadFloat3(&bone_node_address_array[ik.target_bone_idx]->start_pos);
 	//中間ノード(ルートを含む)
-	for (auto& cidx : ik.node_idxes) {
+	for (auto& cidx : ik.node_idxes)
+	{
 		bonePositions.push_back(DirectX::XMLoadFloat3(&bone_node_address_array[cidx]->start_pos));
 	}
 
@@ -878,15 +890,15 @@ void PMDActor::SolveCCDIK(const PMDIK& ik)
 	//つまりこれをラジアンとして使用するにはXM_PIを乗算しなければならない…と思われる。
 	auto ikLimit = ik.limit * DirectX::XM_PI;
 	//ikに設定されている試行回数だけ繰り返す
-	for (int c = 0; c < ik.iterations; ++c) 
+	for (int c = 0; c < ik.iterations; ++c)
 	{
 		//ターゲットと末端がほぼ一致したら抜ける
-		if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(endPos, targetNextPos)).m128_f32[0] <= epsilon) 
+		if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(endPos, targetNextPos)).m128_f32[0] <= epsilon)
 		{
 			break;
 		}
 		//それぞれのボーンを遡りながら角度制限に引っ掛からないように曲げていく
-		for (int bidx = 0; bidx < bonePositions.size(); ++bidx) 
+		for (int bidx = 0; bidx < bonePositions.size(); ++bidx)
 		{
 			const auto& pos = bonePositions[bidx];
 
@@ -897,7 +909,7 @@ void PMDActor::SolveCCDIK(const PMDIK& ik)
 			vecToTarget = DirectX::XMVector3Normalize(vecToTarget);
 
 			//ほぼ同じベクトルになってしまった場合は外積できないため次のボーンに引き渡す
-			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(vecToEnd, vecToTarget)).m128_f32[0] <= epsilon) 
+			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(vecToEnd, vecToTarget)).m128_f32[0] <= epsilon)
 			{
 				continue;
 			}
@@ -907,25 +919,26 @@ void PMDActor::SolveCCDIK(const PMDIK& ik)
 			angle = min(angle, ikLimit);//回転限界補正
 			DirectX::XMMATRIX rot = DirectX::XMMatrixRotationAxis(cross, angle);//回転行列
 			//posを中心に回転
-			auto mat = DirectX::XMMatrixTranslationFromVector(-pos) 
-						* rot 
-						* DirectX::XMMatrixTranslationFromVector(pos);
+			auto mat = DirectX::XMMatrixTranslationFromVector(-pos)
+				* rot
+				* DirectX::XMMatrixTranslationFromVector(pos);
 			mats[bidx] *= mat;//回転行列を保持しておく(乗算で回転重ね掛けを作っておく)
 			//対象となる点をすべて回転させる(現在の点から見て末端側を回転)
-			for (auto idx = bidx - 1; idx >= 0; --idx) 
+			for (auto idx = bidx - 1; idx >= 0; --idx)
 			{//自分を回転させる必要はない
 				bonePositions[idx] = DirectX::XMVector3Transform(bonePositions[idx], mat);
 			}
 			endPos = DirectX::XMVector3Transform(endPos, mat);
 			//もし正解に近くなってたらループを抜ける
-			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(endPos, targetNextPos)).m128_f32[0] <= epsilon) 
+			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(endPos, targetNextPos)).m128_f32[0] <= epsilon)
 			{
 				break;
 			}
 		}
 	}
 	int idx = 0;
-	for (auto& cidx : ik.node_idxes) {
+	for (auto& cidx : ik.node_idxes)
+	{
 		mBoneMatrices[cidx] = mats[idx];
 		++idx;
 	}
@@ -981,7 +994,7 @@ void PMDActor::SolveCosineIK(const PMDIK& ik)
 		auto vt = DirectX::XMVector3Normalize(DirectX::XMVectorSubtract(targetPos, positions[0]));
 		axis = DirectX::XMVector3Cross(vt, vm);
 	}
-	else 
+	else
 	{
 		auto right = DirectX::XMFLOAT3(1, 0, 0);
 		axis = DirectX::XMLoadFloat3(&right);
@@ -1020,8 +1033,8 @@ void PMDActor::SolveLookAt(const PMDIK& ik)
 	targetVec = DirectX::XMVector3Normalize(targetVec);
 
 	DirectX::XMMATRIX mat = DirectX::XMMatrixTranslationFromVector(-rootPos2)
-							* LookAtMatrix(originVec, targetVec, DirectX::XMFLOAT3(0, 1, 0), DirectX::XMFLOAT3(1, 0, 0))
-							* DirectX::XMMatrixTranslationFromVector(rootPos2);
+		* LookAtMatrix(originVec, targetVec, DirectX::XMFLOAT3(0, 1, 0), DirectX::XMFLOAT3(1, 0, 0))
+		* DirectX::XMMatrixTranslationFromVector(rootPos2);
 
 	mBoneMatrices[ik.node_idxes[0]] = mat;
 }
@@ -1029,19 +1042,19 @@ void PMDActor::SolveLookAt(const PMDIK& ik)
 void PMDActor::IKSolve(int frame_no)
 {
 	auto it = std::find_if(mIKEnableData.rbegin(), mIKEnableData.rend(),
-		[frame_no](const VMDIKEnable& ikenable) 
+		[frame_no](const VMDIKEnable& ikenable)
 		{
 			return ikenable.frame_no <= frame_no;
 		});
 
 	for (auto& ik : ik_data)
 	{
-		if (it != mIKEnableData.rend()) 
+		if (it != mIKEnableData.rend())
 		{
 			auto ikEnableIt = it->ik_enable_table.find(bone_name_array[ik.bone_idx]);
-			if (ikEnableIt != it->ik_enable_table.end()) 
+			if (ikEnableIt != it->ik_enable_table.end())
 			{
-				if (!ikEnableIt->second) 
+				if (!ikEnableIt->second)
 				{//もしOFFなら打ち切ります
 					continue;
 				}

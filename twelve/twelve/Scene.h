@@ -10,6 +10,8 @@ public:
 	void AddActor(class Actor* actor);
 	void RemoveActor(class Actor* actor);
 
+	void ProcessInput(const struct InputState& state);
+
 	class Game* GetGame() const { return game_; }
 private:
 	virtual void UpdateActor(float delta_time) = 0;

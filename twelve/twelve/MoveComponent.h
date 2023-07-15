@@ -10,6 +10,12 @@ public:
 
 	void Update(float deltaTime) override;
 
+	const DirectX::XMFLOAT3& GetVelocity() const { return velocity_; }
+	const DirectX::XMFLOAT3& GetAngularVelocity() const { return angular_velocity_; }
+	const DirectX::XMFLOAT3& GetAcceleration() const { return acceleration_; }
+	const DirectX::XMFLOAT3& GetGravity() const { return gravity_; }
+	const DirectX::XMFLOAT3& GetInputVelocity() const { return input_velocity_; }
+
 	void SetVelocity(const DirectX::XMFLOAT3& velocity) { velocity_ = velocity; }
 	void SetAngularVelocity(const DirectX::XMFLOAT3& angular_velocity) { angular_velocity_ = angular_velocity; }
 	void SetAcceleration(const DirectX::XMFLOAT3& acceleration) { acceleration_ = acceleration; }
@@ -25,6 +31,8 @@ private:
 	DirectX::XMFLOAT3 angular_velocity_;
 	DirectX::XMFLOAT3 acceleration_;
 	DirectX::XMFLOAT3 gravity_;
+
+	DirectX::XMFLOAT3 input_velocity_;
 
 	float max_speed_;
 };

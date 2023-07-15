@@ -57,7 +57,7 @@ void Renderer::RemoveModelComponent(ModelComponent* model)
 	}
 }
 
-ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) { 
+ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) {
 	auto res_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
 

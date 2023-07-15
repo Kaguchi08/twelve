@@ -29,7 +29,7 @@ void MoveComponent::Update(float deltaTime)
 
 	// 位置を更新
 	DirectX::XMFLOAT3 pos = owner_->GetPosition();
-	pos += velocity_ * deltaTime;
+	pos += (velocity_ + input_velocity_) * deltaTime;
 
 	// 回転を更新
 	DirectX::XMFLOAT3 rot = owner_->GetRotation();

@@ -138,6 +138,7 @@
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Helper.cpp" />
+    <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModelActor.cpp" />
     <ClCompile Include="ModelComponent.cpp" />
@@ -193,10 +194,12 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelActor.h" />
     <ClInclude Include="ModelComponent.h" />
     <ClInclude Include="ModelLoader.h" />
+    <ClInclude Include="ModelMoveComponent.h" />
     <ClInclude Include="MoveComponent.h" />
     <ClInclude Include="PMDActor.h" />
     <ClInclude Include="PMDRenderer.h" />

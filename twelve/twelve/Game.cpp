@@ -20,7 +20,7 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return DefWindowProc(hwnd, msg, wparam, lparam); // ‹K’è‚Ìˆ—‚ğs‚¤
 }
 
-Game::Game() : 
+Game::Game() :
 	hwnd_(nullptr),
 	wind_class_({})
 {

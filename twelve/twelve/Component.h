@@ -7,7 +7,7 @@ public:
 	Component(class Actor* owner, int update_order = 100);
 	virtual ~Component();
 	virtual void Update(float delta_time);
-	virtual void ProcessInput(const uint8_t* keyState) {}
+	virtual void ProcessInput(const struct InputState& state) {}
 
 	int GetUpdateOrder() const { return update_order_; }
 
