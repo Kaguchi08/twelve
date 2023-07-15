@@ -1,7 +1,8 @@
 //-------------------------------------------------------------------------------------------------------------
-//参考
+// 参考
 // https://qiita.com/HnniTns/items/6e7edc82775a86923cef
 //-------------------------------------------------------------------------------------------------------------
+
 
 #pragma once
 
@@ -81,6 +82,96 @@ _NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT4& v1, 
     return DirectX::XMFLOAT4{ ::fmodf(v1.x, v2.x), ::fmodf(v1.y, v2.y), ::fmodf(v1.z, v2.z), ::fmodf(v1.w, v2.w) };
 }
 
+static inline void operator+= (DirectX::XMFLOAT4& v1, const float num)
+{
+    v1.x += num;
+    v1.y += num;
+    v1.z += num;
+    v1.w += num;
+}
+
+static inline void operator-= (DirectX::XMFLOAT4& v1, const float num)
+{
+    v1.x -= num;
+    v1.y -= num;
+    v1.z -= num;
+    v1.w -= num;
+}
+
+static inline void operator/= (DirectX::XMFLOAT4& v1, const float num)
+{
+    v1.x /= num;
+    v1.y /= num;
+    v1.z /= num;
+    v1.w /= num;
+}
+
+static inline void operator*= (DirectX::XMFLOAT4& v1, const float num)
+{
+    v1.x *= num;
+    v1.y *= num;
+    v1.z *= num;
+    v1.w *= num;
+}
+
+static inline void operator%= (DirectX::XMFLOAT4& v1, const float num)
+{
+    v1.x = ::fmodf(v1.x, num);
+    v1.y = ::fmodf(v1.y, num);
+    v1.z = ::fmodf(v1.z, num);
+    v1.w = ::fmodf(v1.w, num);
+}
+
+_NODISCARD static inline constexpr auto operator+ (const DirectX::XMFLOAT4& v1, const float num)
+{
+    return DirectX::XMFLOAT4{ v1.x + num, v1.y + num, v1.z + num, v1.w + num };
+}
+
+_NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT4& v1, const float num)
+{
+    return DirectX::XMFLOAT4{ v1.x - num, v1.y - num, v1.z - num, v1.w - num };
+}
+
+_NODISCARD static inline constexpr auto operator* (const DirectX::XMFLOAT4& v1, const float num)
+{
+    return DirectX::XMFLOAT4{ v1.x* num, v1.y* num, v1.z* num, v1.w* num };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const DirectX::XMFLOAT4& v1, const float num)
+{
+    return DirectX::XMFLOAT4{ v1.x / num, v1.y / num, v1.z / num, v1.w / num };
+}
+
+_NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT4& v1, const float num)
+{
+    return DirectX::XMFLOAT4{ ::fmodf(v1.x, num), ::fmodf(v1.y, num), ::fmodf(v1.z, num), ::fmodf(v1.w, num) };
+}
+
+_NODISCARD static inline constexpr auto operator+ (const float num, DirectX::XMFLOAT4& v1)
+{
+    return DirectX::XMFLOAT4{ num + v1.x, num + v1.y, num + v1.z, num + v1.w };
+}
+
+_NODISCARD static inline constexpr auto operator- (const float num, DirectX::XMFLOAT4& v1)
+{
+    return DirectX::XMFLOAT4{ num - v1.x, num - v1.y, num - v1.z, num - v1.w };
+}
+
+_NODISCARD static inline constexpr auto operator* (const float num, DirectX::XMFLOAT4& v1)
+{
+    return DirectX::XMFLOAT4{ num* v1.x, num* v1.y, num* v1.z, num* v1.w };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const float num, DirectX::XMFLOAT4& v1)
+{
+    return DirectX::XMFLOAT4{ num / v1.x, num / v1.y, num / v1.z, num / v1.w };
+}
+
+_NODISCARD static inline constexpr auto operator% (const float num, DirectX::XMFLOAT4& v1)
+{
+    return DirectX::XMFLOAT4{ fmodf(num, v1.x), fmodf(num, v1.y), fmodf(num, v1.z), fmodf(num, v1.w) };
+}
+
 _NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT4& v1)
 {
     return DirectX::XMFLOAT4{ -v1.x, -v1.y, -v1.z, -v1.w };
@@ -150,6 +241,91 @@ _NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT3& v1, 
     return DirectX::XMFLOAT3{ ::fmodf(v1.x, v2.x), ::fmodf(v1.y, v2.y), ::fmodf(v1.z, v2.z) };
 }
 
+static inline void operator+= (DirectX::XMFLOAT3& v1, const float num)
+{
+    v1.x += num;
+    v1.y += num;
+    v1.z += num;
+}
+
+static inline void operator-= (DirectX::XMFLOAT3& v1, const float num)
+{
+    v1.x -= num;
+    v1.y -= num;
+    v1.z -= num;
+}
+
+static inline void operator/= (DirectX::XMFLOAT3& v1, const float num)
+{
+    v1.x /= num;
+    v1.y /= num;
+    v1.z /= num;
+}
+
+static inline void operator*= (DirectX::XMFLOAT3& v1, const float num)
+{
+    v1.x *= num;
+    v1.y *= num;
+    v1.z *= num;
+}
+
+static inline void operator%= (DirectX::XMFLOAT3& v1, const float num)
+{
+    v1.x = ::fmodf(v1.x, num);
+    v1.y = ::fmodf(v1.y, num);
+    v1.z = ::fmodf(v1.z, num);
+}
+
+_NODISCARD static inline constexpr auto operator+ (const DirectX::XMFLOAT3& v1, const float num)
+{
+    return DirectX::XMFLOAT3{ v1.x + num, v1.y + num, v1.z + num };
+}
+
+_NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT3& v1, const float num)
+{
+    return DirectX::XMFLOAT3{ v1.x - num, v1.y - num, v1.z - num };
+}
+
+_NODISCARD static inline constexpr auto operator* (const DirectX::XMFLOAT3& v1, const float num)
+{
+    return DirectX::XMFLOAT3{ v1.x* num, v1.y* num, v1.z* num };
+}
+
+_NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT3& v1, const float num)
+{
+    return DirectX::XMFLOAT3{ ::fmodf(v1.x, num), ::fmodf(v1.y, num), ::fmodf(v1.z, num) };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const DirectX::XMFLOAT3& v1, const float num)
+{
+    return DirectX::XMFLOAT3{ v1.x / num, v1.y / num, v1.z / num };
+}
+
+_NODISCARD static inline constexpr auto operator+ (const float num, DirectX::XMFLOAT3& v1)
+{
+    return DirectX::XMFLOAT3{ num + v1.x, num - v1.y, num - v1.z };
+}
+
+_NODISCARD static inline constexpr auto operator- (const float num, DirectX::XMFLOAT3& v1)
+{
+    return DirectX::XMFLOAT3{ num - v1.x, num - v1.y, num - v1.z };
+}
+
+_NODISCARD static inline constexpr auto operator* (const float num, DirectX::XMFLOAT3& v1)
+{
+    return DirectX::XMFLOAT3{ num* v1.x, num - v1.y, num - v1.z };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const float num, DirectX::XMFLOAT3& v1)
+{
+    return DirectX::XMFLOAT3{ num / v1.x, num / v1.y, num / v1.z };
+}
+
+_NODISCARD static inline constexpr auto operator% (const float num, DirectX::XMFLOAT3& v1)
+{
+    return DirectX::XMFLOAT3{ fmodf(num, v1.x), fmodf(num, v1.y), fmodf(num, v1.z) };
+}
+
 _NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT3& v1)
 {
     return DirectX::XMFLOAT3{ -v1.x, -v1.y, -v1.z };
@@ -212,6 +388,86 @@ _NODISCARD static inline constexpr auto operator/ (const DirectX::XMFLOAT2& v1, 
 _NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT2& v1, const DirectX::XMFLOAT2& v2)
 {
     return DirectX::XMFLOAT2{ ::fmodf(v1.x, v2.x), ::fmodf(v1.y, v2.y) };
+}
+
+static inline void operator+= (DirectX::XMFLOAT2& v1, const float num)
+{
+    v1.x += num;
+    v1.y += num;
+}
+
+static inline void operator-= (DirectX::XMFLOAT2& v1, const float num)
+{
+    v1.x -= num;
+    v1.y -= num;
+}
+
+static inline void operator/= (DirectX::XMFLOAT2& v1, const float num)
+{
+    v1.x /= num;
+    v1.y /= num;
+}
+
+static inline void operator*= (DirectX::XMFLOAT2& v1, const float num)
+{
+    v1.x *= num;
+    v1.y *= num;
+}
+
+static inline void operator%= (DirectX::XMFLOAT2& v1, const float num)
+{
+    v1.x = ::fmodf(v1.x, num);
+    v1.y = ::fmodf(v1.y, num);
+}
+
+_NODISCARD static inline constexpr auto operator+ (const DirectX::XMFLOAT2& v1, const float num)
+{
+    return DirectX::XMFLOAT2{ v1.x + num, v1.y + num };
+}
+
+_NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT2& v1, const float num)
+{
+    return DirectX::XMFLOAT2{ v1.x - num, v1.y - num };
+}
+
+_NODISCARD static inline constexpr auto operator* (const DirectX::XMFLOAT2& v1, const float num)
+{
+    return DirectX::XMFLOAT2{ v1.x* num, v1.y* num };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const DirectX::XMFLOAT2& v1, const float num)
+{
+    return DirectX::XMFLOAT2{ v1.x / num, v1.y / num };
+}
+
+_NODISCARD static inline constexpr auto operator% (const DirectX::XMFLOAT2& v1, const float num)
+{
+    return DirectX::XMFLOAT2{ ::fmodf(v1.x, num), ::fmodf(v1.y, num) };
+}
+
+_NODISCARD static inline constexpr auto operator+ (const float num, DirectX::XMFLOAT2& v1)
+{
+    return DirectX::XMFLOAT2{ num + v1.x, num + v1.y };
+}
+
+_NODISCARD static inline constexpr auto operator- (const float num, DirectX::XMFLOAT2& v1)
+{
+    return DirectX::XMFLOAT2{ num - v1.x, num - v1.y };
+}
+
+_NODISCARD static inline constexpr auto operator* (const float num, DirectX::XMFLOAT2& v1)
+{
+    return DirectX::XMFLOAT2{ num* v1.x, num* v1.y };
+}
+
+_NODISCARD static inline constexpr auto operator/ (const float num, DirectX::XMFLOAT2& v1)
+{
+    return DirectX::XMFLOAT2{ num / v1.x, num / v1.y };
+}
+
+_NODISCARD static inline constexpr auto operator% (const float num, DirectX::XMFLOAT2& v1)
+{
+    return DirectX::XMFLOAT2{ fmodf(num, v1.x), fmodf(num, v1.y) };
 }
 
 _NODISCARD static inline constexpr auto operator- (const DirectX::XMFLOAT2& v1)
