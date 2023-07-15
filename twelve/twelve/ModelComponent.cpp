@@ -9,23 +9,24 @@
 #include <d3d12.h>
 
 ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
-    Component(owner, draw_order)
+	Component(owner, draw_order)
 {
-    dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
 	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
 
 	renderer_->AddModelComponent(this);
 
-    // モデル
-    model_ = dx12_->LoadModel(file_name);
-    bone_matrices_.resize(model_->bone_name_array.size());
-    std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
+	// モデル
+	model_ = dx12_->LoadModel(file_name);
+	bone_matrices_.resize(model_->bone_name_array.size());
+	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
 
-    // 座標変換用リソース作成
-    auto result = CreateTransformResourceAndView();
+	// 座標変換用リソース作成
+	auto result = CreateTransformResourceAndView();
 
-    if (FAILED(result)) {
-        assert(0);
+	if (FAILED(result))
+	{
+		assert(0);
 	}
 }
 

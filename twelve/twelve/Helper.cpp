@@ -48,7 +48,8 @@ std::pair<std::string, std::string> SplitFileName(const std::string& path, const
 void EnableDebugLayer()
 {
 	ID3D12Debug* debugLayer = nullptr;
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer)))) {
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugLayer))))
+	{
 		debugLayer->EnableDebugLayer();
 		debugLayer->Release();
 	}

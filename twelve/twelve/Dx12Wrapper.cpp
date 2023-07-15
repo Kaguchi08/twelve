@@ -15,7 +15,7 @@ using namespace Microsoft::WRL;
 // "-" オペランドが使えないため
 using namespace DirectX;
 
-Dx12Wrapper::Dx12Wrapper(HWND hwnd):
+Dx12Wrapper::Dx12Wrapper(HWND hwnd) :
 	hwnd_(hwnd),
 	eye_(0, 15, -50),
 	target_(0, 12, 0),
@@ -28,7 +28,8 @@ Dx12Wrapper::~Dx12Wrapper()
 {
 }
 
-bool Dx12Wrapper::Initialize() {
+bool Dx12Wrapper::Initialize()
+{
 	Game game;
 	window_size_ = game.GetWindowSize();
 
@@ -36,73 +37,88 @@ bool Dx12Wrapper::Initialize() {
 	CreateTextureLoaderTable();
 
 	ID3D12Debug* debug;
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
+	{
 		debug->EnableDebugLayer();
 		debug->Release();
 	}
 
-	if (FAILED(InitializeDXGIDevice())) {
+	if (FAILED(InitializeDXGIDevice()))
+	{
 		assert(0);
 		return false;
 	}
 
-	if (FAILED(InitializeCommand())) {
+	if (FAILED(InitializeCommand()))
+	{
 		assert(0);
 		return false;
 	}
 
-	if (FAILED(CreateSwapChain())) {
+	if (FAILED(CreateSwapChain()))
+	{
 		assert(0);
 		return false;
 	}
 
-	if (FAILED(CreateRenderTarget())) {
+	if (FAILED(CreateRenderTarget()))
+	{
 		assert(0);
 		return false;
 	}
 
 	// 深度
-	if (!CreateDepthBuffer()) {
+	if (!CreateDepthBuffer())
+	{
 		return false;
 	}
 
-	if (!CreateDSV()) {
+	if (!CreateDSV())
+	{
 		return false;
 	}
 
-	if (!CreateDepthSRV()) {
+	if (!CreateDepthSRV())
+	{
 		return false;
 	}
 
 	// フェンスの作成
-	if (FAILED(dev_->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf())))) {
+	if (FAILED(dev_->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf()))))
+	{
 		assert(0);
 		return false;
 	}
 
-	if (FAILED(CreateSceneView())) {
+	if (FAILED(CreateSceneView()))
+	{
 		assert(0);
 		return false;
 	}
 
-	if (!CreateEffectResourceAndView()) {
+	if (!CreateEffectResourceAndView())
+	{
 		return false;
 	}
 
 	// ペラポリ
-	if (!CreatePeraResourceAndView()) {
+	if (!CreatePeraResourceAndView())
+	{
 		return false;
 	}
 
-	if (!CreatePeraConstBufferAndView()) {
+	if (!CreatePeraConstBufferAndView())
+	{
 		return false;
 	}
 
-	if (!CreatePeraVerTex()) {
+	if (!CreatePeraVerTex())
+	{
 		return false;
 	}
 
-	if (!CreatePeraPipeline()) {
+	if (!CreatePeraPipeline())
+	{
 		return false;
 	}
 
@@ -232,7 +248,7 @@ void Dx12Wrapper::SetCameraSetting()
 	auto eye_pos = DirectX::XMLoadFloat3(&eye_);
 	auto target_pos = DirectX::XMLoadFloat3(&target_);
 	auto up_vec = DirectX::XMLoadFloat3(&up_);
-	
+
 	scene_matrix_->eye = eye_;
 	scene_matrix_->view = DirectX::XMMatrixLookAtLH(eye_pos, target_pos, up_vec);
 	scene_matrix_->proj = DirectX::XMMatrixPerspectiveFovLH(
@@ -476,7 +492,7 @@ HRESULT Dx12Wrapper::CreateSwapChain()
 	);
 
 	assert(SUCCEEDED(result));
-	
+
 	return result;
 }
 
@@ -520,13 +536,15 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice()
 
 	for (auto l : levels)
 	{
-		if (SUCCEEDED(D3D12CreateDevice(tmpAdapter, l, IID_PPV_ARGS(dev_.ReleaseAndGetAddressOf())))) {
+		if (SUCCEEDED(D3D12CreateDevice(tmpAdapter, l, IID_PPV_ARGS(dev_.ReleaseAndGetAddressOf()))))
+		{
 			result = S_OK;
 			break;
 		}
 	}
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		return result;
 	}
 
@@ -556,7 +574,7 @@ HRESULT Dx12Wrapper::InitializeCommand()
 	cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	result = dev_->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(mCmdQueue.ReleaseAndGetAddressOf()));
-	
+
 	assert(SUCCEEDED(result));
 
 	return result;
@@ -564,7 +582,7 @@ HRESULT Dx12Wrapper::InitializeCommand()
 
 HRESULT Dx12Wrapper::CreateSceneView()
 {
-    DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
+	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
 	auto result = swap_chain_->GetDesc1(&swapchainDesc);
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -727,7 +745,8 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 		IID_PPV_ARGS(screen_resource_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -741,7 +760,8 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 		IID_PPV_ARGS(screen_resource_2_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -752,7 +772,8 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 
 	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(screen_rtv_heap_.ReleaseAndGetAddressOf()));
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -777,7 +798,8 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 
 	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(sceen_srv_heap_.ReleaseAndGetAddressOf()));
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -814,7 +836,8 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 		IID_PPV_ARGS(pera_const_buffer_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -827,7 +850,8 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 
 	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(pera_cbv_heap_.ReleaseAndGetAddressOf()));
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -843,7 +867,8 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 	float* mapped = nullptr;
 	result = pera_const_buffer_->Map(0, nullptr, (void**)&mapped);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -865,7 +890,8 @@ bool Dx12Wrapper::CreateEffectResourceAndView()
 
 	auto result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(effect_srv_heap_.ReleaseAndGetAddressOf()));
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -885,8 +911,10 @@ bool Dx12Wrapper::CreateEffectResourceAndView()
 	return true;
 }
 
-bool Dx12Wrapper::CreatePeraVerTex() {
-	struct PeraVertex {
+bool Dx12Wrapper::CreatePeraVerTex()
+{
+	struct PeraVertex
+	{
 		DirectX::XMFLOAT3 pos;
 		DirectX::XMFLOAT2 uv;
 	};
@@ -910,7 +938,8 @@ bool Dx12Wrapper::CreatePeraVerTex() {
 		IID_PPV_ARGS(screen_vertex_buffer_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -927,7 +956,8 @@ bool Dx12Wrapper::CreatePeraVerTex() {
 	return true;
 }
 
-bool Dx12Wrapper::CreatePeraPipeline() {
+bool Dx12Wrapper::CreatePeraPipeline()
+{
 	D3D12_DESCRIPTOR_RANGE desc_range[4] = {};
 
 	desc_range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // b0
@@ -941,7 +971,7 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 	desc_range[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // t1
 	desc_range[2].BaseShaderRegister = 1;
 	desc_range[2].NumDescriptors = 1;
-	
+
 	// 深度値テクスチャ
 	desc_range[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // t2
 	desc_range[3].BaseShaderRegister = 2;
@@ -990,7 +1020,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1002,7 +1033,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		IID_PPV_ARGS(screen_root_signature_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1022,7 +1054,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1039,29 +1072,30 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
 
 	D3D12_INPUT_ELEMENT_DESC input_elem_desc[2] = {
 		{
-			"POSITION", 
-			0, 
-			DXGI_FORMAT_R32G32B32_FLOAT, 
-			0, 
-			D3D12_APPEND_ALIGNED_ELEMENT, 
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 
-			0 
+			"POSITION",
+			0,
+			DXGI_FORMAT_R32G32B32_FLOAT,
+			0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+			0
 		},
-		{ 
-			"TEXCOORD", 
-			0, 
-			DXGI_FORMAT_R32G32_FLOAT, 
-			0, 
-			D3D12_APPEND_ALIGNED_ELEMENT, 
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 
-			0 
+		{
+			"TEXCOORD",
+			0,
+			DXGI_FORMAT_R32G32_FLOAT,
+			0,
+			D3D12_APPEND_ALIGNED_ELEMENT,
+			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+			0
 		}
 	};
 
@@ -1088,7 +1122,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		IID_PPV_ARGS(screen_pipeline_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1105,7 +1140,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1117,7 +1153,8 @@ bool Dx12Wrapper::CreatePeraPipeline() {
 		IID_PPV_ARGS(screen_pipeline_2_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}
@@ -1138,7 +1175,8 @@ bool Dx12Wrapper::CreateDepthSRV()
 		IID_PPV_ARGS(depth_srv_heap_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return false;
 	}

@@ -52,12 +52,14 @@ void Renderer::AddModelComponent(ModelComponent* model)
 void Renderer::RemoveModelComponent(ModelComponent* model)
 {
 	auto it = std::find(models_.begin(), models_.end(), model);
-	if (it != models_.end()) {
+	if (it != models_.end())
+	{
 		models_.erase(it);
 	}
 }
 
-ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) {
+ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height)
+{
 	auto res_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
 
@@ -71,7 +73,8 @@ ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height) {
 		IID_PPV_ARGS(&tex_buffer)
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(SUCCEEDED(result));
 		return nullptr;
 	}
@@ -222,7 +225,8 @@ HRESULT Renderer::CreateModelGraphicsPipeline()
 
 	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -316,7 +320,8 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 		IID_PPV_ARGS(screen_pipeline_state_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -333,7 +338,8 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -345,7 +351,8 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 		IID_PPV_ARGS(screen_pipeline_state_2_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -460,7 +467,8 @@ HRESULT Renderer::CreateScreenRootSignature()
 		error_blob.ReleaseAndGetAddressOf()
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -472,7 +480,8 @@ HRESULT Renderer::CreateScreenRootSignature()
 		IID_PPV_ARGS(screen_root_signature_.ReleaseAndGetAddressOf())
 	);
 
-	if (FAILED(result)) {
+	if (FAILED(result))
+	{
 		assert(0);
 		return result;
 	}
@@ -489,13 +498,15 @@ void Renderer::DrawModel()
 
 	// テスト用
 	// モデル追加
-	for (auto& model : pending_models_) {
+	for (auto& model : pending_models_)
+	{
 		models_.emplace_back(model);
 	}
 
 	pending_models_.clear();
 
-	for (auto& model : models_) {
+	for (auto& model : models_)
+	{
 		model->Draw();
 	}
 }

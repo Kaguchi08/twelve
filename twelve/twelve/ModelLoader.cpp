@@ -122,7 +122,8 @@ bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
 	model->vertices.resize(vert_num);
 
 	DWORD i = 0;
-	for (auto& v : vertices) {
+	for (auto& v : vertices)
+	{
 		model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
 		*((PMDVertex*)vert_map) = v;
 		vert_map += vertex_size;
@@ -218,35 +219,43 @@ bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
 		{
 			auto namePair = SplitFileName(texFileName);
 
-			if (GetExtension(namePair.first) == "sph") {
+			if (GetExtension(namePair.first) == "sph")
+			{
 				texFileName = namePair.second;
 				sphFileName = namePair.first;
 			}
-			else if (GetExtension(namePair.first) == "spa") {
+			else if (GetExtension(namePair.first) == "spa")
+			{
 				texFileName = namePair.second;
 				spaFileName = namePair.first;
 			}
-			else {
+			else
+			{
 				texFileName = namePair.first;
-				if (GetExtension(namePair.second) == "sph") {
+				if (GetExtension(namePair.second) == "sph")
+				{
 					sphFileName = namePair.second;
 				}
-				else if (GetExtension(namePair.second) == "spa") {
+				else if (GetExtension(namePair.second) == "spa")
+				{
 					spaFileName = namePair.second;
 				}
 			}
 		}
 		else
 		{
-			if (GetExtension(materials[i].tex_path) == "sph") {
+			if (GetExtension(materials[i].tex_path) == "sph")
+			{
 				texFileName = "";
 				sphFileName = materials[i].tex_path;
 			}
-			else if (GetExtension(materials[i].tex_path) == "spa") {
+			else if (GetExtension(materials[i].tex_path) == "spa")
+			{
 				texFileName = "";
 				spaFileName = materials[i].tex_path;
 			}
-			else {
+			else
+			{
 				texFileName = materials[i].tex_path;
 			}
 		}

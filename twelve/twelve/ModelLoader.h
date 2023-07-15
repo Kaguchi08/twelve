@@ -5,7 +5,8 @@
 
 using Microsoft::WRL::ComPtr;
 
-class ModelLoader {
+class ModelLoader
+{
 public:
 	ModelLoader(class Renderer& renderer);
 	~ModelLoader();

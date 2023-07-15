@@ -41,7 +41,8 @@ void Scene::AddActor(Actor* actor)
 	{
 		pending_actors_.emplace_back(actor);
 	}
-	else {
+	else
+	{
 		actors_.emplace_back(actor);
 	}
 }
