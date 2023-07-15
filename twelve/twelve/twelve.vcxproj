@@ -142,6 +142,7 @@
     <ClCompile Include="ModelActor.cpp" />
     <ClCompile Include="ModelComponent.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
+    <ClCompile Include="MoveComponent.cpp" />
     <ClCompile Include="PMDActor.cpp" />
     <ClCompile Include="PMDRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -182,6 +183,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
     <None Include="Type.hlsli" />
   </ItemGroup>
   <ItemGroup>
@@ -195,10 +197,12 @@
     <ClInclude Include="ModelActor.h" />
     <ClInclude Include="ModelComponent.h" />
     <ClInclude Include="ModelLoader.h" />
+    <ClInclude Include="MoveComponent.h" />
     <ClInclude Include="PMDActor.h" />
     <ClInclude Include="PMDRenderer.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="XMFLOAT_Helper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -30,7 +30,7 @@ public:
 	void SetPosition(const DirectX::XMFLOAT3& pos) { position_ = pos; }
 	float GetScale() const { return scale_; }
 	void SetScale(float scale) { scale_ = scale; }
-	const DirectX::XMVECTOR& GetRotation() const { return rotation_; }
+	const DirectX::XMFLOAT3& GetRotation() const { return rotation_; }
 	void SetRotation(const DirectX::XMVECTOR& rotation) { rotation_ = rotation; }
 
 	DirectX::XMFLOAT3 GetForward() const;
@@ -46,7 +46,7 @@ private:
 
 	float scale_;
 	DirectX::XMFLOAT3 position_;
-	DirectX::XMVECTOR rotation_;
+	DirectX::XMFLOAT3 rotation_;
 
 	std::vector<class Component*> components_;
 };

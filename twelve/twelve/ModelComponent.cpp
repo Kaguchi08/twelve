@@ -7,8 +7,6 @@
 #include <d3dx12.h>
 #include <d3d12.h>
 
-//using namespace DirectX;
-
 ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
     Component(owner, draw_order)
 {
