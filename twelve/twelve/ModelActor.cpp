@@ -11,7 +11,7 @@ ModelActor::~ModelActor()
 {
 }
 
-void ModelActor::UpdateActor(float deltaTime)
+void ModelActor::UpdateActor(float delta_time)
 {
 }
 

@@ -7,7 +7,7 @@ class ModelActor : public Actor
 public:
 	ModelActor(class Scene* scene);
 	~ModelActor();
-	void UpdateActor(float deltaTime) override;
+	void UpdateActor(float delta_time) override;
 
 	void SetModel(const char* file_name);
 private:

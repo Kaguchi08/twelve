@@ -1,11 +1,12 @@
 #include "Actor.h"
 #include "Scene.h"
+#include "Component.h"
 
 Actor::Actor(class Scene* scene) :
 	state_(State::EActive),
 	scale_(1.0f),
 	position_(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)),
-	rotation_(DirectX::XMQuaternionIdentity()),
+	rotation_(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)),
 	scene_(scene)
 {
 	scene_->AddActor(this);
@@ -21,20 +22,24 @@ Actor::~Actor()
 	}
 }
 
-void Actor::Update(float deltaTime)
+void Actor::Update(float delta_time)
 {
 	if (state_ == State::EActive)
 	{
-		UpdateComponents(deltaTime);
-		UpdateActor(deltaTime);
+		UpdateComponents(delta_time);
+		UpdateActor(delta_time);
 	}
 }
 
-void Actor::UpdateComponents(float deltaTime)
+void Actor::UpdateComponents(float delta_time)
 {
+	for (auto component : components_)
+	{
+		component->Update(delta_time);
+	}
 }
 
-void Actor::UpdateActor(float deltaTime)
+void Actor::UpdateActor(float delta_time)
 {
 }
 
@@ -48,10 +53,16 @@ void Actor::ActorInput(const uint8_t* keyState)
 
 void Actor::AddComponent(Component* component)
 {
+	components_.emplace_back(component);
 }
 
 void Actor::RemoveComponent(Component* component)
 {
+	auto iter = std::find(components_.begin(), components_.end(), component);
+	if (iter != components_.end())
+	{
+		components_.erase(iter);
+	}
 }
 
 DirectX::XMFLOAT3 Actor::GetForward() const

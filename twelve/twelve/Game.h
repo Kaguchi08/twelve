@@ -42,6 +42,8 @@ private:
 	class Scene* current_scene_ = nullptr;
 	class Scene* next_scene_ = nullptr;
 
+	uint32_t tick_count_ = 0;
+
 	void ProcessInput();
 	void UpdateGame();
 	void GenerateOutput();

@@ -13,6 +13,6 @@ Component::~Component()
 	owner_->RemoveComponent(this);
 }
 
-void Component::Update(float deltaTime)
+void Component::Update(float delta_time)
 {
 }

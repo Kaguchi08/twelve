@@ -5,14 +5,14 @@ class Scene {
 public:
 	Scene(class Game* game);
 	
-	void Update(float deltaTime);
+	void Update(float delta_time);
 
 	void AddActor(class Actor* actor);
 	void RemoveActor(class Actor* actor);
 
 	class Game* GetGame() const { return game_; }
 private:
-	virtual void UpdateActor(float deltaTime) = 0;
+	virtual void UpdateActor(float delta_time) = 0;
 
 	class Game* game_;
 

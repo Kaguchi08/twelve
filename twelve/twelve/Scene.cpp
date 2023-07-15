@@ -1,4 +1,5 @@
 #include "Scene.h"
+#include "Actor.h"
 
 Scene::Scene(Game* game) :
 	game_(game),
@@ -6,8 +7,27 @@ Scene::Scene(Game* game) :
 {
 }
 
-void Scene::Update(float deltaTime)
+void Scene::Update(float delta_time)
 {
+	is_update_actors_ = true;
+	for (auto actor : actors_) {
+		actor->Update(delta_time);
+	}
+	is_update_actors_ = false;
+	for (auto pending : pending_actors_) {
+		//pending->ComputeWorldTransform();
+		actors_.emplace_back(pending);
+	}
+	pending_actors_.clear();
+	std::vector<Actor*> dead_actors;
+	for (auto actor : actors_) {
+		if (actor->GetState() == Actor::State::EDead) {
+			dead_actors.emplace_back(actor);
+		}
+	}
+	for (auto actor : dead_actors) {
+		delete actor;
+	}
 }
 
 void Scene::AddActor(Actor* actor)

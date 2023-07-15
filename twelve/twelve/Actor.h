@@ -16,9 +16,9 @@ public:
 	Actor(class Scene* scene);
 	virtual ~Actor();
 
-	void Update(float deltaTime);
-	void UpdateComponents(float deltaTime);
-	virtual void UpdateActor(float deltaTime);
+	void Update(float delta_time);
+	void UpdateComponents(float delta_time);
+	virtual void UpdateActor(float delta_time);
 
 	void ProcessInput(const uint8_t* keyState);
 	virtual void ActorInput(const uint8_t* keyState);
@@ -31,7 +31,7 @@ public:
 	float GetScale() const { return scale_; }
 	void SetScale(float scale) { scale_ = scale; }
 	const DirectX::XMFLOAT3& GetRotation() const { return rotation_; }
-	void SetRotation(const DirectX::XMVECTOR& rotation) { rotation_ = rotation; }
+	void SetRotation(const DirectX::XMFLOAT3& rotation) { rotation_ = rotation; }
 
 	DirectX::XMFLOAT3 GetForward() const;
 	DirectX::XMFLOAT3 GetRight() const;

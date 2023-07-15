@@ -35,4 +35,6 @@ private:
 
 	HRESULT CreateTransformResourceAndView();
 
+	// ƒeƒXƒg
+	float angle_ = 0.0f;
 };

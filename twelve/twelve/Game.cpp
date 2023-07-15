@@ -107,7 +107,16 @@ void Game::ProcessInput()
 
 void Game::UpdateGame()
 {
+	auto end_time = tick_count_ + 16;
+	while (GetTickCount() < end_time)
+	{
+		Sleep(1);
+	}
+
+	float delta_time = (GetTickCount() - tick_count_) / 1000.0f;
+
 	mPMDActor->Update();
+	current_scene_->Update(delta_time);
 }
 
 void Game::GenerateOutput()

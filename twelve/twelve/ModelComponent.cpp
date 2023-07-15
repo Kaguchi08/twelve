@@ -35,6 +35,8 @@ ModelComponent::~ModelComponent()
 
 void ModelComponent::Update(float delta_time)
 {
+	angle_ += 0.001f;
+	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_);
 }
 
 void ModelComponent::Draw()
