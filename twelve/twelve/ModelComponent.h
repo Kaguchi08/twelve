@@ -37,4 +37,5 @@ private:
 
 	// ƒeƒXƒg
 	float angle_ = 0.0f;
+	DirectX::XMFLOAT3 position_ = { 0.0f, 0.0f, 0.0f };
 };

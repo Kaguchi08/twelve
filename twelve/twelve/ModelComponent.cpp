@@ -4,14 +4,15 @@
 #include "Actor.h"
 #include "Scene.h"
 #include "Helper.h"
+#include "XMFLOAT_Helper.h"
 #include <d3dx12.h>
 #include <d3d12.h>
 
 ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
     Component(owner, draw_order)
 {
-    dx12_ = owner->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner->GetScene()->GetGame()->GetRenderer();
+    dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
 
 	renderer_->AddModelComponent(this);
 
@@ -35,8 +36,13 @@ ModelComponent::~ModelComponent()
 
 void ModelComponent::Update(float delta_time)
 {
+	// ワールド行列更新
+	auto pos = owner_->GetPosition();
+	auto rot = owner_->GetRotation();
+
 	angle_ += 0.001f;
-	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_);
+	position_ += 0.0001f;
+	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(position_.x, position_.y, position_.z);
 }
 
 void ModelComponent::Draw()
