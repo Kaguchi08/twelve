@@ -10,14 +10,15 @@ MoveComponent::MoveComponent(Actor* owner, int update_order) :
 	acceleration_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	gravity_ = DirectX::XMFLOAT3(0.0f, -10.0f, 0.0f);
 	max_speed_ = 100.0f;
+	input_velocity_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
 
-void MoveComponent::Update(float deltaTime)
+void MoveComponent::Update(float delta_time)
 {
 	// TODO 空中の移動に対応する
 
 	// 速度を更新
-	velocity_ += acceleration_ * deltaTime;
+	velocity_ += acceleration_ * delta_time;
 
 	// 速度を制限
 	if (DirectX::XMVector3LengthSq(DirectX::XMLoadFloat3(&velocity_)).m128_f32[0] > max_speed_ * max_speed_)
@@ -29,9 +30,13 @@ void MoveComponent::Update(float deltaTime)
 
 	// 位置を更新
 	DirectX::XMFLOAT3 pos = owner_->GetPosition();
-	pos += (velocity_ + input_velocity_) * deltaTime;
+	pos += (velocity_ + input_velocity_) * delta_time;
+	owner_->SetPosition(pos);
 
 	// 回転を更新
 	DirectX::XMFLOAT3 rot = owner_->GetRotation();
-	rot += angular_velocity_ * deltaTime;
+	rot += angular_velocity_ * delta_time;
+	owner_->SetRotation(rot);
+
+	input_velocity_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 }

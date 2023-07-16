@@ -36,6 +36,8 @@ private:
 
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;
+	class InputSystem* input_system_ = nullptr;
+
 	std::shared_ptr<PMDRenderer> mPMDRenderer;
 	std::shared_ptr<PMDActor> mPMDActor;
 

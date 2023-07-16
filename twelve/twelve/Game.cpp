@@ -4,6 +4,7 @@
 #include "PMDActor.h"
 #include "Renderer.h"
 #include "GameScene.h"
+#include "InputSystem.h"
 #include <tchar.h>
 
 const unsigned int WINDOW_WIDTH = 1280;
@@ -28,7 +29,7 @@ Game::Game() :
 
 bool Game::Initialize()
 {
-	std::string strModelPath = "../Assets/Model/初音ミク.pmd";
+	//std::string strModelPath = "../Assets/Model/初音ミク.pmd";
 	//std::string str_model_path = "../Assets/Model/巡音ルカ.pmd";
 	//std::string str_model_path = "../Assets/Model/Kafka/kafka.pmd";
 	//std::string str_model_path = "../Assets/Model/Star_Rail/Seele/seele.pmd";
@@ -40,25 +41,34 @@ bool Game::Initialize()
 	CreateGameWindow(hwnd_, wind_class_);
 
 	dx12_.reset(new Dx12Wrapper(hwnd_));
-	mPMDRenderer.reset(new PMDRenderer(*dx12_));
-
-	renderer_.reset(new Renderer(*dx12_));
+	//mPMDRenderer.reset(new PMDRenderer(*dx12_));
 
 	if (!dx12_->Initialize())
 	{
 		return false;
 	}
 
-	mPMDRenderer->Initialize();
+	renderer_.reset(new Renderer(*dx12_));
+
+	//mPMDRenderer->Initialize();
 	renderer_->Initialize();
 
-	mPMDActor.reset(new PMDActor(strModelPath.c_str(), *mPMDRenderer));
-	mPMDActor->LoadVMDFile("../motion/squat2.vmd");
+	input_system_ = new InputSystem();
+
+	if (!input_system_->Initialize())
+	{
+		return false;
+	}
+
+	/*mPMDActor.reset(new PMDActor(strModelPath.c_str(), *mPMDRenderer));
+	mPMDActor->LoadVMDFile("../motion/squat2.vmd");*/
 	dx12_->ExecuteCommand();
 
-	mPMDActor->PlayAnimation();
+	//mPMDActor->PlayAnimation();
 
 	current_scene_ = new GameScene(this);
+
+	tick_count_ = GetTickCount();
 
 	return true;
 }
@@ -103,6 +113,16 @@ SIZE Game::GetWindowSize() const
 
 void Game::ProcessInput()
 {
+	input_system_->Update();
+
+	const InputState& state = input_system_->GetState();
+
+	if (state.keyboard.GetKeyState(VK_ESCAPE) == ButtonState::kPressed)
+	{
+		PostQuitMessage(0);
+	}
+
+	current_scene_->ProcessInput(state);
 }
 
 void Game::UpdateGame()
@@ -115,7 +135,9 @@ void Game::UpdateGame()
 
 	float delta_time = (GetTickCount() - tick_count_) / 1000.0f;
 
-	mPMDActor->Update();
+	tick_count_ = GetTickCount();
+
+	//mPMDActor->Update();
 	current_scene_->Update(delta_time);
 }
 

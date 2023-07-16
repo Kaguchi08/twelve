@@ -12,4 +12,5 @@ public:
 	void SetModel(const char* file_name);
 private:
 	class ModelComponent* model_;
+	class ModelMoveComponent* move_;
 };

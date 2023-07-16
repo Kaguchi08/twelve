@@ -143,6 +143,7 @@
     <ClCompile Include="ModelActor.cpp" />
     <ClCompile Include="ModelComponent.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
+    <ClCompile Include="ModelMoveComponent.cpp" />
     <ClCompile Include="MoveComponent.cpp" />
     <ClCompile Include="PMDActor.cpp" />
     <ClCompile Include="PMDRenderer.cpp" />
