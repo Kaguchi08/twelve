@@ -12,7 +12,6 @@ ModelMoveComponent::ModelMoveComponent(Actor* owner, int update_order) :
 
 void ModelMoveComponent::ProcessInput(const InputState& state)
 {
-	DirectX::XMFLOAT3 acceleration = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	DirectX::XMFLOAT3 velocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	if (state.keyboard.GetKeyDown('W'))

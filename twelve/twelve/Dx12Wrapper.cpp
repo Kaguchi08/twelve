@@ -20,6 +20,7 @@ Dx12Wrapper::Dx12Wrapper(HWND hwnd) :
 	eye_(0, 15, -50),
 	target_(0, 12, 0),
 	up_(0, 1, 0),
+	view_matrix_(DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&eye_), DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_))),
 	parallel_light_dir_(1, -1, 1)
 {
 }
@@ -245,12 +246,8 @@ void Dx12Wrapper::SetCameraSetting()
 	Game game;
 	auto w_size = game.GetWindowSize();
 
-	auto eye_pos = DirectX::XMLoadFloat3(&eye_);
-	auto target_pos = DirectX::XMLoadFloat3(&target_);
-	auto up_vec = DirectX::XMLoadFloat3(&up_);
-
 	scene_matrix_->eye = eye_;
-	scene_matrix_->view = DirectX::XMMatrixLookAtLH(eye_pos, target_pos, up_vec);
+	scene_matrix_->view = view_matrix_;
 	scene_matrix_->proj = DirectX::XMMatrixPerspectiveFovLH(
 		fov_,
 		static_cast<float>(w_size.cx) / static_cast<float>(w_size.cy),
@@ -266,6 +263,16 @@ void Dx12Wrapper::SetCameraSetting()
 	);
 
 
+}
+
+void Dx12Wrapper::SetScene()
+{
+	SetCameraSetting();
+
+	ID3D12DescriptorHeap* sceneHeaps[] = { scene_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, sceneHeaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
 void Dx12Wrapper::EndDraw()
@@ -318,13 +325,6 @@ ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 	}
 }
 
-void Dx12Wrapper::SetScene()
-{
-	ID3D12DescriptorHeap* sceneHeaps[] = { scene_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, sceneHeaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_heap_->GetGPUDescriptorHandleForHeapStart());
-}
 
 std::shared_ptr<Model> Dx12Wrapper::LoadModel(const char* filepath)
 {
@@ -637,7 +637,7 @@ HRESULT Dx12Wrapper::CreateSceneView()
 		return result;
 	}
 
-	SetCameraSetting();
+	//SetCameraSetting();
 
 	return result;
 }

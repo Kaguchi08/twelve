@@ -32,29 +32,25 @@ public:
 	void DrawToBackBuffer();
 
 	void SetCameraSetting();
+	void SetScene();
 
 	void EndDraw();
 	void ExecuteCommand();
 
-	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
-	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
-
-	ComPtr<ID3D12Device> GetDevice() {
-		return dev_.Get();
-	}
-
-	ComPtr<ID3D12GraphicsCommandList> GetCommandList() {
-		return cmd_list_.Get();
-	}
-
-	ComPtr<IDXGISwapChain> GetSwapChain() {
-		return swap_chain_.Get();
-	}
-
-	void SetScene();
 
 	// モデルの読み込み
 	std::shared_ptr<Model> LoadModel(const char* filepath);
+
+	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
+	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
+
+	ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
+
+	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
+
+	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
+
+	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
 
 private:
 	SIZE window_size_;
@@ -99,11 +95,12 @@ private:
 	DirectX::XMFLOAT3 eye_;
 	DirectX::XMFLOAT3 target_;
 	DirectX::XMFLOAT3 up_;
+	DirectX::XMMATRIX view_matrix_;
 
 	// 平行ライト
 	DirectX::XMFLOAT3 parallel_light_dir_;
 
-	float fov_ = DirectX::XM_PI / 6;
+	float fov_ = DirectX::XM_PI / 4;
 
 	// フェンス
 	ComPtr<ID3D12Fence> fence_ = nullptr;
