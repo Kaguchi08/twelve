@@ -4,7 +4,8 @@
 #include <DirectXMath.h>
 #include <unordered_map>
 
-enum ButtonState {
+enum ButtonState
+{
 	kNone,
 	kPressed,
 	kReleased,
@@ -26,7 +27,15 @@ private:
 
 class MouseState
 {
+public:
+	friend class InputSystem;
 
+	const DirectX::XMFLOAT2& GetPosition() const { return position_; }
+	const DirectX::XMFLOAT2& GetDelta();
+
+private:
+	DirectX::XMFLOAT2 position_;
+	DirectX::XMFLOAT2 center_;
 };
 
 struct InputState
@@ -38,11 +47,15 @@ struct InputState
 class InputSystem
 {
 public:
+	InputSystem(class Game* game);
+
 	bool Initialize();
 	void Update();
 
 	const InputState& GetState() const { return state_; }
+
 private:
+	class Game* game_;
 	InputState state_;
 };
 

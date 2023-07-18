@@ -30,6 +30,7 @@ public:
 
 	// Window
 	SIZE GetWindowSize() const;
+	HWND GetWindowHandle() const { return hwnd_; }
 private:
 	WNDCLASSEX wind_class_;
 	HWND hwnd_;

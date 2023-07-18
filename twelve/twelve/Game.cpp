@@ -36,7 +36,6 @@ bool Game::Initialize()
 	//std::string str_model_path = "../Assets/Model/Star_Rail/Ting Yun/’â‰_.pmd";
 	//std::string str_model_path = "../Assets/Model/Star_Rail/Stelle/stelle.pmd";
 
-
 	auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
 	CreateGameWindow(hwnd_, wind_class_);
 
@@ -53,7 +52,7 @@ bool Game::Initialize()
 	//mPMDRenderer->Initialize();
 	renderer_->Initialize();
 
-	input_system_ = new InputSystem();
+	input_system_ = new InputSystem(this);
 
 	if (!input_system_->Initialize())
 	{
