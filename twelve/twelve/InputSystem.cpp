@@ -32,7 +32,7 @@ bool KeyboardState::GetKeyDown(BYTE keycode) const
 	return current_state_[keycode] & 0x80;
 }
 
-const DirectX::XMFLOAT2& MouseState::GetDelta()
+const DirectX::XMFLOAT2& MouseState::GetDelta() const
 {
 	return position_ - center_;
 }

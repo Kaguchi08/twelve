@@ -38,10 +38,11 @@ ModelComponent::~ModelComponent()
 void ModelComponent::Update(float delta_time)
 {
 	// ワールド行列更新
-	auto pos = owner_->GetPosition();
-	auto rot = owner_->GetRotation();
+	DirectX::XMFLOAT3 pos = owner_->GetPosition();
+	DirectX::XMFLOAT3 rot = owner_->GetRotation();
 
-	//angle_ += 0.001f;
+	//angle_ += 0.1f;
+
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 }
 

@@ -50,6 +50,10 @@ public:
 
 	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
 
+	const DirectX::XMFLOAT3& GetEye() const { return eye_; }
+	const DirectX::XMFLOAT3& GetTarget() const { return target_; }
+	const DirectX::XMFLOAT3& GetUp() const { return up_; }
+
 	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
 
 private:

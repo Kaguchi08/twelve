@@ -107,6 +107,7 @@
       <AdditionalIncludeDirectories>C:\Users\kaguchi\DirectXTex\DirectXTex;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>
       </AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +147,7 @@
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="ModelMoveComponent.cpp" />
     <ClCompile Include="MoveComponent.cpp" />
+    <ClCompile Include="OrbitCameraComponent.cpp" />
     <ClCompile Include="PMDActor.cpp" />
     <ClCompile Include="PMDRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -204,6 +206,7 @@
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="ModelMoveComponent.h" />
     <ClInclude Include="MoveComponent.h" />
+    <ClInclude Include="OrbitCameraComponent.h" />
     <ClInclude Include="PMDActor.h" />
     <ClInclude Include="PMDRenderer.h" />
     <ClInclude Include="Renderer.h" />

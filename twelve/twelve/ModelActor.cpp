@@ -1,12 +1,14 @@
 #include "ModelActor.h"
 #include "ModelComponent.h"
 #include "ModelMoveComponent.h"
+#include "OrbitCameraComponent.h"
 
 ModelActor::ModelActor(Scene* scene) :
 	Actor(scene),
 	model_(nullptr)
 {
 	new ModelMoveComponent(this);
+	new OrbitCameraComponent(this);
 }
 
 ModelActor::~ModelActor()

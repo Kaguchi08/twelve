@@ -31,7 +31,7 @@ public:
 	friend class InputSystem;
 
 	const DirectX::XMFLOAT2& GetPosition() const { return position_; }
-	const DirectX::XMFLOAT2& GetDelta();
+	const DirectX::XMFLOAT2& GetDelta() const;
 
 private:
 	DirectX::XMFLOAT2 position_;
