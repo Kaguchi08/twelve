@@ -7,11 +7,12 @@
 
 OrbitCameraComponent::OrbitCameraComponent(Actor* owner) :
 	CameraComponent(owner),
-	offset_(DirectX::XMFLOAT3(-40.f, 15.0f, 0.0f)),
+	offset_(DirectX::XMFLOAT3(0.0f, 10.0f, -40.0f)),
 	up_(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)),
-	max_angluar_velocity_(5.0f),
-	sensitivity_(0.1f),
-	max_angle_(DirectX::XM_PI)
+	angular_velocity_(DirectX::XMFLOAT2(0.0f, 0.0f)),
+	max_angluar_velocity_(1.0f),
+	sensitivity_(0.005f),
+	max_angle_(DirectX::XM_PI / 6)
 {
 }
 
@@ -43,6 +44,8 @@ void OrbitCameraComponent::Update(float delta_time)
 
 	// 変換行列を計算
 	DirectX::XMFLOAT3 target = owner_->GetPosition();
+	// 注視点が低すぎるので少し上にずらす
+	target.y += 10.0f;
 	DirectX::XMFLOAT3 camera_pos = target + offset_;
 	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&camera_pos), DirectX::XMLoadFloat3(&target), DirectX::XMLoadFloat3(&up_));
 
@@ -53,7 +56,7 @@ void OrbitCameraComponent::Update(float delta_time)
 void OrbitCameraComponent::ProcessInput(const InputState& state)
 {
 	// 角速度の更新
-	DirectX::XMFLOAT2 angular_velocity_ = state.mouse.GetDelta() * sensitivity_;
+	angular_velocity_ = state.mouse.GetDelta() * sensitivity_;
 
 	// 角速度の制限
 	angular_velocity_.x = std::clamp(angular_velocity_.x, -max_angluar_velocity_, max_angluar_velocity_);
