@@ -11,7 +11,7 @@
 
 class PMDRenderer;
 class PMDActor;
-struct Model;
+struct PMDModel;
 
 using Microsoft::WRL::ComPtr;
 
@@ -39,7 +39,7 @@ public:
 
 
 	// モデルの読み込み
-	std::shared_ptr<Model> LoadModel(const char* filepath);
+	std::shared_ptr<PMDModel> LoadModel(const char* filepath);
 
 	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
 	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
@@ -164,7 +164,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
 
 	// 読み込んだ Model のテーブル
-	std::unordered_map<std::string, std::shared_ptr<Model>> model_table_;
+	std::unordered_map<std::string, std::shared_ptr<PMDModel>> model_table_;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();

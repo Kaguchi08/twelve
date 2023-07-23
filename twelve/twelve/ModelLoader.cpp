@@ -18,10 +18,10 @@ ModelLoader::~ModelLoader()
 {
 }
 
-bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
+bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 {
 	FILE* fp;
-	std::string strModelPath = filename;
+	std::string strModelPath = file_name;
 
 	fopen_s(&fp, strModelPath.c_str(), "rb");
 
@@ -384,7 +384,70 @@ bool ModelLoader::LoadPMDModel(const char* filename, Model* model)
 	return true;
 }
 
-HRESULT ModelLoader::CreateMaterialData(struct Model* model)
+bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
+{
+	// FBX Managerの作成
+	FbxManager* manager = FbxManager::Create();
+	if (manager == nullptr)
+	{
+		return false;
+	}
+
+	// FBX Importerの作成
+	FbxImporter* importer = FbxImporter::Create(manager, "");
+	if (importer == nullptr)
+	{
+		manager->Destroy();
+		return false;
+	}
+
+	// FBX Sceneの作成
+	FbxScene* scene = FbxScene::Create(manager, "");
+	if (scene == nullptr)
+	{
+		importer->Destroy();
+		manager->Destroy();
+		return false;
+	}
+
+	// Fileを初期化
+	if (importer->Initialize(file_name) == false)
+	{
+		importer->Destroy();
+		scene->Destroy();
+		manager->Destroy();
+		return false;
+	}
+	// SeneにFileをImport
+	if (importer->Import(scene) == false)
+	{
+		importer->Destroy();
+		scene->Destroy();
+		manager->Destroy();
+		return false;
+	}
+
+	// Triangulate
+	FbxGeometryConverter converter(manager);
+	converter.Triangulate(scene, true);
+
+	// メッシュNodeを探す
+	std::unordered_map<std::string, FbxNode*> mesh_node_table;
+	CollectMeshNode(scene->GetRootNode(), mesh_node_table);
+
+	for (auto mesh_node : mesh_node_table)
+	{
+		CreateMesh(mesh_node.first.c_str(), mesh_node.second->GetMesh(), model);
+	}
+
+	importer->Destroy();
+	scene->Destroy();
+	manager->Destroy();
+
+	return true;
+}
+
+HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 {
 	// マテリアルバッファの作成
 	auto material_buffer_size = AligmentedValue(sizeof(MaterialForHlsl), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT); // 256の倍数にする
@@ -430,7 +493,7 @@ HRESULT ModelLoader::CreateMaterialData(struct Model* model)
 	return S_OK;
 }
 
-HRESULT ModelLoader::CreateMaterialAndView(struct Model* model)
+HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
 	// マテリアルの数分 material, texture, sph, spa, toon
@@ -518,4 +581,78 @@ HRESULT ModelLoader::CreateMaterialAndView(struct Model* model)
 	}
 
 	return S_OK;
+}
+
+void ModelLoader::CollectMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table)
+{
+	for (int i = 0; node->GetNodeAttributeCount(); i++)
+	{
+		FbxNodeAttribute* attr = node->GetNodeAttributeByIndex(i);
+
+		// AttributeがMeshの場合はテーブルに登録
+		if (attr->GetAttributeType() == FbxNodeAttribute::eMesh)
+		{
+			table[node->GetName()] = node;
+			break;
+		}
+	}
+
+	for (int i = 0; i < node->GetChildCount(); i++)
+	{
+		CollectMeshNode(node->GetChild(i), table);
+	}
+}
+
+bool ModelLoader::CreateMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model)
+{
+	// 頂点バッファの取得
+	FbxVector4* vertices = mesh->GetControlPoints();
+	// インデックスバッファの取得
+	int* indices = mesh->GetPolygonVertices();
+	// 頂点座標の数の取得
+	int polygon_vertex_count = mesh->GetPolygonVertexCount();
+
+	for (int i = 0; i < polygon_vertex_count; i++)
+	{
+		FBXVertex vertex{};
+		// インデックスバッファから頂点番号を取得
+		int index = indices[i];
+
+		// 頂点座標の取得
+		vertex.pos[0] = static_cast<float>(-vertices[index][0]); // 左手系に変換
+		vertex.pos[1] = static_cast<float>(vertices[index][1]);
+		vertex.pos[2] = static_cast<float>(vertices[index][2]);
+
+		// 頂点テーブルに追加
+		model->vertex_table[node_name].push_back(vertex);
+	}
+
+	// 法線リストの取得
+	FbxArray<FbxVector4> normals;
+	mesh->GetPolygonVertexNormals(normals);
+
+	for (int i = 0; i < normals.Size(); i++)
+	{
+		// 法線の取得
+		FbxVector4 normal = normals[i];
+
+		// 頂点テーブルに追加
+		model->vertex_table[node_name][i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
+		model->vertex_table[node_name][i].normal[1] = static_cast<float>(normal[1]);
+		model->vertex_table[node_name][i].normal[2] = static_cast<float>(normal[2]);
+	}
+
+	// UVリストの取得
+
+	// ポリゴン数の取得
+	int polygon_count = mesh->GetPolygonCount();
+
+	for (int i = 0; i < polygon_count; i++)
+	{
+		model->index_table[node_name].push_back(i * 3 + 2);
+		model->index_table[node_name].push_back(i * 3 + 1);
+		model->index_table[node_name].push_back(i * 3);
+	}
+
+	return true;
 }

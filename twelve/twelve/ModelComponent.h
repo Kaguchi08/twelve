@@ -9,7 +9,8 @@
 
 using Microsoft::WRL::ComPtr;
 
-class ModelComponent : public Component {
+class ModelComponent : public Component
+{
 public:
 	ModelComponent(class Actor* owner, const char* file_name, int draw_order = 100);
 	~ModelComponent();
@@ -22,7 +23,7 @@ private:
 	std::shared_ptr<class Renderer> renderer_;
 
 	// ƒ‚ƒfƒ‹
-	std::shared_ptr<Model> model_;
+	std::shared_ptr<PMDModel> model_;
 
 	DirectX::XMMATRIX* mapped_matrices_;
 

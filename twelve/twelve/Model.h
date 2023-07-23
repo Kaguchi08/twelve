@@ -56,7 +56,8 @@ struct PMDIK
 };
 
 // モーション関連
-struct KeyFrame {
+struct KeyFrame
+{
 	unsigned int frame_no;
 	DirectX::XMVECTOR quaternion;
 	DirectX::XMFLOAT3 offset;
@@ -72,7 +73,8 @@ struct KeyFrame {
 		offset(ofst),
 		p1(ip1),
 		p2(ip2)
-	{}
+	{
+	}
 };
 
 //IKオンオフデータ
@@ -82,8 +84,16 @@ struct VMDIKEnable
 	std::unordered_map<std::string, bool> ik_enable_table;
 };
 
-// モデル情報をまとめた構造体
-struct Model
+// FBXモデルの頂点データ
+struct FBXVertex
+{
+	float pos[3]; // x, y, z // 座標
+	float normal[3]; // nx, ny, nz // 法線ベクトル
+	float uv[2]; // u, v // UV座標
+};
+
+// PMDモデル情報をまとめた構造体
+struct PMDModel
 {
 	// 全体のインデックス数
 	unsigned int indices_num;
@@ -113,4 +123,28 @@ struct Model
 	std::vector<BoneNode*> bone_node_address_array;
 	std::vector<PMDIK> ik_data;
 	std::vector<uint32_t> knee_idxes;
+};
+
+// FBXモデル情報をまとめた構造体
+struct FBXModel
+{
+	// 全体のインデックス数
+	unsigned int indices_num;
+	// 頂点配列
+	std::vector<DirectX::XMFLOAT3> vertices;
+
+	// 頂点テーブル
+	std::unordered_map<std::string, std::vector<FBXVertex>> vertex_table;
+	// インデックステーブル
+	std::unordered_map<std::string, std::vector<unsigned int>> index_table;
+
+	// マテリアル関連
+
+	// 頂点関連
+	ComPtr<ID3D12Resource> vertex_buffer = nullptr;
+	ComPtr<ID3D12Resource> index_buffer = nullptr;
+
+	// ビュー
+	D3D12_VERTEX_BUFFER_VIEW vb_view = {};
+	D3D12_INDEX_BUFFER_VIEW ib_view = {};
 };

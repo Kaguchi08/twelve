@@ -326,7 +326,7 @@ ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 }
 
 
-std::shared_ptr<Model> Dx12Wrapper::LoadModel(const char* filepath)
+std::shared_ptr<PMDModel> Dx12Wrapper::LoadModel(const char* filepath)
 {
 	auto iter = model_table_.find(filepath);
 	if (iter != model_table_.end())
@@ -335,7 +335,8 @@ std::shared_ptr<Model> Dx12Wrapper::LoadModel(const char* filepath)
 	}
 	else
 	{
-		auto model = std::make_shared<Model>();
+		// PMD
+		auto model = std::make_shared<PMDModel>();
 		auto result = model_loader_->LoadPMDModel(filepath, model.get());
 
 		if (!result)
