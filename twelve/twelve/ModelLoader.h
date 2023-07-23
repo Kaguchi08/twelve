@@ -22,6 +22,8 @@ private:
 	HRESULT CreateMaterialData(struct PMDModel* model);
 	HRESULT CreateMaterialAndView(struct PMDModel* model);
 
-	void CollectMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table);
-	bool CreateMesh(const char* node_name, FbxMesh* mesh);
+	void CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table);
+	bool CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model);
+	bool CreateFBXVertexBuffers(struct FBXModel* model);
+	bool CreateFBXIndexBuffers(struct FBXModel* model);
 };

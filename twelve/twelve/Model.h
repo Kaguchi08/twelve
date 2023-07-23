@@ -140,11 +140,11 @@ struct FBXModel
 
 	// マテリアル関連
 
-	// 頂点関連
-	ComPtr<ID3D12Resource> vertex_buffer = nullptr;
-	ComPtr<ID3D12Resource> index_buffer = nullptr;
+	// バッファテーブル
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> vertex_buffer_table;
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> index_buffer_table;
 
-	// ビュー
-	D3D12_VERTEX_BUFFER_VIEW vb_view = {};
-	D3D12_INDEX_BUFFER_VIEW ib_view = {};
+	// ビューテーブル
+	std::unordered_map<std::string, D3D12_VERTEX_BUFFER_VIEW> vb_view_table;
+	std::unordered_map<std::string, D3D12_INDEX_BUFFER_VIEW> ib_view_table;
 };

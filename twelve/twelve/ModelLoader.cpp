@@ -433,16 +433,19 @@ bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
 
 	// メッシュNodeを探す
 	std::unordered_map<std::string, FbxNode*> mesh_node_table;
-	CollectMeshNode(scene->GetRootNode(), mesh_node_table);
+	CollectFBXMeshNode(scene->GetRootNode(), mesh_node_table);
 
 	for (auto mesh_node : mesh_node_table)
 	{
-		CreateMesh(mesh_node.first.c_str(), mesh_node.second->GetMesh(), model);
+		CreateFBXMesh(mesh_node.first.c_str(), mesh_node.second->GetMesh(), model);
 	}
 
 	importer->Destroy();
 	scene->Destroy();
 	manager->Destroy();
+
+	CreateFBXVertexBuffers(model);
+	CreateFBXIndexBuffers(model);
 
 	return true;
 }
@@ -583,7 +586,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 	return S_OK;
 }
 
-void ModelLoader::CollectMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table)
+void ModelLoader::CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table)
 {
 	for (int i = 0; node->GetNodeAttributeCount(); i++)
 	{
@@ -599,11 +602,11 @@ void ModelLoader::CollectMeshNode(FbxNode* node, std::unordered_map<std::string,
 
 	for (int i = 0; i < node->GetChildCount(); i++)
 	{
-		CollectMeshNode(node->GetChild(i), table);
+		CollectFBXMeshNode(node->GetChild(i), table);
 	}
 }
 
-bool ModelLoader::CreateMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model)
+bool ModelLoader::CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model)
 {
 	// 頂点バッファの取得
 	FbxVector4* vertices = mesh->GetControlPoints();
@@ -655,4 +658,92 @@ bool ModelLoader::CreateMesh(const char* node_name, FbxMesh* mesh, struct FBXMod
 	}
 
 	return true;
+}
+
+bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
+{
+	for (auto& vertices : model->vertex_table)
+	{
+		// 頂点バッファの作成
+		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(vertices.second.size() * sizeof(FBXVertex));
+
+		auto result = dx12_.GetDevice()->CreateCommittedResource(
+			&heap_prop,
+			D3D12_HEAP_FLAG_NONE,
+			&res_desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(model->vertex_buffer_table[vertices.first].ReleaseAndGetAddressOf())
+		);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		// 頂点バッファへの書き込み
+		FBXVertex* vertex_map = nullptr;
+		result = model->vertex_buffer_table[vertices.first]->Map(0, nullptr, (void**)(&vertex_map));
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		DWORD i = 0;
+		constexpr unsigned int vertex_size = sizeof(FBXVertex);
+		for (auto& v : vertices.second)
+		{
+			model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
+			*((FBXVertex*)vertex_map) = v;
+			vertex_map += vertex_size;
+			i++;
+		}
+		model->vertex_buffer_table[vertices.first]->Unmap(0, nullptr);
+
+		model->vb_view_table[vertices.first].BufferLocation = model->vertex_buffer_table[vertices.first]->GetGPUVirtualAddress();
+		model->vb_view_table[vertices.first].SizeInBytes = vertices.second.size() * vertex_size;
+		model->vb_view_table[vertices.first].StrideInBytes = vertex_size;
+	}
+}
+
+bool ModelLoader::CreateFBXIndexBuffers(FBXModel* model)
+{
+	for (auto& indices : model->index_table)
+	{
+		// インデックスバッファの作成
+		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(indices.second.size() * sizeof(unsigned int));
+
+		auto result = dx12_.GetDevice()->CreateCommittedResource(
+			&heap_prop,
+			D3D12_HEAP_FLAG_NONE,
+			&res_desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(model->index_buffer_table[indices.first].ReleaseAndGetAddressOf())
+		);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		// インデックスバッファへの書き込み
+		unsigned short* index_map = nullptr;
+		result = model->index_buffer_table[indices.first]->Map(0, nullptr, (void**)&index_map);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		std::copy(indices.second.begin(), indices.second.end(), index_map);
+		model->index_buffer_table[indices.first]->Unmap(0, nullptr);
+
+		model->ib_view_table[indices.first].BufferLocation = model->index_buffer_table[indices.first]->GetGPUVirtualAddress();
+		model->ib_view_table[indices.first].Format = DXGI_FORMAT_R16_UINT;
+		model->ib_view_table[indices.first].SizeInBytes = indices.second.size() * sizeof(unsigned int);
+	}
 }
