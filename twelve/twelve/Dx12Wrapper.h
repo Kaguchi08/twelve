@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include <string>
 #include <functional>
+#include "Model.h"
 
 class PMDRenderer;
 class PMDActor;
@@ -39,7 +40,8 @@ public:
 
 
 	// モデルの読み込み
-	std::shared_ptr<PMDModel> LoadModel(const char* filepath);
+	std::shared_ptr<PMDModel> LoadPMDModel(const char* file_path);
+	std::shared_ptr<FBXModel> LoadFBXModel(const char* file_path);
 
 	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
 	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
@@ -55,6 +57,7 @@ public:
 	const DirectX::XMFLOAT3& GetUp() const { return up_; }
 
 	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
+	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
 
 private:
 	SIZE window_size_;
@@ -164,7 +167,8 @@ private:
 	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
 
 	// 読み込んだ Model のテーブル
-	std::unordered_map<std::string, std::shared_ptr<PMDModel>> model_table_;
+	std::unordered_map<std::string, std::shared_ptr<PMDModel>> pmd_model_table_;
+	std::unordered_map<std::string, std::shared_ptr<FBXModel>> fbx_model_table_;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();

@@ -2,11 +2,11 @@
 #include "Actor.h"
 #include <string>
 
-class ModelActor : public Actor
+class PlayerActor : public Actor
 {
 public:
-	ModelActor(class Scene* scene);
-	~ModelActor();
+	PlayerActor(class Scene* scene);
+	~PlayerActor();
 	void UpdateActor(float delta_time) override;
 
 	void SetPMDModel(const char* file_name);

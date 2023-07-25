@@ -588,7 +588,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 
 void ModelLoader::CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table)
 {
-	for (int i = 0; node->GetNodeAttributeCount(); i++)
+	for (int i = 0; i < node->GetNodeAttributeCount(); i++)
 	{
 		FbxNodeAttribute* attr = node->GetNodeAttributeByIndex(i);
 
@@ -683,7 +683,7 @@ bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
 		}
 
 		// 頂点バッファへの書き込み
-		FBXVertex* vertex_map = nullptr;
+		unsigned char* vertex_map = nullptr;
 		result = model->vertex_buffer_table[vertices.first]->Map(0, nullptr, (void**)(&vertex_map));
 
 		if (FAILED(result))
@@ -695,7 +695,7 @@ bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
 		constexpr unsigned int vertex_size = sizeof(FBXVertex);
 		for (auto& v : vertices.second)
 		{
-			model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
+			//model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
 			*((FBXVertex*)vertex_map) = v;
 			vertex_map += vertex_size;
 			i++;

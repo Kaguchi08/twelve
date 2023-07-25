@@ -10,6 +10,12 @@ using Microsoft::WRL::ComPtr;
 
 // 構造体
 
+enum ModelType
+{
+	PMD,
+	FBX,
+};
+
 // シェーダー側に投げられるマテリアルデータ
 struct MaterialForHlsl
 {

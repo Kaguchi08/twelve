@@ -1,31 +1,29 @@
-#include "ModelActor.h"
+#include "PlayerActor.h"
 #include "ModelComponent.h"
 #include "ModelMoveComponent.h"
 #include "OrbitCameraComponent.h"
 #include "Model.h"
 
-ModelActor::ModelActor(Scene* scene) :
+PlayerActor::PlayerActor(Scene* scene) :
 	Actor(scene),
 	model_(nullptr)
 {
 	move_ = new ModelMoveComponent(this);
 	new OrbitCameraComponent(this);
 }
-
-ModelActor::~ModelActor()
+PlayerActor::~PlayerActor()
 {
 }
 
-void ModelActor::UpdateActor(float delta_time)
+void PlayerActor::UpdateActor(float delta_time)
 {
 }
 
-void ModelActor::SetPMDModel(const char* file_name)
+void PlayerActor::SetPMDModel(const char* file_name)
 {
 	model_ = new ModelComponent(this, ModelType::PMD, file_name);
 }
 
-void ModelActor::SetFBXModel(const char* file_name)
+void PlayerActor::SetFBXModel(const char* file_name)
 {
-	model_ = new ModelComponent(this, ModelType::FBX, file_name);
 }

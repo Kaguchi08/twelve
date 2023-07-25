@@ -9,4 +9,5 @@ public:
 
 protected:
 	void SetViewMatrix(const DirectX::XMMATRIX& view);
+	void SetEyePosition(const DirectX::XMFLOAT3& eye);
 };

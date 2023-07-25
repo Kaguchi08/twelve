@@ -8,18 +8,31 @@
 #include <d3dx12.h>
 #include <d3d12.h>
 
-ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
+ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_name, int draw_order) :
 	Component(owner, draw_order)
 {
 	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
 	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
 
-	renderer_->AddModelComponent(this);
+	renderer_->AddModelComponent(this, type);
 
 	// モデル
-	model_ = dx12_->LoadModel(file_name);
-	bone_matrices_.resize(model_->bone_name_array.size());
-	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
+	switch (type)
+	{
+	case PMD:
+		pmd_model_ = dx12_->LoadPMDModel(file_name);
+		bone_matrices_.resize(pmd_model_->bone_name_array.size());
+		std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
+
+		break;
+	case FBX:
+		fbx_model_ = dx12_->LoadFBXModel(file_name);
+
+		break;
+	default:
+		break;
+	}
+
 
 	// 座標変換用リソース作成
 	auto result = CreateTransformResourceAndView();
@@ -46,18 +59,18 @@ void ModelComponent::Update(float delta_time)
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 }
 
-void ModelComponent::Draw()
+void ModelComponent::DrawPMD()
 {
 	auto cmd_list = dx12_->GetCommandList();
-	cmd_list->IASetVertexBuffers(0, 1, &model_->vb_view);
-	cmd_list->IASetIndexBuffer(&model_->ib_view);
+	cmd_list->IASetVertexBuffers(0, 1, &pmd_model_->vb_view);
+	cmd_list->IASetIndexBuffer(&pmd_model_->ib_view);
 	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	ID3D12DescriptorHeap* trans_heaps[] = { transform_heap_.Get() };
 	cmd_list->SetDescriptorHeaps(1, trans_heaps);
 	cmd_list->SetGraphicsRootDescriptorTable(1, transform_heap_->GetGPUDescriptorHandleForHeapStart());
 
-	auto material_heap = model_->material_heap.Get();
+	auto material_heap = pmd_model_->material_heap.Get();
 	ID3D12DescriptorHeap* material_heaps[] = { material_heap };
 	cmd_list->SetDescriptorHeaps(1, material_heaps);
 
@@ -66,12 +79,27 @@ void ModelComponent::Draw()
 	unsigned int idxOffset = 0;
 
 	auto inc_size = dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5;
-	for (auto& material : model_->materials)
+	for (auto& material : pmd_model_->materials)
 	{
 		cmd_list->SetGraphicsRootDescriptorTable(2, handle);
 		cmd_list->DrawIndexedInstanced(material.indices_num, 2, idxOffset, 0, 0);
 		handle.ptr += inc_size;
 		idxOffset += material.indices_num;
+	}
+}
+
+void ModelComponent::DrawFBX()
+{
+	for (auto& indices : fbx_model_->index_table)
+	{
+		auto& node_name = indices.first;
+
+		auto cmd_list = dx12_->GetCommandList();
+		cmd_list->IASetVertexBuffers(0, 1, &fbx_model_->vb_view_table[node_name]);
+		cmd_list->IASetIndexBuffer(&fbx_model_->ib_view_table[node_name]);
+		cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		cmd_list->DrawIndexedInstanced(indices.second.size(), 1, 0, 0, 0);
 	}
 }
 

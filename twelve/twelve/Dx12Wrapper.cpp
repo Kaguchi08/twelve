@@ -326,18 +326,17 @@ ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 }
 
 
-std::shared_ptr<PMDModel> Dx12Wrapper::LoadModel(const char* filepath)
+std::shared_ptr<PMDModel> Dx12Wrapper::LoadPMDModel(const char* file_path)
 {
-	auto iter = model_table_.find(filepath);
-	if (iter != model_table_.end())
+	auto iter = pmd_model_table_.find(file_path);
+	if (iter != pmd_model_table_.end())
 	{
 		return iter->second;
 	}
 	else
 	{
-		// PMD
 		auto model = std::make_shared<PMDModel>();
-		auto result = model_loader_->LoadPMDModel(filepath, model.get());
+		auto result = model_loader_->LoadPMDModel(file_path, model.get());
 
 		if (!result)
 		{
@@ -345,7 +344,30 @@ std::shared_ptr<PMDModel> Dx12Wrapper::LoadModel(const char* filepath)
 			return nullptr;
 		}
 
-		model_table_[filepath] = model;
+		pmd_model_table_[file_path] = model;
+		return model;
+	}
+}
+
+std::shared_ptr<FBXModel> Dx12Wrapper::LoadFBXModel(const char* file_path)
+{
+	auto iter = fbx_model_table_.find(file_path);
+	if (iter != fbx_model_table_.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		auto model = std::make_shared<FBXModel>();
+		auto result = model_loader_->LoadFBXModel(file_path, model.get());
+
+		if (!result)
+		{
+			assert(0);
+			return nullptr;
+		}
+
+		fbx_model_table_[file_path] = model;
 		return model;
 	}
 }

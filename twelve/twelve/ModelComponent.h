@@ -12,18 +12,20 @@ using Microsoft::WRL::ComPtr;
 class ModelComponent : public Component
 {
 public:
-	ModelComponent(class Actor* owner, const char* file_name, int draw_order = 100);
+	ModelComponent(class Actor* owner, ModelType type, const char* file_name, int draw_order = 100);
 	~ModelComponent();
 
 	void Update(float delta_time) override;
 
-	void Draw();
+	void DrawPMD();
+	void DrawFBX();
 private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;
 
 	// ƒ‚ƒfƒ‹
-	std::shared_ptr<PMDModel> model_;
+	std::shared_ptr<PMDModel> pmd_model_;
+	std::shared_ptr<FBXModel> fbx_model_;
 
 	DirectX::XMMATRIX* mapped_matrices_;
 

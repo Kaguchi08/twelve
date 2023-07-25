@@ -5,9 +5,10 @@
 GameScene::GameScene(Game* game) :
 	Scene(game)
 {
-	std::string model_path = "../Assets/Model/初音ミク.pmd";
+	std::string pmd_model_path = "../Assets/Model/初音ミク.pmd";
+
 	// 初期化
-	Initialize(model_path.c_str());
+	Initialize(pmd_model_path.c_str());
 }
 
 GameScene::~GameScene()
@@ -16,8 +17,13 @@ GameScene::~GameScene()
 
 bool GameScene::Initialize(const char* file_name)
 {
-	model_ = new ModelActor(this);
-	model_->SetModel(file_name);
+	player_model_ = new PlayerActor(this);
+	player_model_->SetPMDModel(file_name);
+
+	std::string fbx_model_path = "../Assets/fbx/Box.fbx";
+
+	fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());
 
 	return true;
 }

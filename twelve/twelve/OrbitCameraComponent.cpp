@@ -49,6 +49,9 @@ void OrbitCameraComponent::Update(float delta_time)
 	DirectX::XMFLOAT3 camera_pos = target + offset_;
 	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&camera_pos), DirectX::XMLoadFloat3(&target), DirectX::XMLoadFloat3(&up_));
 
+	// 視点座標のセット
+	SetEyePosition(camera_pos);
+
 	// カメラの行列をセット
 	SetViewMatrix(view);
 }

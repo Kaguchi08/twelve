@@ -18,11 +18,13 @@ Renderer::~Renderer()
 void Renderer::Initialize()
 {
 	// ルートシグネチャの初期化
-	CreateModelRootSignature();
+	CreatePMDModelRootSignature();
+	CreateFBXModelRootSignature();
 	CreateScreenRootSignature();
 
 	// パイプラインの初期化
-	CreateModelGraphicsPipeline();
+	CreatePMDModelGraphicsPipeline();
+	CreateFBXModelGraphicsPipeline();
 	CreateScreenGraphicsPipeline();
 
 	// 汎用テクスチャの初期化
@@ -35,26 +37,43 @@ void Renderer::BeforeDraw()
 {
 	auto command_list = dx12_.GetCommandList();
 
-	command_list->SetPipelineState(model_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(model_root_signature_.Get());
+	command_list->SetPipelineState(pmd_model_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
 }
 
 void Renderer::Draw()
 {
-	DrawModel();
+	DrawPMDModel();
+	DrawFBXModel();
 }
 
-void Renderer::AddModelComponent(ModelComponent* model)
+void Renderer::AddModelComponent(ModelComponent* model, ModelType type)
 {
-	pending_models_.emplace_back(model);
+	switch (type)
+	{
+	case PMD:
+		pending_pmd_models_.emplace_back(model);
+		break;
+	case FBX:
+		pending_fbx_models_.emplace_back(model);
+		break;
+	default:
+		break;
+	}
 }
 
 void Renderer::RemoveModelComponent(ModelComponent* model)
 {
-	auto it = std::find(models_.begin(), models_.end(), model);
-	if (it != models_.end())
+	auto it = std::find(pmd_models_.begin(), pmd_models_.end(), model);
+	if (it != pmd_models_.end())
 	{
-		models_.erase(it);
+		pmd_models_.erase(it);
+	}
+
+	it = std::find(pending_pmd_models_.begin(), pending_pmd_models_.end(), model);
+	if (it != pending_pmd_models_.end())
+	{
+		pending_pmd_models_.erase(it);
 	}
 }
 
@@ -128,7 +147,7 @@ ID3D12Resource* Renderer::CreateGradTexture()
 	return tex_buffer;
 }
 
-HRESULT Renderer::CreateModelGraphicsPipeline()
+HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 {
 	ComPtr<ID3DBlob> vs_blob = nullptr;
 	ComPtr<ID3DBlob> ps_blob = nullptr;
@@ -221,9 +240,113 @@ HRESULT Renderer::CreateModelGraphicsPipeline()
 	gps_desc.SampleDesc.Count = 1;
 	gps_desc.SampleDesc.Quality = 0;
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	gps_desc.pRootSignature = model_root_signature_.Get();
+	gps_desc.pRootSignature = pmd_model_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(model_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_model_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	return result;
+}
+
+HRESULT Renderer::CreateFBXModelGraphicsPipeline()
+{
+	ComPtr<ID3DBlob> vs_blob = nullptr;
+	ComPtr<ID3DBlob> ps_blob = nullptr;
+	ComPtr<ID3DBlob> error_blob = nullptr;
+
+	auto result = D3DCompileFromFile(
+		L"FBXVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = D3DCompileFromFile(
+		L"FBXPixelShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"ps_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&ps_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	// 頂点レイアウトの定義
+	D3D12_INPUT_ELEMENT_DESC input_elem_desc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL",	  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,	  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC gps_desc = {};
+
+	gps_desc.InputLayout.pInputElementDescs = input_elem_desc;
+	gps_desc.InputLayout.NumElements = _countof(input_elem_desc);
+	gps_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	gps_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+	// シェーダ
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
+
+	// ラスタライザ
+	gps_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	gps_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	// 出力
+	gps_desc.NumRenderTargets = 1;
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	gps_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	gps_desc.BlendState.RenderTarget[0].BlendEnable = true;
+	gps_desc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	gps_desc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	gps_desc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	gps_desc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	gps_desc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	gps_desc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+
+	// 深度ステンシル
+	gps_desc.DepthStencilState.DepthEnable = true;
+	gps_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	gps_desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	gps_desc.DepthStencilState.StencilEnable = false;
+	gps_desc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+
+	// 全体的な設定
+	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	gps_desc.NodeMask = 0;
+	gps_desc.SampleDesc.Count = 1;
+	gps_desc.SampleDesc.Quality = 0;
+	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	gps_desc.pRootSignature = fbx_model_root_signature_.Get();
+
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_model_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -360,7 +483,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 	return result;
 }
 
-HRESULT Renderer::CreateModelRootSignature()
+HRESULT Renderer::CreatePMDModelRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE range[4] = {};
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
@@ -390,10 +513,49 @@ HRESULT Renderer::CreateModelRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(model_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(pmd_model_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(SUCCEEDED(result));
+		return result;
+	}
+
+	return result;
+}
+
+HRESULT Renderer::CreateFBXModelRootSignature()
+{
+	CD3DX12_DESCRIPTOR_RANGE range[1] = {};
+
+	// 定数
+	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+
+	CD3DX12_ROOT_PARAMETER root_param[1] = {};
+
+	root_param[0].InitAsDescriptorTable(1, &range[0]);
+
+	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[1] = {};
+
+	sampler_desc[0].Init(0);
+
+	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
+
+	root_signature_desc.Init(1, root_param, 1, sampler_desc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> root_sig_blob;
+	ComPtr<ID3DBlob> error_blob;
+
+	auto result = D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &root_sig_blob, &error_blob);
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(fbx_model_root_signature_.ReleaseAndGetAddressOf()));
+	if (FAILED(result))
+	{
+		assert(0);
 		return result;
 	}
 
@@ -489,25 +651,47 @@ HRESULT Renderer::CreateScreenRootSignature()
 	return result;
 }
 
-void Renderer::DrawModel()
+void Renderer::DrawPMDModel()
 {
 	auto command_list = dx12_.GetCommandList();
 
-	command_list->SetPipelineState(model_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(model_root_signature_.Get());
+	command_list->SetPipelineState(pmd_model_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
 
 	// テスト用
 	// モデル追加
-	for (auto& model : pending_models_)
+	for (auto& model : pending_pmd_models_)
 	{
-		models_.emplace_back(model);
+		pmd_models_.emplace_back(model);
 	}
 
-	pending_models_.clear();
+	pending_pmd_models_.clear();
 
-	for (auto& model : models_)
+	for (auto& model : pmd_models_)
 	{
-		model->Draw();
+		model->DrawPMD();
+	}
+}
+
+void Renderer::DrawFBXModel()
+{
+	auto command_list = dx12_.GetCommandList();
+
+	command_list->SetPipelineState(fbx_model_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+
+	// テスト用
+	// モデル追加
+	for (auto& model : pending_fbx_models_)
+	{
+		fbx_models_.emplace_back(model);
+	}
+
+	pending_fbx_models_.clear();
+
+	for (auto& model : fbx_models_)
+	{
+		model->DrawFBX();
 	}
 }
 
