@@ -427,7 +427,7 @@ bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
 		return false;
 	}
 
-	// Triangulate
+	// Triangulate 
 	FbxGeometryConverter converter(manager);
 	converter.Triangulate(scene, true);
 

@@ -21,9 +21,8 @@ bool GameScene::Initialize(const char* file_name)
 	player_model_->SetPMDModel(file_name);
 
 	std::string fbx_model_path = "../Assets/fbx/Box.fbx";
-
-	fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());
+	//std::string fbx_model_path = "../Assets/fbx/building_04.fbx";
+	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
 
 	return true;
 }

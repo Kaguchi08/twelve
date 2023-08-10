@@ -136,8 +136,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AABBComponent.cpp" />
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="CameraComponent.cpp" />
+    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="Dx12Wrapper.cpp" />
     <ClCompile Include="FBXActor.cpp" />
@@ -211,8 +213,10 @@
     <None Include="Type.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AABBComponent.h" />
     <ClInclude Include="Actor.h" />
     <ClInclude Include="CameraComponent.h" />
+    <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="FBXActor.h" />
