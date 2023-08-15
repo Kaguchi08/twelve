@@ -450,6 +450,170 @@ bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
 	return true;
 }
 
+bool ModelLoader::LoadVMDFile(const char* file_name, VMDAnimation* anim)
+{
+	FILE* fp;
+	fopen_s(&fp, file_name, "rb");
+	if (fp == nullptr)
+	{
+		assert(0);
+		fclose(fp);
+		return false;
+	}
+
+	// ヘッダー
+	fseek(fp, 50, SEEK_SET);
+
+	// モーションデータ
+	unsigned int motion_num = 0;
+	fread(&motion_num, sizeof(motion_num), 1, fp);
+
+	// VMDモーション構造体
+	struct VMDMotion
+	{
+		char bone_name[15];
+		unsigned int frame_no;
+		DirectX::XMFLOAT3 location;
+		DirectX::XMFLOAT4 quaternion;
+		unsigned char bezier[64];
+	};
+
+	std::vector<VMDMotion> motions(motion_num);
+
+	// モーションデータの読み込み
+	for (auto& motion : motions)
+	{
+		fread(motion.bone_name, sizeof(motion.bone_name), 1, fp);
+		fread(&motion.frame_no,
+			  sizeof(motion.frame_no)
+			  + sizeof(motion.location)
+			  + sizeof(motion.quaternion)
+			  + sizeof(motion.bezier),
+			  1,
+			  fp
+		);
+	}
+
+	// 使用するモーションテーブルへ変換
+	for (auto& motion : motions)
+	{
+		anim->motion_table[motion.bone_name].emplace_back(
+			KeyFrame(motion.frame_no,
+					 DirectX::XMLoadFloat4(&motion.quaternion),
+					 motion.location,
+					 DirectX::XMFLOAT2((float)motion.bezier[3] / 127.0f, (float)motion.bezier[7] / 127.0f),
+					 DirectX::XMFLOAT2((float)motion.bezier[11] / 127.0f, (float)motion.bezier[15] / 127.0f))
+		);
+
+		anim->duration = std::max<unsigned int>(anim->duration, motion.frame_no);
+	}
+
+	// モーションデータのソート
+	for (auto& motion : anim->motion_table)
+	{
+		std::sort(motion.second.begin(), motion.second.end(),
+				  [](const KeyFrame& lval, const KeyFrame& rval)
+				  {
+					  return lval.frame_no < rval.frame_no;
+				  }
+		);
+	}
+
+#pragma pack(1)
+	//表情データ(頂点モーフデータ)
+	struct VMDMorph
+	{
+		char name[15];//名前(パディングしてしまう)
+		uint32_t frame_no;//フレーム番号
+		float weight;//ウェイト(0.0f～1.0f)
+	};
+#pragma pack()
+
+	uint32_t morph_count = 0;
+	fread(&morph_count, sizeof(morph_count), 1, fp);
+	std::vector<VMDMorph> morphs(morph_count);
+	fread(morphs.data(), sizeof(VMDMorph), morph_count, fp);
+
+#pragma pack(1)
+	//カメラ
+	struct VMDCamera
+	{
+		uint32_t frame_no; // フレーム番号
+		float distance; // 距離
+		DirectX::XMFLOAT3 pos; // 座標
+		DirectX::XMFLOAT3 euler_angle; // オイラー角
+		uint8_t interpolation[24]; // 補完
+		uint32_t fov; // 視界角
+		uint8_t persFlg; // パースフラグON/OFF
+	};
+#pragma pack()
+
+	uint32_t vmd_camera_count = 0;
+	fread(&vmd_camera_count, sizeof(vmd_camera_count), 1, fp);
+	std::vector<VMDCamera> cameraData(vmd_camera_count);
+	fread(cameraData.data(), sizeof(VMDCamera), vmd_camera_count, fp);
+
+	// ライト照明データ
+	struct VMDLight
+	{
+		uint32_t frame_no; // フレーム番号
+		DirectX::XMFLOAT3 rgb; //ライト色
+		DirectX::XMFLOAT3 vec; //光線ベクトル(平行光線)
+	};
+
+	uint32_t vmd_light_count = 0;
+	fread(&vmd_light_count, sizeof(vmd_light_count), 1, fp);
+	std::vector<VMDLight> lights(vmd_light_count);
+	fread(lights.data(), sizeof(VMDLight), vmd_light_count, fp);
+
+#pragma pack(1)
+	// セルフ影データ
+	struct VMDSelfShadow
+	{
+		uint32_t frame_no; // フレーム番号
+		uint8_t mode; //影モード(0:影なし、1:モード１、2:モード２)
+		float distance; //距離
+	};
+#pragma pack()
+
+	uint32_t self_shadow_count = 0;
+	fread(&self_shadow_count, sizeof(self_shadow_count), 1, fp);
+	std::vector<VMDSelfShadow> selfShadowData(self_shadow_count);
+	fread(selfShadowData.data(), sizeof(VMDSelfShadow), self_shadow_count, fp);
+
+	// IKオンオフ切り替わり数
+	uint32_t ik_switch_count = 0;
+	fread(&ik_switch_count, sizeof(ik_switch_count), 1, fp);
+
+	anim->ik_enable_table.resize(ik_switch_count);
+
+	for (auto& ik_enable : anim->ik_enable_table)
+	{
+		fread(&ik_enable.frame_no, sizeof(ik_enable.frame_no), 1, fp);
+		// 可視フラグは使用しない
+		uint8_t visible_flg = 0;
+		fread(&visible_flg, sizeof(visible_flg), 1, fp);
+
+		// 対象ボーン数読み込み
+		uint32_t ik_bone_count = 0;
+		fread(&ik_bone_count, sizeof(ik_bone_count), 1, fp);
+
+		// ON/OFF情報を取得
+		for (int i = 0; i < ik_bone_count; ++i)
+		{
+			char ik_bone_name[20];
+			fread(ik_bone_name, _countof(ik_bone_name), 1, fp);
+			uint8_t flg = 0;
+			fread(&flg, sizeof(flg), 1, fp);
+			ik_enable.ik_enable_table[ik_bone_name] = flg;
+		}
+	}
+
+	fclose(fp);
+
+	return true;
+}
+
 HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 {
 	// マテリアルバッファの作成

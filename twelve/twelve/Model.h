@@ -70,10 +70,10 @@ struct KeyFrame
 	DirectX::XMFLOAT2 p1, p2;
 
 	KeyFrame(unsigned int fno,
-		const DirectX::XMVECTOR& q,
-		const DirectX::XMFLOAT3& ofst,
-		const DirectX::XMFLOAT2& ip1,
-		const DirectX::XMFLOAT2& ip2) :
+			 const DirectX::XMVECTOR& q,
+			 const DirectX::XMFLOAT3& ofst,
+			 const DirectX::XMFLOAT2& ip1,
+			 const DirectX::XMFLOAT2& ip2) :
 		frame_no(fno),
 		quaternion(q),
 		offset(ofst),
@@ -153,4 +153,11 @@ struct FBXModel
 	// ビューテーブル
 	std::unordered_map<std::string, D3D12_VERTEX_BUFFER_VIEW> vb_view_table;
 	std::unordered_map<std::string, D3D12_INDEX_BUFFER_VIEW> ib_view_table;
+};
+
+struct VMDAnimation
+{
+	std::unordered_map<std::string, std::vector<KeyFrame>> motion_table;
+	std::vector<VMDIKEnable> ik_enable_table;
+	unsigned int duration;
 };

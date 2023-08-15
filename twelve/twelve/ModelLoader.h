@@ -15,6 +15,8 @@ public:
 
 	bool LoadPMDModel(const char* file_name, struct PMDModel* model);
 	bool LoadFBXModel(const char* file_name, struct FBXModel* model);
+	bool LoadVMDFile(const char* file_name, struct VMDAnimation* anim);
+
 private:
 	class Dx12Wrapper& dx12_;
 	class Renderer& renderer_;
