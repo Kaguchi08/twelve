@@ -45,7 +45,7 @@ struct AABB
 	AABB(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max);
 
 	void UpdateMinMax(const DirectX::XMFLOAT3& point);
-	void Rotate(const DirectX::XMMATRIX& rotation);
+	void Rotate(const DirectX::XMFLOAT3& rotation);
 	bool Contains(const DirectX::XMFLOAT3& point) const;
 	float MinDistSq(const DirectX::XMFLOAT3& point) const;
 
