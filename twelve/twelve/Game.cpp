@@ -6,6 +6,9 @@
 #include "GameScene.h"
 #include "InputSystem.h"
 #include <tchar.h>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx12.h"
 
 const unsigned int WINDOW_WIDTH = 1280;
 const unsigned int WINDOW_HEIGHT = 720;
