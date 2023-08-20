@@ -60,7 +60,10 @@ void ModelComponent::Update(float delta_time)
 
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 
-	MotionUpdate(delta_time);
+	if (animations_.size() > 0)
+	{
+		MotionUpdate(delta_time);
+	}
 }
 
 void ModelComponent::DrawPMD()
