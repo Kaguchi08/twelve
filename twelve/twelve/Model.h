@@ -161,3 +161,9 @@ struct VMDAnimation
 	std::vector<VMDIKEnable> ik_enable_table;
 	unsigned int duration;
 };
+
+struct Animation
+{
+	std::shared_ptr<VMDAnimation> vmd_anim;
+	bool is_loop;
+};

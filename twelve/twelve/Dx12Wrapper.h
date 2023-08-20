@@ -43,21 +43,48 @@ public:
 	std::shared_ptr<PMDModel> LoadPMDModel(const char* file_path);
 	std::shared_ptr<FBXModel> LoadFBXModel(const char* file_path);
 
+	// アニメーションの読み込み
+	std::shared_ptr<VMDAnimation> LoadVMDAnimation(const char* file_path);
+
 	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
 	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
 
-	ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
+	ComPtr<ID3D12Device> GetDevice()
+	{
+		return dev_.Get();
+	}
 
-	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
+	ComPtr<ID3D12GraphicsCommandList> GetCommandList()
+	{
+		return cmd_list_.Get();
+	}
 
-	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
+	ComPtr<IDXGISwapChain> GetSwapChain()
+	{
+		return swap_chain_.Get();
+	}
 
-	const DirectX::XMFLOAT3& GetEye() const { return eye_; }
-	const DirectX::XMFLOAT3& GetTarget() const { return target_; }
-	const DirectX::XMFLOAT3& GetUp() const { return up_; }
+	const DirectX::XMFLOAT3& GetEye() const
+	{
+		return eye_;
+	}
+	const DirectX::XMFLOAT3& GetTarget() const
+	{
+		return target_;
+	}
+	const DirectX::XMFLOAT3& GetUp() const
+	{
+		return up_;
+	}
 
-	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
-	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
+	void SetViewMatrix(const DirectX::XMMATRIX& view)
+	{
+		view_matrix_ = view;
+	}
+	void SetEye(const DirectX::XMFLOAT3& eye)
+	{
+		eye_ = eye;
+	}
 
 private:
 	SIZE window_size_;
@@ -169,6 +196,9 @@ private:
 	// 読み込んだ Model のテーブル
 	std::unordered_map<std::string, std::shared_ptr<PMDModel>> pmd_model_table_;
 	std::unordered_map<std::string, std::shared_ptr<FBXModel>> fbx_model_table_;
+
+	// 読み込んだアニメーションのテーブル
+	std::unordered_map<std::string, std::shared_ptr<VMDAnimation>> vmd_animation_table_;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();

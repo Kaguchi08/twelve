@@ -77,7 +77,7 @@ extern DirectX::XMMATRIX LookAtMatrix(const DirectX::XMVECTOR& origin, const Dir
 /// <param name="size"></param>
 /// <param name="alignment"></param>
 /// <returns></returns>
-extern unsigned int (AligmentedValue(unsigned int size, unsigned int alignment = 16));
+extern unsigned int(AligmentedValue(unsigned int size, unsigned int alignment = 16));
 
 /// <summary>
 /// ガウスウェイト値を返す
@@ -86,3 +86,5 @@ extern unsigned int (AligmentedValue(unsigned int size, unsigned int alignment =
 /// <param name="s"></param>
 /// <returns></returns>
 extern std::vector<float> GetGaussianWeights(size_t count, float s);
+
+float GetYFromXOnBezier(float x, const DirectX::XMFLOAT2& a, const DirectX::XMFLOAT2& b, uint8_t n = 12);

@@ -19,6 +19,10 @@ public:
 
 	void DrawPMD();
 	void DrawFBX();
+
+	unsigned int AddAnimation(const char* file_name, bool is_loop = true);
+	void DeleteAnimation(unsigned int idx);
+
 private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;
@@ -37,6 +41,39 @@ private:
 	ComPtr<ID3D12DescriptorHeap> transform_heap_ = nullptr;
 
 	HRESULT CreateTransformResourceAndView();
+
+	// モーション
+	void MotionUpdate(float delta_time);
+	void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);
+
+
+	std::unordered_map<unsigned int, Animation> animations_;
+
+
+	unsigned int current_animation_idx_ = 0;
+	unsigned int animation_idx_ = 0;
+	float animation_time_ = 0.0f;
+
+	// IK関連
+	/// <summary>
+	/// CCD-IKによりボーン方向を解決
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveCCDIK(const PMDIK& ik);
+
+	/// <summary>
+	/// 余弦定理IKによりボーン方向を解決
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveCosineIK(const PMDIK& ik);
+
+	/// <summary>
+	/// LookAt行列によりボーン方向を解決
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveLookAt(const PMDIK& ik);
+
+	void IKSolve(int frame_no);
 
 	// テスト
 	float angle_ = 0.0f;

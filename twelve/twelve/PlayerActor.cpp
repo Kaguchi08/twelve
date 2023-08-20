@@ -10,6 +10,7 @@ PlayerActor::PlayerActor(Scene* scene) :
 {
 	move_ = new ModelMoveComponent(this);
 	new OrbitCameraComponent(this);
+
 }
 PlayerActor::~PlayerActor()
 {
@@ -22,6 +23,9 @@ void PlayerActor::UpdateActor(float delta_time)
 void PlayerActor::SetPMDModel(const char* file_name)
 {
 	model_ = new ModelComponent(this, ModelType::PMD, file_name);
+
+	// アニメーション追加
+	model_->AddAnimation("../motion/squat2.vmd");
 }
 
 void PlayerActor::SetFBXModel(const char* file_name)

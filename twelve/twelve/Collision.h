@@ -68,7 +68,7 @@ struct Capsule
 	DirectX::XMFLOAT3 PointOnSegment(float t) const;
 	bool Contains(const DirectX::XMFLOAT3& point) const;
 
-	LineSegment segment;
+	//LineSegment segment;
 	float radius;
 };
 

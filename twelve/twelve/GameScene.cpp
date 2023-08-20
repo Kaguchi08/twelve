@@ -23,6 +23,8 @@ bool GameScene::Initialize(const char* file_name)
 	std::string fbx_model_path = "../Assets/fbx/Box.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/building_04.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
+	fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());
 
 	return true;
 }

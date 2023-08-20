@@ -372,6 +372,27 @@ std::shared_ptr<FBXModel> Dx12Wrapper::LoadFBXModel(const char* file_path)
 	}
 }
 
+std::shared_ptr<VMDAnimation> Dx12Wrapper::LoadVMDAnimation(const char* file_path)
+{
+	auto iter = vmd_animation_table_.find(file_path);
+	if (iter != vmd_animation_table_.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		vmd_animation_table_[file_path] = std::make_shared<VMDAnimation>();
+		auto result = model_loader_->LoadVMDFile(file_path, vmd_animation_table_[file_path].get());
+		if (!result)
+		{
+			assert(0);
+			return nullptr;
+		}
+
+		return vmd_animation_table_[file_path];
+	}
+}
+
 void Dx12Wrapper::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
 {
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource, before, after);
