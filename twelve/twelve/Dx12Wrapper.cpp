@@ -10,6 +10,9 @@
 #include "Renderer.h"
 #include "ModelLoader.h"
 #include "Model.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx12.h"
 
 using namespace Microsoft::WRL;
 // "-" オペランドが使えないため
@@ -119,6 +122,11 @@ bool Dx12Wrapper::Initialize()
 	}
 
 	if (!CreatePeraPipeline())
+	{
+		return false;
+	}
+
+	if (!InitializeImGui())
 	{
 		return false;
 	}
@@ -311,6 +319,30 @@ void Dx12Wrapper::ExecuteCommand()
 	mCmdAllocator->Reset();
 	cmd_list_->Reset(mCmdAllocator.Get(), nullptr);
 }
+
+void Dx12Wrapper::CreateImguiWindow()
+{
+	// imgui 描画前処理
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// imgui ウィンドウ描画
+	ImGui::Begin("DirectX12 Test Menu");
+	ImGui::SetWindowSize(ImVec2(400, 500), ImGuiCond_::ImGuiCond_FirstUseEver);
+
+	ImGui::End();
+}
+
+void Dx12Wrapper::RenderImgui()
+{
+	ImGui::Render();
+
+	cmd_list_->SetDescriptorHeaps(1, imgui_heap_.GetAddressOf());
+
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list_.Get());
+}
+
 
 ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 {
@@ -1237,5 +1269,47 @@ bool Dx12Wrapper::CreateDepthSRV()
 		depth_buffer_.Get(),
 		&srv_desc,
 		handle
+	);
+}
+
+bool Dx12Wrapper::InitializeImGui()
+{
+	// ディスクリプタヒープの作成
+	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	desc.NodeMask = 0;
+	desc.NumDescriptors = 1;
+	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+
+	if (FAILED(dev_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(imgui_heap_.ReleaseAndGetAddressOf()))))
+	{
+		assert(0);
+		return false;
+	}
+
+	// 初期化
+	if (ImGui::CreateContext() == nullptr)
+	{
+		assert(0);
+		return false;
+	}
+
+	// Windows用の初期化
+	bool bln_result = ImGui_ImplWin32_Init(hwnd_);
+	if (!bln_result)
+	{
+		assert(0);
+		return false;
+	}
+
+	// DirectX12用の初期化
+	bln_result = ImGui_ImplDX12_Init
+	(
+		dev_.Get(),
+		3,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		imgui_heap_.Get(),
+		imgui_heap_->GetCPUDescriptorHandleForHeapStart(),
+		imgui_heap_->GetGPUDescriptorHandleForHeapStart()
 	);
 }

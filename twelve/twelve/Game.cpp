@@ -145,6 +145,9 @@ void Game::UpdateGame()
 
 void Game::GenerateOutput()
 {
+	// imgui
+	dx12_->CreateImguiWindow();
+
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();
 	//mPMDRenderer->BeforeDraw();
@@ -158,7 +161,10 @@ void Game::GenerateOutput()
 	dx12_->Clear();
 	dx12_->DrawToBackBuffer();
 
+	dx12_->RenderImgui();
+
 	dx12_->EndDraw();
+
 
 	// ƒtƒŠƒbƒv
 	dx12_->GetSwapChain()->Present(0, 0);

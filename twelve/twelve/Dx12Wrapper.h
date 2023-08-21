@@ -38,6 +38,8 @@ public:
 	void EndDraw();
 	void ExecuteCommand();
 
+	void CreateImguiWindow();
+	void RenderImgui();
 
 	// ƒ‚ƒfƒ‹‚Ì“Ç‚İ‚İ
 	std::shared_ptr<PMDModel> LoadPMDModel(const char* file_path);
@@ -207,4 +209,8 @@ private:
 	bool CreatePeraPipeline();
 	bool CreateDepthSRV();
 
+	// imgui
+	ComPtr<ID3D12DescriptorHeap> imgui_heap_ = nullptr;
+
+	bool InitializeImGui();
 };
