@@ -51,14 +51,14 @@ void Renderer::AddModelComponent(ModelComponent* model, ModelType type)
 {
 	switch (type)
 	{
-	case PMD:
-		pending_pmd_models_.emplace_back(model);
-		break;
-	case FBX:
-		pending_fbx_models_.emplace_back(model);
-		break;
-	default:
-		break;
+		case PMD:
+			pending_pmd_models_.emplace_back(model);
+			break;
+		case FBX:
+			pending_fbx_models_.emplace_back(model);
+			break;
+		default:
+			break;
 	}
 }
 

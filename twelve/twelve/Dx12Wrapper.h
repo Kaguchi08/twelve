@@ -43,48 +43,21 @@ public:
 	void CreateImguiWindow();
 	void RenderImgui();
 
-	ComPtr<ID3D12Device> GetDevice()
-	{
-		return dev_.Get();
-	}
+	ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
 
-	ComPtr<ID3D12GraphicsCommandList> GetCommandList()
-	{
-		return cmd_list_.Get();
-	}
+	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
 
-	ComPtr<IDXGISwapChain> GetSwapChain()
-	{
-		return swap_chain_.Get();
-	}
+	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
 
 	// リソースマネージャーを返す
-	ResourceManager* GetResourceManager()
-	{
-		return resource_manager_.get();
-	}
+	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
 
-	const DirectX::XMFLOAT3& GetEye() const
-	{
-		return eye_;
-	}
-	const DirectX::XMFLOAT3& GetTarget() const
-	{
-		return target_;
-	}
-	const DirectX::XMFLOAT3& GetUp() const
-	{
-		return up_;
-	}
+	const DirectX::XMFLOAT3& GetEye() const { return eye_; }
+	const DirectX::XMFLOAT3& GetTarget() const { return target_; }
+	const DirectX::XMFLOAT3& GetUp() const { return up_; }
 
-	void SetViewMatrix(const DirectX::XMMATRIX& view)
-	{
-		view_matrix_ = view;
-	}
-	void SetEye(const DirectX::XMFLOAT3& eye)
-	{
-		eye_ = eye;
-	}
+	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
+	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
 
 private:
 	SIZE window_size_;
@@ -103,9 +76,9 @@ private:
 
 	// DirextX
 	ComPtr<ID3D12Device> dev_ = nullptr;
-	ComPtr<ID3D12CommandAllocator> mCmdAllocator = nullptr;
+	ComPtr<ID3D12CommandAllocator> cmd_allocator_ = nullptr;
 	ComPtr<ID3D12GraphicsCommandList> cmd_list_ = nullptr;
-	ComPtr<ID3D12CommandQueue> mCmdQueue = nullptr;
+	ComPtr<ID3D12CommandQueue> cmd_queue_ = nullptr;
 
 	// 表示に関わるバッファ周り
 	ComPtr<ID3D12Resource> depth_buffer_ = nullptr;

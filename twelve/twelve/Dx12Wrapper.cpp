@@ -298,9 +298,9 @@ void Dx12Wrapper::ExecuteCommand()
 	cmd_list_->Close();
 
 	ID3D12CommandList* cmdLists[] = { cmd_list_.Get() };
-	mCmdQueue->ExecuteCommandLists(1, cmdLists);
+	cmd_queue_->ExecuteCommandLists(1, cmdLists);
 
-	mCmdQueue->Signal(fence_.Get(), ++fence_val_);
+	cmd_queue_->Signal(fence_.Get(), ++fence_val_);
 
 	if (fence_->GetCompletedValue() < fence_val_)
 	{
@@ -310,8 +310,8 @@ void Dx12Wrapper::ExecuteCommand()
 		CloseHandle(event);
 	}
 
-	mCmdAllocator->Reset();
-	cmd_list_->Reset(mCmdAllocator.Get(), nullptr);
+	cmd_allocator_->Reset();
+	cmd_list_->Reset(cmd_allocator_.Get(), nullptr);
 }
 
 void Dx12Wrapper::CreateImguiWindow()
@@ -458,7 +458,7 @@ HRESULT Dx12Wrapper::CreateSwapChain()
 
 	auto result = dxgi_factory_->CreateSwapChainForHwnd
 	(
-		mCmdQueue.Get(),
+		cmd_queue_.Get(),
 		hwnd_,
 		&swapchainDesc,
 		nullptr,
@@ -528,14 +528,14 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice()
 
 HRESULT Dx12Wrapper::InitializeCommand()
 {
-	auto result = dev_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(mCmdAllocator.ReleaseAndGetAddressOf()));
+	auto result = dev_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmd_allocator_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(0);
 		return result;
 	}
 
-	result = dev_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCmdAllocator.Get(), nullptr, IID_PPV_ARGS(cmd_list_.ReleaseAndGetAddressOf()));
+	result = dev_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd_allocator_.Get(), nullptr, IID_PPV_ARGS(cmd_list_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(0);
@@ -548,7 +548,7 @@ HRESULT Dx12Wrapper::InitializeCommand()
 	cmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-	result = dev_->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(mCmdQueue.ReleaseAndGetAddressOf()));
+	result = dev_->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(cmd_queue_.ReleaseAndGetAddressOf()));
 
 	assert(SUCCEEDED(result));
 
