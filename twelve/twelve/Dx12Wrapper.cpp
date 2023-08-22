@@ -348,13 +348,7 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
 	auto result = swap_chain_->GetDesc1(&swap_chain_desc);
 
-	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	heapDesc.NodeMask = 0;
-	heapDesc.NumDescriptors = swap_chain_desc.BufferCount;
-	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	result = dev_->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(rtv_heap_.ReleaseAndGetAddressOf()));
+	result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, swap_chain_desc.BufferCount, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, rtv_heap_);
 
 	if (FAILED(result))
 	{
@@ -382,8 +376,7 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 			return result;
 		}
 
-		rtvDesc.Format = back_buffers_[i]->GetDesc().Format;
-		dev_->CreateRenderTargetView(back_buffers_[i], &rtvDesc, handle);
+		result = CreateRenderTargetView(back_buffers_[i], back_buffers_[i]->GetDesc().Format, handle);
 		handle.ptr += inc_size;
 	}
 
@@ -672,10 +665,7 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 	}
 
 	// RTV作成
-	auto heap_desc = rtv_heap_->GetDesc();
-	heap_desc.NumDescriptors = 2;
-
-	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(screen_rtv_heap_.ReleaseAndGetAddressOf()));
+	result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, screen_rtv_heap_);
 
 	if (FAILED(result))
 	{
@@ -683,25 +673,16 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 		return false;
 	}
 
-	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
-	rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
 	auto handle = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 
-	dev_->CreateRenderTargetView(screen_resource_.Get(), &rtv_desc, handle);
+	CreateRenderTargetView(screen_resource_.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, handle);
 
 	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	dev_->CreateRenderTargetView(screen_resource_2_.Get(), &rtv_desc, handle);
+	CreateRenderTargetView(screen_resource_2_.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, handle);
 
 	// SRV作成
-	heap_desc.NumDescriptors = 2;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.NodeMask = 0;
-
-	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(sceen_srv_heap_.ReleaseAndGetAddressOf()));
+	result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, sceen_srv_heap_);
 
 	if (FAILED(result))
 	{
@@ -711,7 +692,7 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Format = rtv_desc.Format;
+	srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	srv_desc.Texture2D.MipLevels = 1;
 	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
@@ -756,6 +737,27 @@ HRESULT Dx12Wrapper::CreateFence()
 	return S_OK;
 }
 
+HRESULT Dx12Wrapper::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.Type = type;
+	heap_desc.NodeMask = node_mask;
+	heap_desc.NumDescriptors = num_descriptors;
+	heap_desc.Flags = flags;
+
+	return dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf()));
+}
+
+HRESULT Dx12Wrapper::CreateRenderTargetView(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle)
+{
+	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+	rtv_desc.Format = format;
+	rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+	dev_->CreateRenderTargetView(resource, &rtv_desc, handle);
+	return S_OK;
+}
+
 bool Dx12Wrapper::CreatePeraConstBufferAndView()
 {
 	auto weights = GetGaussianWeights(8, 5.0f);
@@ -777,13 +779,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 		return false;
 	}
 
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.NodeMask = 0;
-	heap_desc.NumDescriptors = 1;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(pera_cbv_heap_.ReleaseAndGetAddressOf()));
+	result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, pera_cbv_heap_);
 
 	if (FAILED(result))
 	{
@@ -817,13 +813,7 @@ bool Dx12Wrapper::CreateEffectResourceAndView()
 	//effect_resource_ = CreateTextureFromFile("../normal/crack_n.png");
 	effect_resource_ = resource_manager_->CreateTextureFromFile("../normal/normalmap.jpg");
 
-
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.NumDescriptors = 1;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	auto result = dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(effect_srv_heap_.ReleaseAndGetAddressOf()));
+	auto result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, effect_srv_heap_);
 
 	if (FAILED(result))
 	{
@@ -1099,16 +1089,7 @@ bool Dx12Wrapper::CreatePeraPipeline()
 
 bool Dx12Wrapper::CreateDepthSRV()
 {
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.NodeMask = 0;
-	heap_desc.NumDescriptors = 1;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-
-	auto result = dev_->CreateDescriptorHeap(
-		&heap_desc,
-		IID_PPV_ARGS(depth_srv_heap_.ReleaseAndGetAddressOf())
-	);
+	auto result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, depth_srv_heap_);
 
 	if (FAILED(result))
 	{
@@ -1134,13 +1115,9 @@ bool Dx12Wrapper::CreateDepthSRV()
 bool Dx12Wrapper::InitializeImGui()
 {
 	// ディスクリプタヒープの作成
-	D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-	desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	desc.NodeMask = 0;
-	desc.NumDescriptors = 1;
-	desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	auto result = CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, imgui_heap_);
 
-	if (FAILED(dev_->CreateDescriptorHeap(&desc, IID_PPV_ARGS(imgui_heap_.ReleaseAndGetAddressOf()))))
+	if (FAILED(result))
 	{
 		assert(0);
 		return false;
