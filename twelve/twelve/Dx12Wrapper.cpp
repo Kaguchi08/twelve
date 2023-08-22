@@ -37,11 +37,10 @@ bool Dx12Wrapper::Initialize()
 	Game game;
 	window_size_ = game.GetWindowSize();
 
-	ID3D12Debug* debug;
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
+	if (FAILED(InitializeDebug()))
 	{
-		debug->EnableDebugLayer();
-		debug->Release();
+		assert(0);
+		return false;
 	}
 
 	if (FAILED(InitializeDXGIDevice()))
@@ -50,13 +49,11 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	// TODO: この辺直したい
-	renderer_.reset(new Renderer(*this));
-	renderer_->Initialize();
-	model_loader_.reset(new ModelLoader(*renderer_));
-
-	// リソースマネージャーの初期化
-	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
+	if (FAILED(InitializeRenderer()))
+	{
+		assert(0);
+		return false;
+	}
 
 	if (FAILED(InitializeCommand()))
 	{
@@ -76,7 +73,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	// 深度
 	if (!CreateDepthBuffer())
 	{
 		return false;
@@ -92,8 +88,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	// フェンスの作成
-	if (FAILED(dev_->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf()))))
+	if (FAILED(CreateFence()))
 	{
 		assert(0);
 		return false;
@@ -110,7 +105,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	// ペラポリ
 	if (!CreatePeraResourceAndView())
 	{
 		return false;
@@ -135,8 +129,6 @@ bool Dx12Wrapper::Initialize()
 	{
 		return false;
 	}
-
-
 
 	return true;
 }
@@ -732,6 +724,36 @@ bool Dx12Wrapper::CreatePeraResourceAndView()
 	dev_->CreateShaderResourceView(screen_resource_2_.Get(), &srv_desc, handle);
 
 	return true;
+}
+
+HRESULT Dx12Wrapper::InitializeDebug()
+{
+	ID3D12Debug* debug;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
+	{
+		debug->EnableDebugLayer();
+		debug->Release();
+	}
+	return S_OK;
+}
+
+HRESULT Dx12Wrapper::InitializeRenderer()
+{
+	renderer_.reset(new Renderer(*this));
+	renderer_->Initialize();
+	model_loader_.reset(new ModelLoader(*renderer_));
+	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
+	return S_OK;
+}
+
+HRESULT Dx12Wrapper::CreateFence()
+{
+	if (FAILED(dev_->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf()))))
+	{
+		assert(0);
+		return E_FAIL;
+	}
+	return S_OK;
 }
 
 bool Dx12Wrapper::CreatePeraConstBufferAndView()

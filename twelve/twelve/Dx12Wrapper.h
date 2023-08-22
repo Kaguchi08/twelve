@@ -161,6 +161,11 @@ private:
 	// ビュープロジェクション用ビューの生成
 	HRESULT CreateSceneView();
 
+	HRESULT InitializeDebug();
+	HRESULT InitializeRenderer();
+	HRESULT CreateFence();
+
+
 	// テクスチャを張り付けるポリゴン
 	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
 	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
