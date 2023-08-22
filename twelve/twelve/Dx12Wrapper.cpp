@@ -1,18 +1,18 @@
-#include "Dx12Wrapper.h"
-#include "Helper.h"
 #include <cassert>
-#include <d3dx12.h>
-#include "PMDRenderer.h"
-#include "PMDActor.h"
+#include <d3d12.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include <wrl.h>
+#include "Dx12Wrapper.h"
 #include "Game.h"
-#include "Renderer.h"
+#include "Helper.h"
 #include "ModelLoader.h"
-#include "Model.h"
+#include "PMDActor.h"
+#include "PMDRenderer.h"
+#include "Renderer.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
+#include "imgui/imgui_impl_win32.h"
 
 using namespace Microsoft::WRL;
 // "-" オペランドが使えないため
@@ -36,6 +36,9 @@ bool Dx12Wrapper::Initialize()
 {
 	Game game;
 	window_size_ = game.GetWindowSize();
+
+	// リソースマネージャーの初期化
+	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
 
 	// テクスチャローダ関連の初期化
 	CreateTextureLoaderTable();
@@ -346,8 +349,8 @@ void Dx12Wrapper::RenderImgui()
 
 ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
 {
-	auto it = mTextureTable.find(tex_path);
-	if (it != mTextureTable.end())
+	auto it = teexture_table_.find(tex_path);
+	if (it != teexture_table_.end())
 	{
 		return it->second;
 	}

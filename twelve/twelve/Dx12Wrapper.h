@@ -9,6 +9,8 @@
 #include <string>
 #include <functional>
 #include "Model.h"
+#include "ResourceManager.h"
+
 
 class PMDRenderer;
 class PMDActor;
@@ -92,6 +94,10 @@ private:
 	SIZE window_size_;
 
 	HWND hwnd_;
+
+	// リソースマネージャー
+	std::unique_ptr<class ResourceManager> resource_manager_ = nullptr;
+
 	std::shared_ptr<class Renderer> renderer_ = nullptr;
 	std::unique_ptr<class ModelLoader> model_loader_;
 
@@ -164,7 +170,7 @@ private:
 	std::map<std::string, LoadLambda_t> mLoadLambdaTable;
 
 	// テクスチャテーブル
-	std::unordered_map<std::string, ComPtr<ID3D12Resource>> mTextureTable;
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> teexture_table_;
 
 	// テクスチャローダテーブルの作成
 	void CreateTextureLoaderTable();

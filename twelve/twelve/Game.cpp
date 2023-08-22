@@ -13,6 +13,8 @@
 const unsigned int WINDOW_WIDTH = 1280;
 const unsigned int WINDOW_HEIGHT = 720;
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
 LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	// ƒEƒBƒ“ƒhƒE‚ª”jŠü‚³‚ê‚½‚çŒÄ‚Î‚ê‚Ü‚·
@@ -21,6 +23,8 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		PostQuitMessage(0); // OS‚É‘Î‚µ‚ÄI‚í‚è‚Æ“`‚¦‚é
 		return 0;
 	}
+
+	ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
 	return DefWindowProc(hwnd, msg, wparam, lparam); // ‹K’è‚Ìˆ—‚ðs‚¤
 }
 
@@ -53,6 +57,7 @@ bool Game::Initialize()
 	renderer_.reset(new Renderer(*dx12_));
 
 	//mPMDRenderer->Initialize();
+
 	renderer_->Initialize();
 
 	input_system_ = new InputSystem(this);
@@ -64,13 +69,13 @@ bool Game::Initialize()
 
 	/*mPMDActor.reset(new PMDActor(strModelPath.c_str(), *mPMDRenderer));
 	mPMDActor->LoadVMDFile("../motion/squat2.vmd");*/
-	dx12_->ExecuteCommand();
+	//dx12_->ExecuteCommand();
 
 	//mPMDActor->PlayAnimation();
 
 	current_scene_ = new GameScene(this);
 
-	tick_count_ = GetTickCount();
+	tick_count_ = GetTickCount64();
 
 	return true;
 }
@@ -78,7 +83,6 @@ bool Game::Initialize()
 void Game::RunLoop()
 {
 	ShowWindow(hwnd_, SW_SHOW);
-	float angle = 0.0f;
 	MSG msg = {};
 
 	while (true)
@@ -130,14 +134,14 @@ void Game::ProcessInput()
 void Game::UpdateGame()
 {
 	auto end_time = tick_count_ + 16;
-	while (GetTickCount() < end_time)
+	while (GetTickCount64() < end_time)
 	{
 		Sleep(1);
 	}
 
-	float delta_time = (GetTickCount() - tick_count_) / 1000.0f;
+	float delta_time = (GetTickCount64() - tick_count_) / 1000.0f;
 
-	tick_count_ = GetTickCount();
+	tick_count_ = GetTickCount64();
 
 	//mPMDActor->Update();
 	current_scene_->Update(delta_time);
