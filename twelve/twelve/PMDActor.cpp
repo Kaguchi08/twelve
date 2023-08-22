@@ -103,12 +103,12 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	{
 		fread(keyFrame.boneName, sizeof(keyFrame.boneName), 1, fp);
 		fread(&keyFrame.frame_no,
-			sizeof(keyFrame.frame_no)
-			+ sizeof(keyFrame.location)
-			+ sizeof(keyFrame.quaternion)
-			+ sizeof(keyFrame.bezier),
-			1,
-			fp
+			  sizeof(keyFrame.frame_no)
+			  + sizeof(keyFrame.location)
+			  + sizeof(keyFrame.quaternion)
+			  + sizeof(keyFrame.bezier),
+			  1,
+			  fp
 		);
 	}
 
@@ -205,10 +205,10 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	{
 		key_frames_[keyFrame.boneName].emplace_back(
 			KeyFrame(keyFrame.frame_no,
-				DirectX::XMLoadFloat4(&keyFrame.quaternion),
-				keyFrame.location,
-				DirectX::XMFLOAT2((float)keyFrame.bezier[3] / 127.0f, (float)keyFrame.bezier[7] / 127.0f),
-				DirectX::XMFLOAT2((float)keyFrame.bezier[11] / 127.0f, (float)keyFrame.bezier[15] / 127.0f)
+					 DirectX::XMLoadFloat4(&keyFrame.quaternion),
+					 keyFrame.location,
+					 DirectX::XMFLOAT2((float)keyFrame.bezier[3] / 127.0f, (float)keyFrame.bezier[7] / 127.0f),
+					 DirectX::XMFLOAT2((float)keyFrame.bezier[11] / 127.0f, (float)keyFrame.bezier[15] / 127.0f)
 			));
 
 		duration_ = std::max<unsigned int>(duration_, keyFrame.frame_no);
@@ -217,10 +217,10 @@ void PMDActor::LoadVMDFile(const char* filepath)
 	for (auto& boneMotion : key_frames_)
 	{
 		std::sort(boneMotion.second.begin(), boneMotion.second.end(),
-			[](const KeyFrame& lval, const KeyFrame& rval)
-			{
-				return lval.frame_no < rval.frame_no;
-			});
+				  [](const KeyFrame& lval, const KeyFrame& rval)
+				  {
+					  return lval.frame_no < rval.frame_no;
+				  });
 	}
 
 	for (auto& boneMotion : key_frames_)
@@ -578,7 +578,7 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 		sprintf_s(toonFileName, 32, "toon%02d.bmp", pmdMaterials[i].toon_idx + 1);
 		toonFilePath += toonFileName;
 
-		toon_resources[i] = dx12_.GetTextureFromPath(toonFilePath.c_str());
+		toon_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(toonFilePath.c_str());
 
 		if (strlen(pmdMaterials[i].tex_path) == 0)
 		{
@@ -638,19 +638,19 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 		if (texFileName != "")
 		{
 			auto texFilePath = GetTexturePathFromModelAndTexPath(strModelPath, texFileName.c_str());
-			texture_resources[i] = dx12_.GetTextureFromPath(texFilePath.c_str());
+			texture_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(texFilePath.c_str());
 		}
 
 		if (sphFileName != "")
 		{
 			auto sphFilePath = GetTexturePathFromModelAndTexPath(strModelPath, sphFileName.c_str());
-			sph_resources[i] = dx12_.GetTextureFromPath(sphFilePath.c_str());
+			sph_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(sphFilePath.c_str());
 		}
 
 		if (spaFileName != "")
 		{
 			auto spaFilePaht = GetTexturePathFromModelAndTexPath(strModelPath, spaFileName.c_str());
-			spa_resources[i] = dx12_.GetTextureFromPath(spaFilePaht.c_str());
+			spa_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(spaFilePaht.c_str());
 		}
 	}
 
@@ -746,11 +746,11 @@ HRESULT PMDActor::LoadPMDFile(const char* filepath)
 	auto getNameFromIdx = [&](uint16_t idx)->std::string
 	{
 		auto it = std::find_if(bone_node_table.begin(),
-			bone_node_table.end(),
-			[idx](const std::pair<std::string, BoneNode>& pair)
-			{
-				return pair.second.bone_idx == idx;
-			});
+							   bone_node_table.end(),
+							   [idx](const std::pair<std::string, BoneNode>& pair)
+							   {
+								   return pair.second.bone_idx == idx;
+							   });
 		if (it != bone_node_table.end())
 		{
 			return it->first;
@@ -814,9 +814,9 @@ void PMDActor::MotionUpdate()
 		auto keyFrames = boneMotion.second;
 
 		auto rit = std::find_if(keyFrames.rbegin(), keyFrames.rend(), [frame_no](const KeyFrame& keyFrame)
-			{
-				return keyFrame.frame_no <= frame_no;
-			});
+								{
+									return keyFrame.frame_no <= frame_no;
+								});
 
 		if (rit == keyFrames.rend())
 		{
@@ -1042,10 +1042,10 @@ void PMDActor::SolveLookAt(const PMDIK& ik)
 void PMDActor::IKSolve(int frame_no)
 {
 	auto it = std::find_if(mIKEnableData.rbegin(), mIKEnableData.rend(),
-		[frame_no](const VMDIKEnable& ikenable)
-		{
-			return ikenable.frame_no <= frame_no;
-		});
+						   [frame_no](const VMDIKEnable& ikenable)
+						   {
+							   return ikenable.frame_no <= frame_no;
+						   });
 
 	for (auto& ik : ik_data)
 	{
@@ -1065,17 +1065,17 @@ void PMDActor::IKSolve(int frame_no)
 
 		switch (childrenNodeCount)
 		{
-		case 0:
-			assert(0);
-			continue;
-		case 1:
-			SolveLookAt(ik);
-			break;
-		case 2:
-			SolveCosineIK(ik);
-			break;
-		default:
-			SolveCCDIK(ik);
+			case 0:
+				assert(0);
+				continue;
+			case 1:
+				SolveLookAt(ik);
+				break;
+			case 2:
+				SolveCosineIK(ik);
+				break;
+			default:
+				SolveCCDIK(ik);
 		}
 	}
 }

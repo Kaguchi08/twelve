@@ -103,34 +103,6 @@ std::shared_ptr<VMDAnimation> ResourceManager::LoadVMDAnimation(const char* file
 	}
 }
 
-void ResourceManager::CreateTextureLoaderTable()
-{
-	mLoadLambdaTable["sph"]
-		= mLoadLambdaTable["spa"]
-		= mLoadLambdaTable["bmp"]
-		= mLoadLambdaTable["png"]
-		= mLoadLambdaTable["jpg"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS_NONE, meta, img);
-	};
-
-	mLoadLambdaTable["tga"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromTGAFile(path.c_str(), meta, img);
-	};
-
-	mLoadLambdaTable["dds"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, meta, img);
-	};
-}
-
 ID3D12Resource* ResourceManager::CreateTextureFromFile(const char* tex_path)
 {
 	std::string strTexPath = tex_path;
@@ -184,4 +156,32 @@ ID3D12Resource* ResourceManager::CreateTextureFromFile(const char* tex_path)
 	}
 
 	return texBuff;
+}
+
+void ResourceManager::CreateTextureLoaderTable()
+{
+	mLoadLambdaTable["sph"]
+		= mLoadLambdaTable["spa"]
+		= mLoadLambdaTable["bmp"]
+		= mLoadLambdaTable["png"]
+		= mLoadLambdaTable["jpg"]
+		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
+		-> HRESULT
+	{
+		return DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS_NONE, meta, img);
+	};
+
+	mLoadLambdaTable["tga"]
+		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
+		-> HRESULT
+	{
+		return DirectX::LoadFromTGAFile(path.c_str(), meta, img);
+	};
+
+	mLoadLambdaTable["dds"]
+		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
+		-> HRESULT
+	{
+		return DirectX::LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, meta, img);
+	};
 }

@@ -19,16 +19,17 @@ class VMDAnimation;
 class ResourceManager
 {
 public:
-	ResourceManager(ID3D12Device* device, std::unique_ptr<class ModelLoader> model_loader);
+	ResourceManager(ComPtr<ID3D12Device> dev, std::unique_ptr<class ModelLoader> model_loader);
 
 	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
 	std::shared_ptr<PMDModel> LoadPMDModel(const char* file_path);
 	std::shared_ptr<FBXModel> LoadFBXModel(const char* file_path);
 	std::shared_ptr<VMDAnimation> LoadVMDAnimation(const char* file_path);
 
+	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
+
 private:
 	ComPtr<ID3D12Device> dev_ = nullptr;
-	ID3D12Device* device_;
 	std::unique_ptr<class ModelLoader> model_loader_;
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>> teexture_table_;
 	std::unordered_map<std::string, std::shared_ptr<PMDModel>> pmd_model_table_;
@@ -40,5 +41,4 @@ private:
 	std::map<std::string, LoadLambda_t> mLoadLambdaTable;
 
 	void CreateTextureLoaderTable();
-	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
 };

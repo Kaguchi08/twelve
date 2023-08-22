@@ -203,7 +203,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 		sprintf_s(toonFileName, 32, "toon%02d.bmp", materials[i].toon_idx + 1);
 		toonFilePath += toonFileName;
 
-		model->toon_resources[i] = dx12_.GetTextureFromPath(toonFilePath.c_str());
+		model->toon_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(toonFilePath.c_str());
 
 		if (strlen(materials[i].tex_path) == 0)
 		{
@@ -263,19 +263,19 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 		if (texFileName != "")
 		{
 			auto texFilePath = GetTexturePathFromModelAndTexPath(strModelPath, texFileName.c_str());
-			model->texture_resources[i] = dx12_.GetTextureFromPath(texFilePath.c_str());
+			model->texture_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(texFilePath.c_str());
 		}
 
 		if (sphFileName != "")
 		{
 			auto sphFilePath = GetTexturePathFromModelAndTexPath(strModelPath, sphFileName.c_str());
-			model->sph_resources[i] = dx12_.GetTextureFromPath(sphFilePath.c_str());
+			model->sph_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(sphFilePath.c_str());
 		}
 
 		if (spaFileName != "")
 		{
 			auto spaFilePaht = GetTexturePathFromModelAndTexPath(strModelPath, spaFileName.c_str());
-			model->spa_resources[i] = dx12_.GetTextureFromPath(spaFilePaht.c_str());
+			model->spa_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(spaFilePaht.c_str());
 		}
 	}
 

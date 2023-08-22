@@ -37,12 +37,6 @@ bool Dx12Wrapper::Initialize()
 	Game game;
 	window_size_ = game.GetWindowSize();
 
-	// リソースマネージャーの初期化
-	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
-
-	// テクスチャローダ関連の初期化
-	CreateTextureLoaderTable();
-
 	ID3D12Debug* debug;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
 	{
@@ -55,6 +49,14 @@ bool Dx12Wrapper::Initialize()
 		assert(0);
 		return false;
 	}
+
+	// TODO: この辺直したい
+	renderer_.reset(new Renderer(*this));
+	renderer_->Initialize();
+	model_loader_.reset(new ModelLoader(*renderer_));
+
+	// リソースマネージャーの初期化
+	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
 
 	if (FAILED(InitializeCommand()))
 	{
@@ -134,10 +136,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	// TODO: この辺直したい
-	renderer_.reset(new Renderer(*this));
-	renderer_->Initialize();
-	model_loader_.reset(new ModelLoader(*renderer_));
+
 
 	return true;
 }
@@ -344,88 +343,6 @@ void Dx12Wrapper::RenderImgui()
 	cmd_list_->SetDescriptorHeaps(1, imgui_heap_.GetAddressOf());
 
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list_.Get());
-}
-
-
-ComPtr<ID3D12Resource> Dx12Wrapper::GetTextureFromPath(const char* tex_path)
-{
-	auto it = teexture_table_.find(tex_path);
-	if (it != teexture_table_.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return ComPtr<ID3D12Resource>(CreateTextureFromFile(tex_path));
-	}
-}
-
-
-std::shared_ptr<PMDModel> Dx12Wrapper::LoadPMDModel(const char* file_path)
-{
-	auto iter = pmd_model_table_.find(file_path);
-	if (iter != pmd_model_table_.end())
-	{
-		return iter->second;
-	}
-	else
-	{
-		auto model = std::make_shared<PMDModel>();
-		auto result = model_loader_->LoadPMDModel(file_path, model.get());
-
-		if (!result)
-		{
-			assert(0);
-			return nullptr;
-		}
-
-		pmd_model_table_[file_path] = model;
-		return model;
-	}
-}
-
-std::shared_ptr<FBXModel> Dx12Wrapper::LoadFBXModel(const char* file_path)
-{
-	auto iter = fbx_model_table_.find(file_path);
-	if (iter != fbx_model_table_.end())
-	{
-		return iter->second;
-	}
-	else
-	{
-		auto model = std::make_shared<FBXModel>();
-		auto result = model_loader_->LoadFBXModel(file_path, model.get());
-
-		if (!result)
-		{
-			assert(0);
-			return nullptr;
-		}
-
-		fbx_model_table_[file_path] = model;
-		return model;
-	}
-}
-
-std::shared_ptr<VMDAnimation> Dx12Wrapper::LoadVMDAnimation(const char* file_path)
-{
-	auto iter = vmd_animation_table_.find(file_path);
-	if (iter != vmd_animation_table_.end())
-	{
-		return iter->second;
-	}
-	else
-	{
-		vmd_animation_table_[file_path] = std::make_shared<VMDAnimation>();
-		auto result = model_loader_->LoadVMDFile(file_path, vmd_animation_table_[file_path].get());
-		if (!result)
-		{
-			assert(0);
-			return nullptr;
-		}
-
-		return vmd_animation_table_[file_path];
-	}
 }
 
 void Dx12Wrapper::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
@@ -721,89 +638,6 @@ HRESULT Dx12Wrapper::CreateSceneView()
 	return result;
 }
 
-void Dx12Wrapper::CreateTextureLoaderTable()
-{
-	mLoadLambdaTable["sph"]
-		= mLoadLambdaTable["spa"]
-		= mLoadLambdaTable["bmp"]
-		= mLoadLambdaTable["png"]
-		= mLoadLambdaTable["jpg"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS_NONE, meta, img);
-	};
-
-	mLoadLambdaTable["tga"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromTGAFile(path.c_str(), meta, img);
-	};
-
-	mLoadLambdaTable["dds"]
-		= [](const std::wstring& path, DirectX::TexMetadata* meta, DirectX::ScratchImage& img)
-		-> HRESULT
-	{
-		return DirectX::LoadFromDDSFile(path.c_str(), DirectX::DDS_FLAGS_NONE, meta, img);
-	};
-}
-
-ID3D12Resource* Dx12Wrapper::CreateTextureFromFile(const char* tex_path)
-{
-	std::string strTexPath = tex_path;
-	// WICテクスチャのロード
-	DirectX::TexMetadata metadata = {};
-	DirectX::ScratchImage scratchImg = {};
-
-	auto wTexPath = GetWideStringFromString(strTexPath);
-	auto ext = GetExtension(strTexPath);
-	auto result = mLoadLambdaTable[ext](wTexPath, &metadata, scratchImg);
-
-	if (FAILED(result))
-	{
-		return nullptr;
-	}
-
-	auto img = scratchImg.GetImage(0, 0, 0);
-
-	auto texHeapProp = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
-	auto resDesc = CD3DX12_RESOURCE_DESC::Tex2D(metadata.format, metadata.width, metadata.height, metadata.arraySize, metadata.mipLevels);
-
-	ID3D12Resource* texBuff = nullptr;
-	result = dev_->CreateCommittedResource
-	(
-		&texHeapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		nullptr,
-		IID_PPV_ARGS(&texBuff)
-	);
-
-	if (FAILED(result))
-	{
-		return nullptr;
-	}
-
-	// テクスチャ用バッファへの書き込み
-	result = texBuff->WriteToSubresource
-	(
-		0,
-		nullptr,
-		img->pixels,
-		img->rowPitch,
-		img->slicePitch
-	);
-
-	if (FAILED(result))
-	{
-		return nullptr;
-	}
-
-	return texBuff;
-}
-
 bool Dx12Wrapper::CreatePeraResourceAndView()
 {
 	// 使っているバックバッファーの情報を利用
@@ -959,7 +793,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 bool Dx12Wrapper::CreateEffectResourceAndView()
 {
 	//effect_resource_ = CreateTextureFromFile("../normal/crack_n.png");
-	effect_resource_ = CreateTextureFromFile("../normal/normalmap.jpg");
+	effect_resource_ = resource_manager_->CreateTextureFromFile("../normal/normalmap.jpg");
 
 
 	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};

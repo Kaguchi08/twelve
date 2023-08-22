@@ -22,13 +22,13 @@ ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_na
 	switch (type)
 	{
 		case PMD:
-			pmd_model_ = dx12_->LoadPMDModel(file_name);
+			pmd_model_ = dx12_->GetResourceManager()->LoadPMDModel(file_name);
 			bone_matrices_.resize(pmd_model_->bone_name_array.size());
 			std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
 
 			break;
 		case FBX:
-			fbx_model_ = dx12_->LoadFBXModel(file_name);
+			fbx_model_ = dx12_->GetResourceManager()->LoadFBXModel(file_name);
 
 			break;
 		default:
@@ -116,7 +116,7 @@ unsigned int ModelComponent::AddAnimation(const char* file_name, bool is_loop)
 	animation_idx_++;
 
 	Animation animation;
-	animation.vmd_anim = dx12_->LoadVMDAnimation(file_name);
+	animation.vmd_anim = dx12_->GetResourceManager()->LoadVMDAnimation(file_name);
 	animation.is_loop = is_loop;
 
 	animations_[idx] = animation;

@@ -43,16 +43,6 @@ public:
 	void CreateImguiWindow();
 	void RenderImgui();
 
-	// モデルの読み込み
-	std::shared_ptr<PMDModel> LoadPMDModel(const char* file_path);
-	std::shared_ptr<FBXModel> LoadFBXModel(const char* file_path);
-
-	// アニメーションの読み込み
-	std::shared_ptr<VMDAnimation> LoadVMDAnimation(const char* file_path);
-
-	// テクスチャパスから必要なテクスチャバッファへのポインタを返す
-	ComPtr<ID3D12Resource> GetTextureFromPath(const char* tex_path);
-
 	ComPtr<ID3D12Device> GetDevice()
 	{
 		return dev_.Get();
@@ -66,6 +56,12 @@ public:
 	ComPtr<IDXGISwapChain> GetSwapChain()
 	{
 		return swap_chain_.Get();
+	}
+
+	// リソースマネージャーを返す
+	ResourceManager* GetResourceManager()
+	{
+		return resource_manager_.get();
 	}
 
 	const DirectX::XMFLOAT3& GetEye() const
@@ -165,18 +161,6 @@ private:
 	// ビュープロジェクション用ビューの生成
 	HRESULT CreateSceneView();
 
-	// ロード用テーブル
-	using LoadLambda_t = std::function<HRESULT(const std::wstring& path, DirectX::TexMetadata*, DirectX::ScratchImage&)>;
-	std::map<std::string, LoadLambda_t> mLoadLambdaTable;
-
-	// テクスチャテーブル
-	std::unordered_map<std::string, ComPtr<ID3D12Resource>> teexture_table_;
-
-	// テクスチャローダテーブルの作成
-	void CreateTextureLoaderTable();
-	// テクスチャ名からテクスチャバッファ作成、コピー
-	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
-
 	// テクスチャを張り付けるポリゴン
 	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
 	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
@@ -200,13 +184,6 @@ private:
 
 	// 深度値テクスチャ
 	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
-
-	// 読み込んだ Model のテーブル
-	std::unordered_map<std::string, std::shared_ptr<PMDModel>> pmd_model_table_;
-	std::unordered_map<std::string, std::shared_ptr<FBXModel>> fbx_model_table_;
-
-	// 読み込んだアニメーションのテーブル
-	std::unordered_map<std::string, std::shared_ptr<VMDAnimation>> vmd_animation_table_;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();
