@@ -10,6 +10,7 @@
 #include <functional>
 #include "Model.h"
 #include "ResourceManager.h"
+#include "Light.h"
 
 
 class PMDRenderer;
@@ -67,6 +68,9 @@ private:
 	// リソースマネージャー
 	std::unique_ptr<class ResourceManager> resource_manager_ = nullptr;
 
+	// ライト
+	std::unique_ptr<class Light> light_ = nullptr;
+
 	std::shared_ptr<class Renderer> renderer_ = nullptr;
 	std::unique_ptr<class ModelLoader> model_loader_;
 
@@ -107,9 +111,6 @@ private:
 	DirectX::XMFLOAT3 target_;
 	DirectX::XMFLOAT3 up_;
 	DirectX::XMMATRIX view_matrix_;
-
-	// 平行ライト
-	DirectX::XMFLOAT3 parallel_light_dir_;
 
 	float fov_ = DirectX::XM_PI / 4;
 

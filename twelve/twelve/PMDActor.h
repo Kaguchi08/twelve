@@ -81,7 +81,7 @@ private:
 
 	// マテリアル関連
 	std::vector<Material> mMaterials;
-	ComPtr<ID3D12Resource> material_buffer = nullptr;
+	ComPtr<ID3D12Resource> material_const_buffer = nullptr;
 	std::vector<ComPtr<ID3D12Resource>> texture_resources;
 	std::vector<ComPtr<ID3D12Resource>> sph_resources;
 	std::vector<ComPtr<ID3D12Resource>> spa_resources;
@@ -119,7 +119,7 @@ private:
 	// マテリアルバッファの作成
 	HRESULT CreateMaterialData();
 
-	ComPtr<ID3D12DescriptorHeap> material_heap = nullptr;
+	ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
 
 	// マテリアルとテクスチャのビューを作成
 	HRESULT CreateMaterialAndTextureView();
@@ -134,23 +134,25 @@ private:
 	float mAngle;
 
 	// モーション関連
-	struct KeyFrame {
+	struct KeyFrame
+	{
 		unsigned int frame_no;
 		DirectX::XMVECTOR quaternion;
 		DirectX::XMFLOAT3 offset;
 		DirectX::XMFLOAT2 p1, p2;
 
-		KeyFrame(unsigned int fno, 
-				 const DirectX::XMVECTOR& q, 
+		KeyFrame(unsigned int fno,
+				 const DirectX::XMVECTOR& q,
 				 const DirectX::XMFLOAT3& ofst,
-			     const DirectX::XMFLOAT2& ip1,
+				 const DirectX::XMFLOAT2& ip1,
 				 const DirectX::XMFLOAT2& ip2) :
-			frame_no(fno), 
+			frame_no(fno),
 			quaternion(q),
 			offset(ofst),
 			p1(ip1),
-		    p2(ip2)
-		{}
+			p2(ip2)
+		{
+		}
 	};
 
 	std::unordered_map<std::string, std::vector<KeyFrame>> key_frames_;
@@ -184,7 +186,7 @@ private:
 	void IKSolve(int frame_no);
 
 	//IKオンオフデータ
-	struct VMDIKEnable 
+	struct VMDIKEnable
 	{
 		uint32_t frame_no;
 		std::unordered_map<std::string, bool> ik_enable_table;

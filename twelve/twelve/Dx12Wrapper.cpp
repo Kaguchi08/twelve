@@ -23,8 +23,7 @@ Dx12Wrapper::Dx12Wrapper(HWND hwnd) :
 	eye_(0, 15, -50),
 	target_(0, 12, 0),
 	up_(0, 1, 0),
-	view_matrix_(DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&eye_), DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_))),
-	parallel_light_dir_(1, -1, 1)
+	view_matrix_(DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&eye_), DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_)))
 {
 }
 
@@ -36,6 +35,8 @@ bool Dx12Wrapper::Initialize()
 {
 	Game game;
 	window_size_ = game.GetWindowSize();
+
+	light_ = std::make_unique<Light>();
 
 	if (FAILED(InitializeDebug()))
 	{
@@ -256,7 +257,7 @@ void Dx12Wrapper::SetCameraSetting()
 
 	scene_matrix_->shadow = DirectX::XMMatrixShadow(
 		DirectX::XMLoadFloat4(&plane_normal_vec),
-		-DirectX::XMLoadFloat3(&parallel_light_dir_)
+		-DirectX::XMLoadFloat3(&light_->GetDirectionalLightDir())
 	);
 
 

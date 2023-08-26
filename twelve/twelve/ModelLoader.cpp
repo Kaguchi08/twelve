@@ -628,7 +628,7 @@ HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 		&resDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(model->material_buffer.ReleaseAndGetAddressOf())
+		IID_PPV_ARGS(model->material_const_buffer.ReleaseAndGetAddressOf())
 	);
 
 	if (FAILED(result))
@@ -640,7 +640,7 @@ HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 	// マテリアルバッファのマップ
 	char* mapped_material = nullptr;
 
-	result = model->material_buffer->Map(0, nullptr, (void**)&mapped_material);
+	result = model->material_const_buffer->Map(0, nullptr, (void**)&mapped_material);
 	if (FAILED(result))
 	{
 		assert(0);
@@ -655,7 +655,7 @@ HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 	}
 
 	// マテリアルバッファのアンマップ
-	model->material_buffer->Unmap(0, nullptr);
+	model->material_const_buffer->Unmap(0, nullptr);
 
 	return S_OK;
 }
@@ -669,7 +669,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heap_desc.NodeMask = 0;
 
-	auto result = dx12_.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(model->material_heap.ReleaseAndGetAddressOf()));
+	auto result = dx12_.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(model->material_cbv_heap.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -681,7 +681,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 
 	// View 作成
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
-	cbv_desc.BufferLocation = model->material_buffer->GetGPUVirtualAddress();
+	cbv_desc.BufferLocation = model->material_const_buffer->GetGPUVirtualAddress();
 	cbv_desc.SizeInBytes = material_buffer_size;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -689,7 +689,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srv_desc.Texture2D.MipLevels = 1;
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(model->material_heap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(model->material_cbv_heap->GetCPUDescriptorHandleForHeapStart());
 	auto inc_size = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	for (int i = 0; i < model->materials.size(); ++i)

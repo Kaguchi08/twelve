@@ -486,9 +486,9 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 HRESULT Renderer::CreatePMDModelRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE range[4] = {};
-	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2);
+	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // scene_cbv
+	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // transform_cbv
+	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // material_cbv
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0);
 
 	CD3DX12_ROOT_PARAMETER root_param[3] = {};

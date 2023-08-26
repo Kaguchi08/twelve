@@ -37,8 +37,8 @@ private:
 	std::vector<DirectX::XMMATRIX> bone_matrices_;
 
 	// ç¿ïWïœä∑
-	ComPtr<ID3D12Resource> transform_buffer_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> transform_heap_ = nullptr;
+	ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
 
 	HRESULT CreateTransformResourceAndView();
 

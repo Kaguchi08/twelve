@@ -62,10 +62,10 @@ void PMDActor::DrawToBackBuffer()
 	dx12_.GetCommandList()->SetDescriptorHeaps(1, transHeaps);
 	dx12_.GetCommandList()->SetGraphicsRootDescriptorTable(1, mTransformHeap->GetGPUDescriptorHandleForHeapStart());
 
-	ID3D12DescriptorHeap* materialHeaps[] = { material_heap.Get() };
+	ID3D12DescriptorHeap* materialHeaps[] = { material_cbv_heap.Get() };
 	dx12_.GetCommandList()->SetDescriptorHeaps(1, materialHeaps);
 
-	auto materialH = material_heap->GetGPUDescriptorHandleForHeapStart();
+	auto materialH = material_cbv_heap->GetGPUDescriptorHandleForHeapStart();
 	unsigned int idxOffset = 0;
 
 	auto cbvSrvIncSize = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5;
@@ -265,7 +265,7 @@ HRESULT PMDActor::CreateMaterialData()
 		&resDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(material_buffer.ReleaseAndGetAddressOf())
+		IID_PPV_ARGS(material_const_buffer.ReleaseAndGetAddressOf())
 	);
 
 	if (FAILED(result))
@@ -277,7 +277,7 @@ HRESULT PMDActor::CreateMaterialData()
 	// マテリアルバッファのマップ
 	char* mapMaterial = nullptr;
 
-	result = material_buffer->Map(0, nullptr, (void**)&mapMaterial);
+	result = material_const_buffer->Map(0, nullptr, (void**)&mapMaterial);
 	if (FAILED(result))
 	{
 		assert(SUCCEEDED(result));
@@ -292,7 +292,7 @@ HRESULT PMDActor::CreateMaterialData()
 	}
 
 	// マテリアルバッファのアンマップ
-	material_buffer->Unmap(0, nullptr);
+	material_const_buffer->Unmap(0, nullptr);
 
 	return S_OK;
 }
@@ -305,7 +305,7 @@ HRESULT PMDActor::CreateMaterialAndTextureView()
 	materialDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	materialDescHeapDesc.NodeMask = 0;
 
-	auto result = dx12_.GetDevice()->CreateDescriptorHeap(&materialDescHeapDesc, IID_PPV_ARGS(material_heap.ReleaseAndGetAddressOf()));
+	auto result = dx12_.GetDevice()->CreateDescriptorHeap(&materialDescHeapDesc, IID_PPV_ARGS(material_cbv_heap.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -317,7 +317,7 @@ HRESULT PMDActor::CreateMaterialAndTextureView()
 	materialBufferSize = (materialBufferSize + 0xff) & ~0xff; // 256の倍数にする
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC matCBVDesc = {};
-	matCBVDesc.BufferLocation = material_buffer->GetGPUVirtualAddress();
+	matCBVDesc.BufferLocation = material_const_buffer->GetGPUVirtualAddress();
 	matCBVDesc.SizeInBytes = materialBufferSize;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -325,7 +325,7 @@ HRESULT PMDActor::CreateMaterialAndTextureView()
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE matDescHeapHandle(material_heap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE matDescHeapHandle(material_cbv_heap->GetCPUDescriptorHandleForHeapStart());
 	auto incSize = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	for (int i = 0; i < mMaterials.size(); ++i)

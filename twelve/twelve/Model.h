@@ -108,8 +108,8 @@ struct PMDModel
 
 	// マテリアル関連
 	std::vector<Material> materials;
-	ComPtr<ID3D12DescriptorHeap> material_heap = nullptr;
-	ComPtr<ID3D12Resource> material_buffer = nullptr;
+	ComPtr<ID3D12Resource> material_const_buffer = nullptr;
+	ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
 	std::vector<ComPtr<ID3D12Resource>> texture_resources;
 	std::vector<ComPtr<ID3D12Resource>> sph_resources;
 	std::vector<ComPtr<ID3D12Resource>> spa_resources;
