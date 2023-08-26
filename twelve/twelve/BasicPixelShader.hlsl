@@ -18,6 +18,7 @@ cbuffer SceneData : register(b0)
     float3 eye;
 };
 
+// PMDƒ‚ƒfƒ‹—p
 cbuffer Material : register(b2)
 {
     float4 diffuse;
@@ -56,7 +57,7 @@ float4 BasicPS(BasicType input) : SV_TARGET
     
     float4 tex_col = tex.Sample(smp, input.uv);
     
-    float4 ret = float4((spa_col + sph_col * tex_col * toon_col * diffuse).rgb, diffuse.a) 
+    float4 ret = float4((spa_col + sph_col * tex_col * toon_col * diffuse).rgb, diffuse.a)
                 + float4(specular * spec_b, 1);
     
     return ret;

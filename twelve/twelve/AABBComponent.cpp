@@ -10,7 +10,6 @@ AABBComponent::AABBComponent(Actor* owner, int update_order) :
 {
 }
 
-
 AABBComponent::~AABBComponent()
 {
 }

@@ -15,6 +15,7 @@ using namespace Microsoft::WRL;
 class PMDModel;
 class FBXModel;
 class VMDAnimation;
+class ModelLoader;
 
 class ResourceManager
 {

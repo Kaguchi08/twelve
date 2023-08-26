@@ -29,6 +29,17 @@ public:
 	ComPtr<ID3D12Resource> black_texture_ = nullptr;
 	ComPtr<ID3D12Resource> grad_texture_ = nullptr;
 
+	// geter/setter
+	ComPtr<ID3D12PipelineState> GetPMDModelPipelineState() { return pmd_model_pipeline_state_; }
+	ComPtr<ID3D12PipelineState> GetFBXModelPipelineState() { return fbx_model_pipeline_state_; }
+	ComPtr<ID3D12PipelineState> GetScreenPipelineState() { return screen_pipeline_state_; }
+	ComPtr<ID3D12PipelineState> GetScreenPipelineState2() { return screen_pipeline_state_2_; }
+
+	ComPtr<ID3D12RootSignature> GetPMDModelRootSignature() { return pmd_model_root_signature_; }
+	ComPtr<ID3D12RootSignature> GetFBXModelRootSignature() { return fbx_model_root_signature_; }
+	ComPtr<ID3D12RootSignature> GetScreenRootSignature() { return screen_root_signature_; }
+
+
 private:
 	class Dx12Wrapper& dx12_;
 	// パイプライン

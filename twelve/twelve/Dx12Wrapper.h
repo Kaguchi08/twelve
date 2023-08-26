@@ -90,13 +90,13 @@ private:
 
 	// シーンを構成するバッファ周り
 	ComPtr<ID3D12Resource> scene_const_buff_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> scene_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> scene_csv_heap_ = nullptr;
 
 	struct SceneMatrix
 	{
 		DirectX::XMMATRIX view;
 		DirectX::XMMATRIX proj;
-		DirectX::XMMATRIX light_view;
+		DirectX::XMMATRIX light_view; // 使ってない
 		DirectX::XMMATRIX shadow;
 		DirectX::XMFLOAT3 eye;
 	};
@@ -151,10 +151,6 @@ private:
 	ComPtr<ID3D12Resource> screen_vertex_buffer_ = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
 
-	ComPtr<ID3D12PipelineState> screen_pipeline_;
-	ComPtr<ID3D12PipelineState> screen_pipeline_2_;
-	ComPtr<ID3D12RootSignature> screen_root_signature_;
-
 	// ぼかし
 	ComPtr<ID3D12Resource> pera_const_buffer_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> pera_cbv_heap_;
@@ -170,7 +166,6 @@ private:
 	bool CreatePeraConstBufferAndView();
 	bool CreateEffectResourceAndView();
 	bool CreatePeraVerTex();
-	bool CreatePeraPipeline();
 	bool CreateDepthSRV();
 
 	// imgui

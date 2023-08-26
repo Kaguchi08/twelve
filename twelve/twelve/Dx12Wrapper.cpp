@@ -120,11 +120,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (!CreatePeraPipeline())
-	{
-		return false;
-	}
-
 	if (!InitializeImGui())
 	{
 		return false;
@@ -179,7 +174,7 @@ void Dx12Wrapper::DrawToPera2()
 	cmd_list_->RSSetViewports(1, view_port_.get());
 	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
 
-	cmd_list_->SetGraphicsRootSignature(screen_root_signature_.Get());
+	cmd_list_->SetGraphicsRootSignature(renderer_->GetScreenRootSignature().Get());
 	cmd_list_->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
 
 	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
@@ -189,7 +184,7 @@ void Dx12Wrapper::DrawToPera2()
 	handle = pera_cbv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list_->SetGraphicsRootDescriptorTable(0, handle);
 
-	cmd_list_->SetPipelineState(screen_pipeline_.Get());
+	cmd_list_->SetPipelineState(renderer_->GetScreenPipelineState().Get());
 	cmd_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	cmd_list_->IASetVertexBuffers(0, 1, &screen_vertex_buffer_view_);
 	cmd_list_->DrawInstanced(4, 1, 0, 0);
@@ -221,7 +216,7 @@ void Dx12Wrapper::DrawToBackBuffer()
 	cmd_list_->RSSetViewports(1, view_port_.get());
 	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
 
-	cmd_list_->SetGraphicsRootSignature(screen_root_signature_.Get());
+	cmd_list_->SetGraphicsRootSignature(renderer_->GetScreenRootSignature().Get());
 	cmd_list_->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
 
 	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
@@ -237,7 +232,7 @@ void Dx12Wrapper::DrawToBackBuffer()
 	handle = effect_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list_->SetGraphicsRootDescriptorTable(2, handle);
 
-	cmd_list_->SetPipelineState(screen_pipeline_2_.Get());
+	cmd_list_->SetPipelineState(renderer_->GetScreenPipelineState2().Get());
 	cmd_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	cmd_list_->IASetVertexBuffers(0, 1, &screen_vertex_buffer_view_);
 	cmd_list_->DrawInstanced(4, 1, 0, 0);
@@ -271,10 +266,10 @@ void Dx12Wrapper::SetScene()
 {
 	SetCameraSetting();
 
-	ID3D12DescriptorHeap* sceneHeaps[] = { scene_heap_.Get() };
+	ID3D12DescriptorHeap* sceneHeaps[] = { scene_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, sceneHeaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
 void Dx12Wrapper::EndDraw()
@@ -580,7 +575,7 @@ HRESULT Dx12Wrapper::CreateSceneView()
 		return result;
 	}
 
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_heap_);
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_csv_heap_);
 
 	if (FAILED(result))
 	{
@@ -588,7 +583,7 @@ HRESULT Dx12Wrapper::CreateSceneView()
 		return result;
 	}
 
-	auto handle = scene_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto handle = scene_csv_heap_->GetCPUDescriptorHandleForHeapStart();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
 	view_desc.BufferLocation = scene_const_buff_->GetGPUVirtualAddress();
@@ -864,212 +859,6 @@ bool Dx12Wrapper::CreatePeraVerTex()
 	screen_vertex_buffer_view_.BufferLocation = screen_vertex_buffer_->GetGPUVirtualAddress();
 	screen_vertex_buffer_view_.SizeInBytes = sizeof(pv);
 	screen_vertex_buffer_view_.StrideInBytes = sizeof(PeraVertex);
-
-	return true;
-}
-
-bool Dx12Wrapper::CreatePeraPipeline()
-{
-	D3D12_DESCRIPTOR_RANGE desc_range[4] = {};
-
-	desc_range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; // b0
-	desc_range[0].BaseShaderRegister = 0;
-	desc_range[0].NumDescriptors = 1;
-
-	desc_range[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // t0
-	desc_range[1].BaseShaderRegister = 0;
-	desc_range[1].NumDescriptors = 1;
-
-	desc_range[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // t1
-	desc_range[2].BaseShaderRegister = 1;
-	desc_range[2].NumDescriptors = 1;
-
-	// 深度値テクスチャ
-	desc_range[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; // t2
-	desc_range[3].BaseShaderRegister = 2;
-	desc_range[3].NumDescriptors = 1;
-
-	D3D12_ROOT_PARAMETER root_param[4] = {};
-
-	root_param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	root_param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	root_param[0].DescriptorTable.pDescriptorRanges = &desc_range[0];
-	root_param[0].DescriptorTable.NumDescriptorRanges = 1;
-
-	root_param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	root_param[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	root_param[1].DescriptorTable.pDescriptorRanges = &desc_range[1];
-	root_param[1].DescriptorTable.NumDescriptorRanges = 1;
-
-	root_param[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	root_param[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	root_param[2].DescriptorTable.pDescriptorRanges = &desc_range[2];
-	root_param[2].DescriptorTable.NumDescriptorRanges = 1;
-
-	root_param[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	root_param[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-	root_param[3].DescriptorTable.pDescriptorRanges = &desc_range[3];
-	root_param[3].DescriptorTable.NumDescriptorRanges = 1;
-
-	D3D12_STATIC_SAMPLER_DESC sampler_desc = CD3DX12_STATIC_SAMPLER_DESC(0);
-	sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-	sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-
-	D3D12_ROOT_SIGNATURE_DESC root_sig_desc = {};
-	root_sig_desc.NumParameters = 4;
-	root_sig_desc.pParameters = root_param;
-	root_sig_desc.NumStaticSamplers = 1;
-	root_sig_desc.pStaticSamplers = &sampler_desc;
-	root_sig_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-
-	ComPtr<ID3DBlob> root_sig_blob = nullptr;
-	ComPtr<ID3DBlob> error_blob = nullptr;
-
-	auto result = D3D12SerializeRootSignature(
-		&root_sig_desc,
-		D3D_ROOT_SIGNATURE_VERSION_1_0,
-		root_sig_blob.ReleaseAndGetAddressOf(),
-		error_blob.ReleaseAndGetAddressOf()
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	result = dev_->CreateRootSignature(
-		0,
-		root_sig_blob->GetBufferPointer(),
-		root_sig_blob->GetBufferSize(),
-		IID_PPV_ARGS(screen_root_signature_.ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	ComPtr<ID3DBlob> vs_blob = nullptr;
-	ComPtr<ID3DBlob> ps_blob = nullptr;
-
-	result = D3DCompileFromFile(
-		L"PeraVertexShader.hlsl",
-		nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"PeraVS",
-		"vs_5_0",
-		0,
-		0,
-		vs_blob.ReleaseAndGetAddressOf(),
-		error_blob.ReleaseAndGetAddressOf()
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	result = D3DCompileFromFile(
-		L"PeraPixelShader.hlsl",
-		nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"PeraPS",
-		"ps_5_0",
-		0,
-		0,
-		ps_blob.ReleaseAndGetAddressOf(),
-		error_blob.ReleaseAndGetAddressOf()
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	D3D12_INPUT_ELEMENT_DESC input_elem_desc[2] = {
-		{
-			"POSITION",
-			0,
-			DXGI_FORMAT_R32G32B32_FLOAT,
-			0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-			0
-		},
-		{
-			"TEXCOORD",
-			0,
-			DXGI_FORMAT_R32G32_FLOAT,
-			0,
-			D3D12_APPEND_ALIGNED_ELEMENT,
-			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-			0
-		}
-	};
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC gps_desc = {};
-	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
-	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
-	gps_desc.DepthStencilState.DepthEnable = false;
-	gps_desc.DepthStencilState.StencilEnable = false;
-	gps_desc.InputLayout.NumElements = _countof(input_elem_desc);
-	gps_desc.InputLayout.pInputElementDescs = input_elem_desc;
-	gps_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	gps_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	gps_desc.NumRenderTargets = 1;
-	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	gps_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-	gps_desc.SampleDesc.Count = 1;
-	gps_desc.SampleDesc.Quality = 0;
-	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-	gps_desc.pRootSignature = screen_root_signature_.Get();
-
-	result = dev_->CreateGraphicsPipelineState(
-		&gps_desc,
-		IID_PPV_ARGS(screen_pipeline_.ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	result = D3DCompileFromFile(
-		L"PeraPixelShader.hlsl",
-		nullptr,
-		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"VerticalBokehPS",
-		"ps_5_0",
-		0,
-		0,
-		ps_blob.ReleaseAndGetAddressOf(),
-		error_blob.ReleaseAndGetAddressOf()
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
-
-	result = dev_->CreateGraphicsPipelineState(
-		&gps_desc,
-		IID_PPV_ARGS(screen_pipeline_2_.ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
 
 	return true;
 }
