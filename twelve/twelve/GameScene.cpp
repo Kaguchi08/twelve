@@ -6,6 +6,8 @@ GameScene::GameScene(Game* game) :
 	Scene(game)
 {
 	std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒN.pmd";
+	//std::string pmd_model_path = "../Assets/Model/„‰¹ƒ‹ƒJ.pmd";
+	//std::string pmd_model_path = "../Assets/Model/Kafka/kafka.pmd";
 
 	// ‰Šú‰»
 	Initialize(pmd_model_path.c_str());

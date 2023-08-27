@@ -13,7 +13,6 @@ cbuffer SceneData : register(b0)
 {
     matrix view;
     matrix proj;
-    matrix light_view;
     matrix shadow;
     float3 eye;
 };
@@ -56,6 +55,23 @@ float4 BasicPS(BasicType input) : SV_TARGET
     float4 spa_col = spa.Sample(smp, sp_uv);
     
     float4 tex_col = tex.Sample(smp, input.uv);
+    
+    float4 finalColor = tex_col;
+    
+    // スフィアマップ
+    finalColor *= sph_col;
+    finalColor += spa_col;
+    
+    // ディフューズ
+    float4 finalDiff = toon_col * diffuse;
+    
+    // スペキュラ
+    float4 finalSpec = float4(specular * spec_b, 1);
+    
+    finalColor = finalColor * (finalDiff + finalSpec);
+    
+    return finalColor;
+    
     
     float4 ret = float4((spa_col + sph_col * tex_col * toon_col * diffuse).rgb, diffuse.a)
                 + float4(specular * spec_b, 1);

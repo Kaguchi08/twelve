@@ -12,7 +12,6 @@ cbuffer SceneData : register(b0)
 {
     matrix view;
     matrix proj;
-    matrix light_view;
     matrix shadow;
     float3 eye;
 };
@@ -31,13 +30,13 @@ cbuffer Material : register(b2)
     float3 ambient;
 };
 
-BasicType BasicVS(float4 pos : POSITION, 
-                  float4 normal : NORMAL, 
+BasicType BasicVS(float4 pos : POSITION,
+                  float4 normal : NORMAL,
                   float2 uv : TEXCOORD,
                   min16int2 bone_no : BONENO,
                   min16int weight : WEIGHT,
-                  uint inst_no : SV_InstanceID) 
- {
+                  uint inst_no : SV_InstanceID)
+{
     BasicType output;
     float w = weight / 100.0f;
     matrix bm = bones[bone_no.x] * w + bones[bone_no.y] * (1.0f - w);
@@ -55,5 +54,5 @@ BasicType BasicVS(float4 pos : POSITION,
     output.uv = uv;
     output.inst_no = inst_no;
     
-	return output;
+    return output;
 }

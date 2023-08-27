@@ -100,7 +100,6 @@ private:
 	{
 		DirectX::XMMATRIX view;
 		DirectX::XMMATRIX proj;
-		DirectX::XMMATRIX light_view; // Žg‚Á‚Ä‚È‚¢
 		DirectX::XMMATRIX shadow;
 		DirectX::XMFLOAT3 eye;
 	};

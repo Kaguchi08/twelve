@@ -154,10 +154,10 @@ HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 	ComPtr<ID3DBlob> error_blob = nullptr;
 
 	auto result = D3DCompileFromFile(
-		L"BasicVertexShader.hlsl",
+		L"PMDVertexShader.hlsl",
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"BasicVS",
+		"VSMain",
 		"vs_5_0",
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
@@ -172,10 +172,10 @@ HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 	}
 
 	result = D3DCompileFromFile(
-		L"BasicPixelShader.hlsl",
+		L"PMDPixelShader.hlsl",
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"BasicPS",
+		"PSMain",
 		"ps_5_0",
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
