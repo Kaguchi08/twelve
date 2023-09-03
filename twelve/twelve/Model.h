@@ -5,6 +5,7 @@
 #include <DirectXMath.h>
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 using Microsoft::WRL::ComPtr;
 
@@ -131,28 +132,25 @@ struct PMDModel
 	std::vector<uint32_t> knee_idxes;
 };
 
+struct FBXMeshData
+{
+	ComPtr<ID3D12Resource> vertex_buffer;
+	ComPtr<ID3D12Resource> index_buffer;
+	D3D12_VERTEX_BUFFER_VIEW vb_view;
+	D3D12_INDEX_BUFFER_VIEW ib_view;
+	std::vector<FBXVertex> vertices;
+	std::vector<unsigned int> indices;
+	std::string material_name;
+};
+
 // FBXモデル情報をまとめた構造体
 struct FBXModel
 {
 	// 全体のインデックス数
 	unsigned int indices_num;
-	// 頂点配列
-	std::vector<DirectX::XMFLOAT3> vertices;
 
-	// 頂点テーブル
-	std::unordered_map<std::string, std::vector<FBXVertex>> vertex_table;
-	// インデックステーブル
-	std::unordered_map<std::string, std::vector<unsigned int>> index_table;
-
-	// マテリアル関連
-
-	// バッファテーブル
-	std::unordered_map<std::string, ComPtr<ID3D12Resource>> vertex_buffer_table;
-	std::unordered_map<std::string, ComPtr<ID3D12Resource>> index_buffer_table;
-
-	// ビューテーブル
-	std::unordered_map<std::string, D3D12_VERTEX_BUFFER_VIEW> vb_view_table;
-	std::unordered_map<std::string, D3D12_INDEX_BUFFER_VIEW> ib_view_table;
+	// メッシュデータ
+	std::vector<FBXMeshData> mesh_data;
 };
 
 struct VMDAnimation

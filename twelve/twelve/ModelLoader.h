@@ -4,6 +4,8 @@
 #include <vector>
 #include <unordered_map>
 #include <fbxsdk.h>
+#include "Model.h"
+
 
 using Microsoft::WRL::ComPtr;
 
@@ -25,7 +27,13 @@ private:
 	HRESULT CreateMaterialAndView(struct PMDModel* model);
 
 	void CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table);
-	bool CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model);
+	bool CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model);
 	bool CreateFBXVertexBuffers(struct FBXModel* model);
 	bool CreateFBXIndexBuffers(struct FBXModel* model);
+
+	void LoadVertices(FbxMesh* mesh, FBXMeshData& mesh_data);
+	void LoadIndices(FbxMesh* mesh, FBXMeshData& mesh_data);
+	void LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data);
+
+	void LoadMaterial(FbxSurfaceMaterial* material);
 };

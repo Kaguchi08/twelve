@@ -2,7 +2,6 @@
 #include "XMFLOAT_Helper.h"
 #include <Windows.h>
 #include <DirectXMath.h>
-#include <unordered_map>
 
 enum ButtonState
 {

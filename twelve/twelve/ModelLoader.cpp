@@ -1,6 +1,5 @@
 #include "ModelLoader.h"
 #include "Renderer.h"
-#include "Model.h"
 #include "Dx12Wrapper.h"
 #include <string>
 #include <assert.h>
@@ -427,17 +426,25 @@ bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
 		return false;
 	}
 
-	// Triangulate 
 	FbxGeometryConverter converter(manager);
+
+	// マテリアル単位でメッシュを分割
+	converter.SplitMeshesPerMaterial(scene, true);
+	// ポリゴンを三角形に
 	converter.Triangulate(scene, true);
 
-	// メッシュNodeを探す
-	std::unordered_map<std::string, FbxNode*> mesh_node_table;
-	CollectFBXMeshNode(scene->GetRootNode(), mesh_node_table);
+	int material_num = scene->GetSrcObjectCount<FbxSurfaceMaterial>();
 
-	for (auto mesh_node : mesh_node_table)
+	/*for (int i = 0; i < material_num; i++)
 	{
-		CreateFBXMesh(mesh_node.first.c_str(), mesh_node.second->GetMesh(), model);
+
+	}*/
+
+	int mesh_num = scene->GetSrcObjectCount<FbxMesh>();
+
+	for (int i = 0; i < mesh_num; i++)
+	{
+		CreateFBXMesh(scene->GetSrcObject<FbxMesh>(i), model);
 	}
 
 	importer->Destroy();
@@ -770,7 +777,156 @@ void ModelLoader::CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::stri
 	}
 }
 
-bool ModelLoader::CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBXModel* model)
+bool ModelLoader::CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model)
+{
+	FBXMeshData mesh_data;
+	LoadIndices(mesh, mesh_data);
+	LoadVertices(mesh, mesh_data);
+	LoadNormals(mesh, mesh_data);
+
+	model->mesh_data.push_back(mesh_data);
+
+	//// 頂点バッファの取得
+	//FbxVector4* vertices = mesh->GetControlPoints();
+	//// インデックスバッファの取得
+	//int* indices = mesh->GetPolygonVertices();
+	//// 頂点座標の数の取得
+	//int polygon_vertex_count = mesh->GetPolygonVertexCount();
+
+	//for (int i = 0; i < polygon_vertex_count; i++)
+	//{
+	//	FBXVertex vertex{};
+	//	// インデックスバッファから頂点番号を取得
+	//	int index = indices[i];
+
+	//	// 頂点座標の取得
+	//	vertex.pos[0] = static_cast<float>(-vertices[index][0]); // 左手系に変換
+	//	vertex.pos[1] = static_cast<float>(vertices[index][1]);
+	//	vertex.pos[2] = static_cast<float>(vertices[index][2]);
+
+	//	// 頂点テーブルに追加
+	//	model->vertex_table[node_name].push_back(vertex);
+	//}
+
+	//// 法線リストの取得
+	//FbxArray<FbxVector4> normals;
+	//mesh->GetPolygonVertexNormals(normals);
+
+	//for (int i = 0; i < normals.Size(); i++)
+	//{
+	//	// 法線の取得
+	//	FbxVector4 normal = normals[i];
+
+	//	// 頂点テーブルに追加
+	//	model->vertex_table[node_name][i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
+	//	model->vertex_table[node_name][i].normal[1] = static_cast<float>(normal[1]);
+	//	model->vertex_table[node_name][i].normal[2] = static_cast<float>(normal[2]);
+	//}
+
+	//// UVリストの取得
+
+	//// ポリゴン数の取得
+	//int polygon_count = mesh->GetPolygonCount();
+
+	//for (int i = 0; i < polygon_count; i++)
+	//{
+	//	model->index_table[node_name].push_back(i * 3 + 2);
+	//	model->index_table[node_name].push_back(i * 3 + 1);
+	//	model->index_table[node_name].push_back(i * 3);
+	//}
+
+	return true;
+}
+
+bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
+{
+	for (auto& mesh : model->mesh_data)
+	{
+		// 頂点バッファの作成
+		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(mesh.vertices.size() * sizeof(FBXVertex));
+
+		auto result = dx12_.GetDevice()->CreateCommittedResource(
+			&heap_prop,
+			D3D12_HEAP_FLAG_NONE,
+			&res_desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(mesh.vertex_buffer.ReleaseAndGetAddressOf())
+		);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		// 頂点バッファへの書き込み
+		unsigned char* vertex_map = nullptr;
+		result = mesh.vertex_buffer->Map(0, nullptr, (void**)(&vertex_map));
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		DWORD i = 0;
+		constexpr unsigned int vertex_size = sizeof(FBXVertex);
+		for (auto& v : mesh.vertices)
+		{
+			//model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
+			*((FBXVertex*)vertex_map) = v;
+			vertex_map += vertex_size;
+			i++;
+		}
+		mesh.vertex_buffer->Unmap(0, nullptr);
+
+		mesh.vb_view.BufferLocation = mesh.vertex_buffer->GetGPUVirtualAddress();
+		mesh.vb_view.SizeInBytes = mesh.vertices.size() * vertex_size;
+		mesh.vb_view.StrideInBytes = vertex_size;
+	}
+}
+
+bool ModelLoader::CreateFBXIndexBuffers(FBXModel* model)
+{
+	for (auto& mesh : model->mesh_data)
+	{
+		// インデックスバッファの作成
+		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(mesh.indices.size() * sizeof(unsigned int));
+
+		auto result = dx12_.GetDevice()->CreateCommittedResource(
+			&heap_prop,
+			D3D12_HEAP_FLAG_NONE,
+			&res_desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(mesh.index_buffer.ReleaseAndGetAddressOf())
+		);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		// インデックスバッファへの書き込み
+		unsigned short* index_map = nullptr;
+		result = mesh.index_buffer->Map(0, nullptr, (void**)&index_map);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		std::copy(mesh.indices.begin(), mesh.indices.end(), index_map);
+		mesh.index_buffer->Unmap(0, nullptr);
+
+		mesh.ib_view.BufferLocation = mesh.index_buffer->GetGPUVirtualAddress();
+		mesh.ib_view.Format = DXGI_FORMAT_R16_UINT;
+		mesh.ib_view.SizeInBytes = mesh.indices.size() * sizeof(unsigned int);
+	}
+}
+
+void ModelLoader::LoadVertices(FbxMesh* mesh, FBXMeshData& mesh_data)
 {
 	// 頂点バッファの取得
 	FbxVector4* vertices = mesh->GetControlPoints();
@@ -791,9 +947,25 @@ bool ModelLoader::CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBX
 		vertex.pos[2] = static_cast<float>(vertices[index][2]);
 
 		// 頂点テーブルに追加
-		model->vertex_table[node_name].push_back(vertex);
+		mesh_data.vertices.push_back(vertex);
 	}
+}
 
+void ModelLoader::LoadIndices(FbxMesh* mesh, FBXMeshData& mesh_data)
+{
+	// ポリゴン数の取得
+	int polygon_count = mesh->GetPolygonCount();
+
+	for (int i = 0; i < polygon_count; i++)
+	{
+		mesh_data.indices.push_back(i * 3 + 2);
+		mesh_data.indices.push_back(i * 3 + 1);
+		mesh_data.indices.push_back(i * 3);
+	}
+}
+
+void ModelLoader::LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data)
+{
 	// 法線リストの取得
 	FbxArray<FbxVector4> normals;
 	mesh->GetPolygonVertexNormals(normals);
@@ -804,110 +976,8 @@ bool ModelLoader::CreateFBXMesh(const char* node_name, FbxMesh* mesh, struct FBX
 		FbxVector4 normal = normals[i];
 
 		// 頂点テーブルに追加
-		model->vertex_table[node_name][i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
-		model->vertex_table[node_name][i].normal[1] = static_cast<float>(normal[1]);
-		model->vertex_table[node_name][i].normal[2] = static_cast<float>(normal[2]);
-	}
-
-	// UVリストの取得
-
-	// ポリゴン数の取得
-	int polygon_count = mesh->GetPolygonCount();
-
-	for (int i = 0; i < polygon_count; i++)
-	{
-		model->index_table[node_name].push_back(i * 3 + 2);
-		model->index_table[node_name].push_back(i * 3 + 1);
-		model->index_table[node_name].push_back(i * 3);
-	}
-
-	return true;
-}
-
-bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
-{
-	for (auto& vertices : model->vertex_table)
-	{
-		// 頂点バッファの作成
-		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(vertices.second.size() * sizeof(FBXVertex));
-
-		auto result = dx12_.GetDevice()->CreateCommittedResource(
-			&heap_prop,
-			D3D12_HEAP_FLAG_NONE,
-			&res_desc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(model->vertex_buffer_table[vertices.first].ReleaseAndGetAddressOf())
-		);
-
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// 頂点バッファへの書き込み
-		unsigned char* vertex_map = nullptr;
-		result = model->vertex_buffer_table[vertices.first]->Map(0, nullptr, (void**)(&vertex_map));
-
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		DWORD i = 0;
-		constexpr unsigned int vertex_size = sizeof(FBXVertex);
-		for (auto& v : vertices.second)
-		{
-			//model->vertices[i] = DirectX::XMFLOAT3(v.pos[0], v.pos[1], v.pos[2]);
-			*((FBXVertex*)vertex_map) = v;
-			vertex_map += vertex_size;
-			i++;
-		}
-		model->vertex_buffer_table[vertices.first]->Unmap(0, nullptr);
-
-		model->vb_view_table[vertices.first].BufferLocation = model->vertex_buffer_table[vertices.first]->GetGPUVirtualAddress();
-		model->vb_view_table[vertices.first].SizeInBytes = vertices.second.size() * vertex_size;
-		model->vb_view_table[vertices.first].StrideInBytes = vertex_size;
-	}
-}
-
-bool ModelLoader::CreateFBXIndexBuffers(FBXModel* model)
-{
-	for (auto& indices : model->index_table)
-	{
-		// インデックスバッファの作成
-		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(indices.second.size() * sizeof(unsigned int));
-
-		auto result = dx12_.GetDevice()->CreateCommittedResource(
-			&heap_prop,
-			D3D12_HEAP_FLAG_NONE,
-			&res_desc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(model->index_buffer_table[indices.first].ReleaseAndGetAddressOf())
-		);
-
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// インデックスバッファへの書き込み
-		unsigned short* index_map = nullptr;
-		result = model->index_buffer_table[indices.first]->Map(0, nullptr, (void**)&index_map);
-
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		std::copy(indices.second.begin(), indices.second.end(), index_map);
-		model->index_buffer_table[indices.first]->Unmap(0, nullptr);
-
-		model->ib_view_table[indices.first].BufferLocation = model->index_buffer_table[indices.first]->GetGPUVirtualAddress();
-		model->ib_view_table[indices.first].Format = DXGI_FORMAT_R16_UINT;
-		model->ib_view_table[indices.first].SizeInBytes = indices.second.size() * sizeof(unsigned int);
+		mesh_data.vertices[i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
+		mesh_data.vertices[i].normal[1] = static_cast<float>(normal[1]);
+		mesh_data.vertices[i].normal[2] = static_cast<float>(normal[2]);
 	}
 }

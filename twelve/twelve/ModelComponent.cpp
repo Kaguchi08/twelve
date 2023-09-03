@@ -97,16 +97,14 @@ void ModelComponent::DrawPMD()
 
 void ModelComponent::DrawFBX()
 {
-	for (auto& indices : fbx_model_->index_table)
+	for (auto& mesh : fbx_model_->mesh_data)
 	{
-		auto& node_name = indices.first;
-
 		auto cmd_list = dx12_->GetCommandList();
-		cmd_list->IASetVertexBuffers(0, 1, &fbx_model_->vb_view_table[node_name]);
-		cmd_list->IASetIndexBuffer(&fbx_model_->ib_view_table[node_name]);
+		cmd_list->IASetVertexBuffers(0, 1, &mesh.vb_view);
+		cmd_list->IASetIndexBuffer(&mesh.ib_view);
 		cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		cmd_list->DrawIndexedInstanced(indices.second.size(), 1, 0, 0, 0);
+		cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
 	}
 }
 
