@@ -26,7 +26,9 @@ private:
 	HRESULT CreateMaterialData(struct PMDModel* model);
 	HRESULT CreateMaterialAndView(struct PMDModel* model);
 
+	// Žg‚Á‚Ä‚È‚¢
 	void CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table);
+
 	bool CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model);
 	bool CreateFBXVertexBuffers(struct FBXModel* model);
 	bool CreateFBXIndexBuffers(struct FBXModel* model);
@@ -35,5 +37,5 @@ private:
 	void LoadIndices(FbxMesh* mesh, FBXMeshData& mesh_data);
 	void LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data);
 
-	void LoadMaterial(FbxSurfaceMaterial* material);
+	void LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model);
 };

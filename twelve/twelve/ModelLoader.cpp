@@ -435,10 +435,10 @@ bool ModelLoader::LoadFBXModel(const char* file_name, FBXModel* model)
 
 	int material_num = scene->GetSrcObjectCount<FbxSurfaceMaterial>();
 
-	/*for (int i = 0; i < material_num; i++)
+	for (int i = 0; i < material_num; i++)
 	{
-
-	}*/
+		LoadMaterial(scene->GetSrcObject<FbxSurfaceMaterial>(i), model);
+	}
 
 	int mesh_num = scene->GetSrcObjectCount<FbxMesh>();
 
@@ -786,55 +786,6 @@ bool ModelLoader::CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model)
 
 	model->mesh_data.push_back(mesh_data);
 
-	//// 頂点バッファの取得
-	//FbxVector4* vertices = mesh->GetControlPoints();
-	//// インデックスバッファの取得
-	//int* indices = mesh->GetPolygonVertices();
-	//// 頂点座標の数の取得
-	//int polygon_vertex_count = mesh->GetPolygonVertexCount();
-
-	//for (int i = 0; i < polygon_vertex_count; i++)
-	//{
-	//	FBXVertex vertex{};
-	//	// インデックスバッファから頂点番号を取得
-	//	int index = indices[i];
-
-	//	// 頂点座標の取得
-	//	vertex.pos[0] = static_cast<float>(-vertices[index][0]); // 左手系に変換
-	//	vertex.pos[1] = static_cast<float>(vertices[index][1]);
-	//	vertex.pos[2] = static_cast<float>(vertices[index][2]);
-
-	//	// 頂点テーブルに追加
-	//	model->vertex_table[node_name].push_back(vertex);
-	//}
-
-	//// 法線リストの取得
-	//FbxArray<FbxVector4> normals;
-	//mesh->GetPolygonVertexNormals(normals);
-
-	//for (int i = 0; i < normals.Size(); i++)
-	//{
-	//	// 法線の取得
-	//	FbxVector4 normal = normals[i];
-
-	//	// 頂点テーブルに追加
-	//	model->vertex_table[node_name][i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
-	//	model->vertex_table[node_name][i].normal[1] = static_cast<float>(normal[1]);
-	//	model->vertex_table[node_name][i].normal[2] = static_cast<float>(normal[2]);
-	//}
-
-	//// UVリストの取得
-
-	//// ポリゴン数の取得
-	//int polygon_count = mesh->GetPolygonCount();
-
-	//for (int i = 0; i < polygon_count; i++)
-	//{
-	//	model->index_table[node_name].push_back(i * 3 + 2);
-	//	model->index_table[node_name].push_back(i * 3 + 1);
-	//	model->index_table[node_name].push_back(i * 3);
-	//}
-
 	return true;
 }
 
@@ -980,4 +931,80 @@ void ModelLoader::LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data)
 		mesh_data.vertices[i].normal[1] = static_cast<float>(normal[1]);
 		mesh_data.vertices[i].normal[2] = static_cast<float>(normal[2]);
 	}
+}
+
+void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
+{
+	FBXMaterial entry_material;
+	enum class MaterialType
+	{
+		Ambient,
+		Diffuse,
+		//Specular,
+		MaxOrder,
+	};
+
+	FbxDouble3 colors[(int)MaterialType::MaxOrder];
+	FbxDouble factors[(int)MaterialType::MaxOrder];
+
+	// 初期化
+	FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sAmbient);
+
+	if (material->GetClassId().Is(FbxSurfaceLambert::ClassId))
+	{
+		const char* element_check_list[] =
+		{
+			FbxSurfaceMaterial::sAmbient,
+			FbxSurfaceMaterial::sDiffuse,
+			// FbxSurfaceMaterial::sSpecular,
+		};
+
+		const char* factor_check_list[] =
+		{
+			FbxSurfaceMaterial::sAmbientFactor,
+			FbxSurfaceMaterial::sDiffuseFactor,
+			// FbxSurfaceMaterial::sSpecularFactor,
+		};
+
+		for (int i = 0; i < (int)MaterialType::MaxOrder; i++)
+		{
+			prop = material->FindProperty(element_check_list[i]);
+			if (prop.IsValid())
+			{
+				colors[i] = prop.Get<FbxDouble3>();
+			}
+			else
+			{
+				colors[i] = FbxDouble3(1.0, 1.0, 1.0);
+			}
+
+			prop = material->FindProperty(factor_check_list[i]);
+			if (prop.IsValid())
+			{
+				factors[i] = prop.Get<FbxDouble>();
+			}
+			else
+			{
+				factors[i] = 1.0;
+			}
+		}
+	}
+
+	FbxDouble3 color = colors[(int)MaterialType::Ambient];
+	FbxDouble factor = factors[(int)MaterialType::Ambient];
+
+	entry_material.ambient[0] = static_cast<float>(color[0]);
+	entry_material.ambient[1] = static_cast<float>(color[1]);
+	entry_material.ambient[2] = static_cast<float>(color[2]);
+	entry_material.ambient[3] = static_cast<float>(factor);
+
+	color = colors[(int)MaterialType::Diffuse];
+	factor = factors[(int)MaterialType::Diffuse];
+
+	entry_material.diffuse[0] = static_cast<float>(color[0]);
+	entry_material.diffuse[1] = static_cast<float>(color[1]);
+	entry_material.diffuse[2] = static_cast<float>(color[2]);
+	entry_material.diffuse[3] = static_cast<float>(factor);
+
+	model->materials[material->GetName()] = entry_material;
 }

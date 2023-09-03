@@ -143,6 +143,13 @@ struct FBXMeshData
 	std::string material_name;
 };
 
+struct FBXMaterial
+{
+	float ambient[4];
+	float diffuse[4];
+	float specular[4];
+};
+
 // FBXモデル情報をまとめた構造体
 struct FBXModel
 {
@@ -151,6 +158,9 @@ struct FBXModel
 
 	// メッシュデータ
 	std::vector<FBXMeshData> mesh_data;
+
+	// マテリアル関連
+	std::unordered_map <std::string, FBXMaterial> materials;
 };
 
 struct VMDAnimation
