@@ -28,6 +28,13 @@ cbuffer Material : register(b2)
     float3 ambient;
 };
 
+cbuffer Light : register(b3)
+{
+    float3 direction;
+    float4 color;
+    float4 ambientLight;
+};
+
 struct VSIn
 {
     float4 pos : POSITION;

@@ -5,7 +5,8 @@
 GameScene::GameScene(Game* game) :
 	Scene(game)
 {
-	std::string pmd_model_path = "../Assets/Model/初音ミク.pmd";
+	std::string pmd_model_path = "../Assets/Model/初音ミクVer2.pmd";
+	//std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
 	//std::string pmd_model_path = "../Assets/Model/巡音ルカ.pmd";
 	//std::string pmd_model_path = "../Assets/Model/Kafka/kafka.pmd";
 

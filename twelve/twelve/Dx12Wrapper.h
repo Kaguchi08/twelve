@@ -70,6 +70,8 @@ private:
 
 	// ライト
 	std::unique_ptr<class Light> light_ = nullptr;
+	ComPtr<ID3D12Resource> light_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> light_csv_heap_ = nullptr;
 
 	std::shared_ptr<class Renderer> renderer_ = nullptr;
 	std::unique_ptr<class ModelLoader> model_loader_;
@@ -133,6 +135,9 @@ private:
 	HRESULT InitializeCommand();
 	// ビュープロジェクション用ビューの生成
 	HRESULT CreateSceneView();
+
+	// ライト
+	HRESULT CreateLight();
 
 	HRESULT InitializeDebug();
 	HRESULT InitializeRenderer();

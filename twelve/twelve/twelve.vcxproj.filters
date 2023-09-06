@@ -132,6 +132,9 @@
     <ClCompile Include="ResourceManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="BasicVertexShader.hlsl">
@@ -152,6 +155,12 @@
     <FxCompile Include="FBXPixelShader.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="PMDPixelShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="PMDVertexShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Type.hlsli">
@@ -159,6 +168,9 @@
     </None>
     <None Include="cpp.hint" />
     <None Include="FBXHeader.hlsli">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="PMDHeader.hlsli">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>
@@ -260,6 +272,9 @@
       <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="ResourceManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

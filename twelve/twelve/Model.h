@@ -21,7 +21,7 @@ enum ModelType
 struct MaterialForHlsl
 {
 	DirectX::XMFLOAT3 diffuse;
-	float alpha;
+	float alpha; // ディフューズのアルファ値
 	DirectX::XMFLOAT3 specular;
 	float specularity;
 	DirectX::XMFLOAT3 ambient;

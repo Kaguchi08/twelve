@@ -101,6 +101,12 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
+	if (FAILED(CreateLight()))
+	{
+		assert(0);
+		return false;
+	}
+
 	if (!CreateEffectResourceAndView())
 	{
 		return false;
@@ -257,7 +263,7 @@ void Dx12Wrapper::SetCameraSetting()
 
 	scene_matrix_->shadow = DirectX::XMMatrixShadow(
 		DirectX::XMLoadFloat4(&plane_normal_vec),
-		-DirectX::XMLoadFloat3(&light_->GetDirectionalLightDir())
+		-DirectX::XMLoadFloat3(&light_->GetState()->direction)
 	);
 
 
@@ -267,10 +273,15 @@ void Dx12Wrapper::SetScene()
 {
 	SetCameraSetting();
 
-	ID3D12DescriptorHeap* sceneHeaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
 
-	cmd_list_->SetDescriptorHeaps(1, sceneHeaps);
+	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, light_heaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
 void Dx12Wrapper::EndDraw()
@@ -602,6 +613,60 @@ HRESULT Dx12Wrapper::CreateSceneView()
 	}
 
 	//SetCameraSetting();
+
+	return result;
+}
+
+HRESULT Dx12Wrapper::CreateLight()
+{
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(AligmentedValue(sizeof(LightState), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
+
+	// 定数バッファの作成
+	auto result = dev_->CreateCommittedResource
+	(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(light_const_buffer_.ReleaseAndGetAddressOf())
+	);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, light_csv_heap_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	auto handle = light_csv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
+	view_desc.BufferLocation = light_const_buffer_->GetGPUVirtualAddress();
+	view_desc.SizeInBytes = light_const_buffer_->GetDesc().Width;
+
+	dev_->CreateConstantBufferView(&view_desc, handle);
+
+	LightState* mapped_light = nullptr;
+	result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	*mapped_light = *(light_->GetState());
+
+	light_const_buffer_->Unmap(0, nullptr);
 
 	return result;
 }

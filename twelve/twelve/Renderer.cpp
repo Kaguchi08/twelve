@@ -485,23 +485,25 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 
 HRESULT Renderer::CreatePMDModelRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE range[4] = {};
+	CD3DX12_DESCRIPTOR_RANGE range[5] = {};
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // scene_cbv
 	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // transform_cbv
 	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // material_cbv
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0);
+	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 3); // light_cbv
 
-	CD3DX12_ROOT_PARAMETER root_param[3] = {};
+	CD3DX12_ROOT_PARAMETER root_param[4] = {};
 	root_param[0].InitAsDescriptorTable(1, &range[0]);
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
-	root_param[2].InitAsDescriptorTable(2, &range[2]);
+	root_param[2].InitAsDescriptorTable(2, &range[2]); // マテリアル関連はまとめる
+	root_param[3].InitAsDescriptorTable(1, &range[4]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[2] = {};
 	sampler_desc[0].Init(0);
 	sampler_desc[1].Init(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
 
 	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
-	root_signature_desc.Init(3, root_param, 2, sampler_desc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	root_signature_desc.Init(4, root_param, 2, sampler_desc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 	ComPtr<ID3DBlob> root_sig_blob;
 	ComPtr<ID3DBlob> error_blob;

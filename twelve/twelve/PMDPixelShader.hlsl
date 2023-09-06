@@ -70,8 +70,7 @@ float4 CalcPhongSpecular(float3 lightDirection, float4 lightColor, float4 worldP
 
 float4 CalcLigFromDirectionLight(PSIn psIn)
 {
-    float3 light = normalize(float3(1, -1, 1));
-    float4 color = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    float3 light = normalize(direction);
     
     // ディレクションライトによるLambert拡散反射光を計算する
     float4 diffDirection = CalcLambertDiffuse(light, color, psIn.normal);

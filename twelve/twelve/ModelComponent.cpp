@@ -347,10 +347,16 @@ void ModelComponent::SolveCCDIK(const PMDIK& ik)
 			}
 			end_pos = DirectX::XMVector3Transform(end_pos, mat);
 			//もし正解に近くなってたらループを抜ける
-			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
+			/*if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
 			{
 				break;
-			}
+			}*/
+		}
+
+		// ターゲットと末端がほぼ一致したら抜ける
+		if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
+		{
+			break;
 		}
 	}
 
@@ -398,10 +404,28 @@ void ModelComponent::SolveCosineIK(const PMDIK& ik)
 	linearVec = DirectX::XMVector3Normalize(linearVec);
 
 	// ルートから真ん中への角度計算
-	float theta1 = acosf((A * A + B * B - C * C) / (2 * A * B));
+	float theta1 = (A * A + B * B - C * C) / (2 * A * B);
+	if (theta1 > 1.0)
+	{
+		theta1 = 1.0f;
+	}
+	else if (theta1 < -1.0)
+	{
+		theta1 = -1.0f;
+	}
+	theta1 = acosf(theta1);
 
 	// 真ん中からターゲットへの角度計算
-	float theta2 = acosf((B * B + C * C - A * A) / (2 * B * C));
+	float theta2 = (B * B + C * C - A * A) / (2 * B * C);
+	if (theta2 > 1.0)
+	{
+		theta2 = 1.0f;
+	}
+	else if (theta2 < -1.0)
+	{
+		theta2 = -1.0f;
+	}
+	theta2 = acosf(theta2);
 
 	// 軸を求める
 	// もし真ん中が「ひざ」であった場合には強制的にX軸とする。
