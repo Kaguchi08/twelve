@@ -2,12 +2,19 @@
 
 SamplerState smp : register(s0);
 
-cbuffer SceneData : register(b0)
+cbuffer Scene : register(b0)
 {
     matrix view;
     matrix proj;
     matrix shadow;
     float3 eye;
+};
+
+cbuffer Material : register(b1)
+{
+    float4 ambient;
+    float4 diffuse;
+    float4 specular;
 };
 
 struct VSIn

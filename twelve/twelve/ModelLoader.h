@@ -23,8 +23,11 @@ private:
 	class Dx12Wrapper& dx12_;
 	class Renderer& renderer_;
 
-	HRESULT CreateMaterialData(struct PMDModel* model);
-	HRESULT CreateMaterialAndView(struct PMDModel* model);
+	HRESULT CreatePMDMaterialData(struct PMDModel* model);
+	HRESULT CreatePMDMaterialAndView(struct PMDModel* model);
+
+	HRESULT CreateFBXMaterialData(struct FBXModel* model);
+	HRESULT CreateFBXMaterialAndView(struct FBXModel* model);
 
 	// Žg‚Á‚Ä‚È‚¢
 	void CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table);
@@ -38,4 +41,7 @@ private:
 	void LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data);
 
 	void LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model);
+
+	void SetMaterialName(FbxMesh* mesh, FBXMeshData& mesh_data);
+	void SetMaterialData(struct FBXModel* model);
 };

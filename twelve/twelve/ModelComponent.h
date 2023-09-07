@@ -42,6 +42,9 @@ private:
 
 	HRESULT CreateTransformResourceAndView();
 
+	// FBXモデルのマテリアル関連
+	HRESULT CreateMaterialResourceAndView(std::string material_name);
+
 	// モーション
 	void MotionUpdate(float delta_time);
 	void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);

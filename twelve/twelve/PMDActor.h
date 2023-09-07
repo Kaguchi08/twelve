@@ -117,7 +117,7 @@ private:
 	std::vector<PMDIK> ik_data;
 
 	// マテリアルバッファの作成
-	HRESULT CreateMaterialData();
+	HRESULT CreatePMDMaterialData();
 
 	ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
 

@@ -75,7 +75,7 @@ void InputSystem::Update()
 	state_.mouse.position_ = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
 
 	// ’†‰›‚É–ß‚·
-	//SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
+	SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
 }
 
 

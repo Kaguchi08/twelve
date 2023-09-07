@@ -34,7 +34,7 @@ PMDActor::PMDActor(const char* filepath, PMDRenderer& renderer)
 	mTransform.world = DirectX::XMMatrixIdentity();
 	LoadPMDFile(filepath);
 	CreateTransformView();
-	CreateMaterialData();
+	CreatePMDMaterialData();
 	CreateMaterialAndTextureView();
 }
 
@@ -250,7 +250,7 @@ void PMDActor::PlayAnimation()
 	mStartTime = timeGetTime();
 }
 
-HRESULT PMDActor::CreateMaterialData()
+HRESULT PMDActor::CreatePMDMaterialData()
 {
 	// マテリアルバッファの作成
 	auto materialBufferSize = sizeof(MaterialForHlsl);

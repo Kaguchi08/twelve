@@ -172,45 +172,45 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	fread(&material_num, sizeof(unsigned int), 1, fp);
 
 	// vector のサイズ
-	model->materials.resize(material_num);
+	model->material_table.resize(material_num);
 	model->texture_resources.resize(material_num);
 	model->sph_resources.resize(material_num);
 	model->spa_resources.resize(material_num);
 	model->toon_resources.resize(material_num);
 
 	// マテリアルの読み込み
-	std::vector<PMDMaterial> materials(material_num);
-	fread(materials.data(), sizeof(PMDMaterial), material_num, fp);
+	std::vector<PMDMaterial> material_table(material_num);
+	fread(material_table.data(), sizeof(PMDMaterial), material_num, fp);
 
 	// コピー
-	for (int i = 0; i < materials.size(); ++i)
+	for (int i = 0; i < material_table.size(); ++i)
 	{
-		auto& material = model->materials[i];
-		material.indices_num = materials[i].indices_num;
-		material.hlsl.diffuse = materials[i].diffuse;
-		material.hlsl.alpha = materials[i].alpha;
-		material.hlsl.specular = materials[i].specular;
-		material.hlsl.specularity = materials[i].specularity;
-		material.hlsl.ambient = materials[i].ambient;
-		material.additional.toon_idx = materials[i].toon_idx;
+		auto& material = model->material_table[i];
+		material.indices_num = material_table[i].indices_num;
+		material.hlsl.diffuse = material_table[i].diffuse;
+		material.hlsl.alpha = material_table[i].alpha;
+		material.hlsl.specular = material_table[i].specular;
+		material.hlsl.specularity = material_table[i].specularity;
+		material.hlsl.ambient = material_table[i].ambient;
+		material.additional.toon_idx = material_table[i].toon_idx;
 
 		// toon
 		//std::string toonFilePath = "../Assets/Model/Kafka/";
 		std::string toonFilePath = "../toon/";
 		char toonFileName[32];
 		//sprintf_s(toonFileName, 32, "toon%d.png", pmdMaterials[i].toonIdx + 1);
-		sprintf_s(toonFileName, 32, "toon%02d.bmp", materials[i].toon_idx + 1);
+		sprintf_s(toonFileName, 32, "toon%02d.bmp", material_table[i].toon_idx + 1);
 		toonFilePath += toonFileName;
 
 		model->toon_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(toonFilePath.c_str());
 
-		if (strlen(materials[i].tex_path) == 0)
+		if (strlen(material_table[i].tex_path) == 0)
 		{
 			model->texture_resources[i] = nullptr;
 			continue;
 		}
 
-		std::string texFileName = materials[i].tex_path;
+		std::string texFileName = material_table[i].tex_path;
 		std::string sphFileName = "";
 		std::string spaFileName = "";
 
@@ -243,19 +243,19 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 		}
 		else
 		{
-			if (GetExtension(materials[i].tex_path) == "sph")
+			if (GetExtension(material_table[i].tex_path) == "sph")
 			{
 				texFileName = "";
-				sphFileName = materials[i].tex_path;
+				sphFileName = material_table[i].tex_path;
 			}
-			else if (GetExtension(materials[i].tex_path) == "spa")
+			else if (GetExtension(material_table[i].tex_path) == "spa")
 			{
 				texFileName = "";
-				spaFileName = materials[i].tex_path;
+				spaFileName = material_table[i].tex_path;
 			}
 			else
 			{
-				texFileName = materials[i].tex_path;
+				texFileName = material_table[i].tex_path;
 			}
 		}
 
@@ -279,7 +279,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	}
 
 	// マテリアルバッファの作成
-	result = CreateMaterialData(model);
+	result = CreatePMDMaterialData(model);
 
 	if (FAILED(result))
 	{
@@ -289,7 +289,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	}
 
 	// マテリアルのビューの作成
-	result = CreateMaterialAndView(model);
+	result = CreatePMDMaterialAndView(model);
 
 	if (FAILED(result))
 	{
@@ -621,13 +621,13 @@ bool ModelLoader::LoadVMDFile(const char* file_name, VMDAnimation* anim)
 	return true;
 }
 
-HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
+HRESULT ModelLoader::CreatePMDMaterialData(struct PMDModel* model)
 {
 	// マテリアルバッファの作成
 	auto material_buffer_size = AligmentedValue(sizeof(MaterialForHlsl), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT); // 256の倍数にする
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(material_buffer_size * model->materials.size());
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(material_buffer_size * model->material_table.size());
 
 	auto result = dx12_.GetDevice()->CreateCommittedResource(
 		&heap_prop,
@@ -655,7 +655,7 @@ HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 	}
 
 	// マテリアルバッファへの書き込み
-	for (auto& material : model->materials)
+	for (auto& material : model->material_table)
 	{
 		*((MaterialForHlsl*)mapped_material) = material.hlsl;
 		mapped_material += material_buffer_size;
@@ -667,11 +667,11 @@ HRESULT ModelLoader::CreateMaterialData(struct PMDModel* model)
 	return S_OK;
 }
 
-HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
+HRESULT ModelLoader::CreatePMDMaterialAndView(struct PMDModel* model)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
 	// マテリアルの数分 material, texture, sph, spa, toon
-	heap_desc.NumDescriptors = model->materials.size() * 5;
+	heap_desc.NumDescriptors = model->material_table.size() * 5;
 	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heap_desc.NodeMask = 0;
@@ -699,7 +699,7 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(model->material_cbv_heap->GetCPUDescriptorHandleForHeapStart());
 	auto inc_size = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	for (int i = 0; i < model->materials.size(); ++i)
+	for (int i = 0; i < model->material_table.size(); ++i)
 	{
 		dx12_.GetDevice()->CreateConstantBufferView(&cbv_desc, handle);
 		handle.ptr += inc_size; // Offset()でもいける
@@ -757,6 +757,16 @@ HRESULT ModelLoader::CreateMaterialAndView(struct PMDModel* model)
 	return S_OK;
 }
 
+HRESULT ModelLoader::CreateFBXMaterialData(FBXModel* model)
+{
+	return S_OK;
+}
+
+HRESULT ModelLoader::CreateFBXMaterialAndView(FBXModel* model)
+{
+	return S_OK;
+}
+
 void ModelLoader::CollectFBXMeshNode(FbxNode* node, std::unordered_map<std::string, FbxNode*>& table)
 {
 	for (int i = 0; i < node->GetNodeAttributeCount(); i++)
@@ -783,6 +793,7 @@ bool ModelLoader::CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model)
 	LoadIndices(mesh, mesh_data);
 	LoadVertices(mesh, mesh_data);
 	LoadNormals(mesh, mesh_data);
+	SetMaterialName(mesh, mesh_data);
 
 	model->mesh_data.push_back(mesh_data);
 
@@ -1006,5 +1017,33 @@ void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 	entry_material.diffuse[2] = static_cast<float>(color[2]);
 	entry_material.diffuse[3] = static_cast<float>(factor);
 
-	model->materials[material->GetName()] = entry_material;
+	model->material_table[material->GetName()] = entry_material;
+	// 定数バッファを初期化しておく
+	model->material_const_buffer_table[material->GetName()] = nullptr;
+	// ディスクリプタヒープを初期化しておく
+	model->material_cbv_heap_table[material->GetName()] = nullptr;
+}
+
+void ModelLoader::SetMaterialName(FbxMesh* mesh, FBXMeshData& mesh_data)
+{
+	// マテリアルが無ければ終わり
+	if (mesh->GetElementMaterialCount() == 0)
+	{
+		mesh_data.material_name = "";
+		return;
+	}
+
+	// Mesh側のマテリアル情報を取得
+	FbxLayerElementMaterial* material = mesh->GetElementMaterial(0);
+	int index = material->GetIndexArray().GetAt(0);
+	FbxSurfaceMaterial* surface_material = mesh->GetNode()->GetSrcObject<FbxSurfaceMaterial>(index);
+
+	if (surface_material != nullptr)
+	{
+		mesh_data.material_name = surface_material->GetName();
+	}
+	else
+	{
+		mesh_data.material_name = "";
+	}
 }

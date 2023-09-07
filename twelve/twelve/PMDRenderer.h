@@ -19,12 +19,14 @@ public:
 
 	void Initialize();
 
-	void BeforeDraw();
+	void BeforePMDDraw();
 
-	ID3D12PipelineState* GetPipelineState() {
+	ID3D12PipelineState* GetPipelineState()
+	{
 		return pipeline_state_.Get();
 	}
-	ID3D12RootSignature* GetRootSignature() {
+	ID3D12RootSignature* GetRootSignature()
+	{
 		return root_signature_.Get();
 	}
 private:
@@ -49,5 +51,5 @@ private:
 	// ルートシグネチャ初期化
 	HRESULT CreateRootSignature();
 
-	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error=nullptr);
+	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
 };

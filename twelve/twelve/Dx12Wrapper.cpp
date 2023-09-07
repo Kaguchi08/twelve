@@ -161,7 +161,7 @@ void Dx12Wrapper::DrawToPera1()
 	cmd_list_->RSSetViewports(1, view_port_.get());
 	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
 
-	SetScene();
+	//SetScene();
 
 	//cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
 
@@ -269,7 +269,7 @@ void Dx12Wrapper::SetCameraSetting()
 
 }
 
-void Dx12Wrapper::SetScene()
+void Dx12Wrapper::SetPMDSceneCB()
 {
 	SetCameraSetting();
 
@@ -282,6 +282,21 @@ void Dx12Wrapper::SetScene()
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Dx12Wrapper::SetFBXSceneCB()
+{
+	SetCameraSetting();
+
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+	/*ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, light_heaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());*/
 }
 
 void Dx12Wrapper::EndDraw()

@@ -15,9 +15,14 @@ public:
 	Renderer(class Dx12Wrapper& dx);
 	~Renderer();
 	void Initialize();
-	void BeforeDraw();
+	void BeforePMDDraw();
+	void BeforeFBXDraw();
 
 	void Draw();
+
+	// •`‰æ
+	void DrawPMDModel();
+	void DrawFBXModel();
 
 	void AddModelComponent(class ModelComponent* model, ModelType type);
 	void RemoveModelComponent(class ModelComponent* model);
@@ -76,9 +81,7 @@ private:
 	HRESULT CreateFBXModelRootSignature();
 	HRESULT CreateScreenRootSignature();
 
-	// •`‰æ
-	void DrawPMDModel();
-	void DrawFBXModel();
+
 
 	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
 };

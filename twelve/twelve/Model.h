@@ -108,7 +108,7 @@ struct PMDModel
 	std::vector<DirectX::XMFLOAT3> vertices;
 
 	// マテリアル関連
-	std::vector<Material> materials;
+	std::vector<Material> material_table;
 	ComPtr<ID3D12Resource> material_const_buffer = nullptr;
 	ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
 	std::vector<ComPtr<ID3D12Resource>> texture_resources;
@@ -160,7 +160,9 @@ struct FBXModel
 	std::vector<FBXMeshData> mesh_data;
 
 	// マテリアル関連
-	std::unordered_map <std::string, FBXMaterial> materials;
+	std::unordered_map<std::string, FBXMaterial> material_table; // マテリアル名とマテリアルデータの対応表
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> material_const_buffer_table; // マテリアル名とマテリアル定数バッファの対応表
+	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> material_cbv_heap_table; // マテリアル名とマテリアル定数バッファの対応表
 };
 
 struct VMDAnimation

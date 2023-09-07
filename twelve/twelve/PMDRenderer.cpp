@@ -36,7 +36,7 @@ void PMDRenderer::Initialize()
 	mGradTexture = CreateGradTexture();
 }
 
-void PMDRenderer::BeforeDraw()
+void PMDRenderer::BeforePMDDraw()
 {
 	auto cmd_list = dx12_.GetCommandList();
 	cmd_list->SetPipelineState(pipeline_state_.Get());

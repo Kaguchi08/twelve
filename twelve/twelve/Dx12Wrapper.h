@@ -36,7 +36,9 @@ public:
 	void DrawToBackBuffer();
 
 	void SetCameraSetting();
-	void SetScene();
+	// 定数バッファをセットする
+	void SetPMDSceneCB();
+	void SetFBXSceneCB();
 
 	void EndDraw();
 	void ExecuteCommand();

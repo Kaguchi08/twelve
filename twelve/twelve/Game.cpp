@@ -154,11 +154,15 @@ void Game::GenerateOutput()
 
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();
-	//mPMDRenderer->BeforeDraw();
-	renderer_->BeforeDraw();
 	dx12_->DrawToPera1();
-	renderer_->Draw();
-	//mPMDActor->DrawToBackBuffer();
+
+	renderer_->BeforePMDDraw();
+	dx12_->SetPMDSceneCB();
+	renderer_->DrawPMDModel();
+
+	renderer_->BeforeFBXDraw();
+	dx12_->SetFBXSceneCB();
+	renderer_->DrawFBXModel();
 
 	dx12_->DrawToPera2();
 
