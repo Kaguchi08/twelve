@@ -31,6 +31,7 @@ public:
 
 	const DirectX::XMFLOAT2& GetPosition() const { return position_; }
 	const DirectX::XMFLOAT2& GetDelta() const;
+	const DirectX::XMFLOAT2& GetCenter() const { return center_; }
 
 private:
 	DirectX::XMFLOAT2 position_;

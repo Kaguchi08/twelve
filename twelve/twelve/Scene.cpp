@@ -66,7 +66,7 @@ void Scene::RemoveActor(Actor* actor)
 	}
 }
 
-void Scene::ProcessInput(const InputState& state)
+void Scene::ActorInput(const InputState& state)
 {
 	for (auto actor : actors_)
 	{

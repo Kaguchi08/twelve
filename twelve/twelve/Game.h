@@ -15,6 +15,13 @@ class Dx12Wrapper;
 class PMDRenderer;
 class PMDActor;
 
+enum GameState
+{
+	Title,
+	Play,
+	Pause,
+};
+
 class Game
 {
 public:
@@ -24,9 +31,15 @@ public:
 	void RunLoop();
 	void Shutdown();
 
-	// Getter
+	// getter
 	std::shared_ptr<Dx12Wrapper> GetDx12() const { return dx12_; }
 	std::shared_ptr<class Renderer> GetRenderer() const { return renderer_; }
+	class InputSystem* GetInputSystem() const { return input_system_; }
+	uint32_t GetTickCount() const { return tick_count_; }
+	GameState GetGameState() const { return game_state_; }
+
+	// setter
+	void SetGameState(GameState state) { game_state_ = state; }
 
 	// Window
 	SIZE GetWindowSize() const;
@@ -46,6 +59,8 @@ private:
 	class Scene* next_scene_ = nullptr;
 
 	uint32_t tick_count_ = 0;
+
+	GameState game_state_ = Play;
 
 	void ProcessInput();
 	void UpdateGame();

@@ -1,5 +1,7 @@
 #include "GameScene.h"
 #include "ModelActor.h"
+#include "InputSystem.h"
+#include "Game.h"
 #include <string>
 
 GameScene::GameScene(Game* game) :
@@ -16,6 +18,28 @@ GameScene::GameScene(Game* game) :
 
 GameScene::~GameScene()
 {
+}
+
+void GameScene::ProcessInput(const InputState& state)
+{
+	if (state.keyboard.GetKeyState(VK_RETURN) == ButtonState::kPressed)
+	{
+		if (game_->GetGameState() == GameState::Pause)
+		{
+			// カーソルを非表示
+			ShowCursor(false);
+			// 中央に戻す
+			SetCursorPos(state.mouse.GetCenter().x, state.mouse.GetCenter().y);
+
+			game_->SetGameState(GameState::Play);
+		}
+		else if (game_->GetGameState() == GameState::Play)
+		{
+			// カーソルを表示
+			ShowCursor(true);
+			game_->SetGameState(GameState::Pause);
+		}
+	}
 }
 
 bool GameScene::Initialize(const char* file_name)

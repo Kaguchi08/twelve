@@ -1,7 +1,5 @@
 #include "Game.h"
 #include "Dx12Wrapper.h"
-#include "PMDRenderer.h"
-#include "PMDActor.h"
 #include "Renderer.h"
 #include "GameScene.h"
 #include "InputSystem.h"
@@ -17,7 +15,7 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam
 
 LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	// ウィンドウが破棄されたら呼ばれます
+	// ウィンドウが破棄されたら呼ばれる
 	if (msg == WM_DESTROY)
 	{
 		PostQuitMessage(0); // OSに対して終わりと伝える
@@ -36,18 +34,10 @@ Game::Game() :
 
 bool Game::Initialize()
 {
-	//std::string strModelPath = "../Assets/Model/初音ミク.pmd";
-	//std::string str_model_path = "../Assets/Model/巡音ルカ.pmd";
-	//std::string str_model_path = "../Assets/Model/Kafka/kafka.pmd";
-	//std::string str_model_path = "../Assets/Model/Star_Rail/Seele/seele.pmd";
-	//std::string str_model_path = "../Assets/Model/Star_Rail/Ting Yun/停雲.pmd";
-	//std::string str_model_path = "../Assets/Model/Star_Rail/Stelle/stelle.pmd";
-
 	auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
 	CreateGameWindow(hwnd_, wind_class_);
 
 	dx12_.reset(new Dx12Wrapper(hwnd_));
-	//mPMDRenderer.reset(new PMDRenderer(*dx12_));
 
 	if (!dx12_->Initialize())
 	{
@@ -55,9 +45,6 @@ bool Game::Initialize()
 	}
 
 	renderer_.reset(new Renderer(*dx12_));
-
-	//mPMDRenderer->Initialize();
-
 	renderer_->Initialize();
 
 	input_system_ = new InputSystem(this);
@@ -66,12 +53,6 @@ bool Game::Initialize()
 	{
 		return false;
 	}
-
-	/*mPMDActor.reset(new PMDActor(strModelPath.c_str(), *mPMDRenderer));
-	mPMDActor->LoadVMDFile("../motion/squat2.vmd");*/
-	//dx12_->ExecuteCommand();
-
-	//mPMDActor->PlayAnimation();
 
 	current_scene_ = new GameScene(this);
 
@@ -99,7 +80,12 @@ void Game::RunLoop()
 		}
 
 		ProcessInput();
-		UpdateGame();
+
+		if (game_state_ == GameState::Play)
+		{
+			UpdateGame();
+		}
+
 		GenerateOutput();
 	}
 }
@@ -128,6 +114,7 @@ void Game::ProcessInput()
 		PostQuitMessage(0);
 	}
 
+	current_scene_->ActorInput(state);
 	current_scene_->ProcessInput(state);
 }
 
@@ -143,15 +130,11 @@ void Game::UpdateGame()
 
 	tick_count_ = GetTickCount64();
 
-	//mPMDActor->Update();
 	current_scene_->Update(delta_time);
 }
 
 void Game::GenerateOutput()
 {
-	// imgui
-	dx12_->CreateImguiWindow();
-
 	// 1枚目
 	dx12_->PreDrawToPera();
 	dx12_->DrawToPera1();
@@ -169,7 +152,12 @@ void Game::GenerateOutput()
 	dx12_->Clear();
 	dx12_->DrawToBackBuffer();
 
-	dx12_->RenderImgui();
+	if (game_state_ == GameState::Pause)
+	{
+		// imgui
+		dx12_->CreateImguiWindow();
+		dx12_->RenderImgui();
+	}
 
 	dx12_->EndDraw();
 

@@ -1,19 +1,22 @@
 #pragma once
 #include <vector>
 
-class Scene {
+class Scene
+{
 public:
 	Scene(class Game* game);
-	
+
 	void Update(float delta_time);
 
 	void AddActor(class Actor* actor);
 	void RemoveActor(class Actor* actor);
 
-	void ProcessInput(const struct InputState& state);
+	void ActorInput(const struct InputState& state);
+
+	virtual void ProcessInput(const struct InputState& state) = 0;
 
 	class Game* GetGame() const { return game_; }
-private:
+protected:
 	virtual void UpdateActor(float delta_time) = 0;
 
 	class Game* game_;

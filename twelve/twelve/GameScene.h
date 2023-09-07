@@ -8,6 +8,9 @@ class GameScene : public Scene
 public:
 	GameScene(class Game* game);
 	~GameScene();
+
+	void ProcessInput(const struct InputState& state) override;
+
 private:
 	PlayerActor* player_model_;
 	FBXActor* fbx_model_;
