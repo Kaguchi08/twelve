@@ -17,9 +17,9 @@ class PMDActor;
 
 enum GameState
 {
-	Title,
-	Play,
-	Pause,
+	kTitle,
+	kPlay,
+	kPause,
 };
 
 class Game
@@ -60,7 +60,7 @@ private:
 
 	uint32_t tick_count_ = 0;
 
-	GameState game_state_ = Play;
+	GameState game_state_ = kPlay;
 
 	void ProcessInput();
 	void UpdateGame();

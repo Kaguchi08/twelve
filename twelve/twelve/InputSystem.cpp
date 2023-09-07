@@ -74,7 +74,7 @@ void InputSystem::Update()
 	GetCursorPos(&current_pos);
 	state_.mouse.position_ = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
 
-	if (game_->GetGameState() == GameState::Play)
+	if (game_->GetGameState() == GameState::kPlay)
 	{
 		// ’†‰›‚É–ß‚·
 		SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);

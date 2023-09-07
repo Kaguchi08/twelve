@@ -24,20 +24,20 @@ void GameScene::ProcessInput(const InputState& state)
 {
 	if (state.keyboard.GetKeyState(VK_RETURN) == ButtonState::kPressed)
 	{
-		if (game_->GetGameState() == GameState::Pause)
+		if (game_->GetGameState() == GameState::kPause)
 		{
 			// カーソルを非表示
 			ShowCursor(false);
 			// 中央に戻す
 			SetCursorPos(state.mouse.GetCenter().x, state.mouse.GetCenter().y);
 
-			game_->SetGameState(GameState::Play);
+			game_->SetGameState(GameState::kPlay);
 		}
-		else if (game_->GetGameState() == GameState::Play)
+		else if (game_->GetGameState() == GameState::kPlay)
 		{
 			// カーソルを表示
 			ShowCursor(true);
-			game_->SetGameState(GameState::Pause);
+			game_->SetGameState(GameState::kPause);
 		}
 	}
 }

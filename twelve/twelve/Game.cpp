@@ -81,7 +81,7 @@ void Game::RunLoop()
 
 		ProcessInput();
 
-		if (game_state_ == GameState::Play)
+		if (game_state_ == GameState::kPlay)
 		{
 			UpdateGame();
 		}
@@ -114,8 +114,13 @@ void Game::ProcessInput()
 		PostQuitMessage(0);
 	}
 
-	current_scene_->ActorInput(state);
+	if (game_state_ == GameState::kPlay)
+	{
+		current_scene_->ActorInput(state);
+	}
+
 	current_scene_->ProcessInput(state);
+
 }
 
 void Game::UpdateGame()
@@ -152,7 +157,7 @@ void Game::GenerateOutput()
 	dx12_->Clear();
 	dx12_->DrawToBackBuffer();
 
-	if (game_state_ == GameState::Pause)
+	if (game_state_ == GameState::kPause)
 	{
 		// imgui
 		dx12_->CreateImguiWindow();
