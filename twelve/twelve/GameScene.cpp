@@ -54,10 +54,16 @@ bool GameScene::Initialize(const char* file_name)
 	//std::string fbx_model_path = "../Assets/fbx/forest_nature_set_all_in.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
 	//std::string fbx_model_path = "../Assets/fbx/France_GameMap.fbx";
-	/*fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());*/
+	fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());
 
 	plane_actors_.emplace_back(new PlaneActor(this));
+
+	for (auto& plane_actotr : plane_actors_)
+	{
+		std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
+		plane_actotr->SetTexture(tex_file_path.c_str());
+	}
 
 	return true;
 }

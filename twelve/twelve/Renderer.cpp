@@ -397,10 +397,10 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	ComPtr<ID3DBlob> error_blob = nullptr;
 
 	auto result = D3DCompileFromFile(
-		L"FBXVertexShader.hlsl",
+		L"PrimitiveVertexShader.hlsl",
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"main",
+		"VSMain",
 		"vs_5_0",
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
@@ -415,10 +415,10 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	}
 
 	result = D3DCompileFromFile(
-		L"FBXPixelShader.hlsl",
+		L"PrimitivePixelShader.hlsl",
 		nullptr,
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
-		"main",
+		"PSMain",
 		"ps_5_0",
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
@@ -714,8 +714,8 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 
 HRESULT Renderer::CreatePrimitiveRootSignature()
 {
-	const int num_ranges = 2;
-	const int num_root_params = 2;
+	const int num_ranges = 4;
+	const int num_root_params = 4;
 	const int num_samplers = 1;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -723,12 +723,16 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	// 定数
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // シーン関連 
 	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // マテリアル関連
+	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // テクスチャ
+	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // ライト
 
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
 
 	root_param[0].InitAsDescriptorTable(1, &range[0]);
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
+	root_param[2].InitAsDescriptorTable(1, &range[2]);
+	root_param[3].InitAsDescriptorTable(1, &range[3]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 

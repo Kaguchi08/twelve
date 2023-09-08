@@ -306,10 +306,10 @@ void Dx12Wrapper::SetPrimitiveSceneCB()
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-	/*ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
+	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());*/
+	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
 void Dx12Wrapper::EndDraw()

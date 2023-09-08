@@ -1,0 +1,45 @@
+Texture2D<float4> tex : register(t0);
+
+SamplerState smp : register(s0);
+
+cbuffer Scene : register(b0)
+{
+    matrix view;
+    matrix proj;
+    matrix shadow;
+    float3 eye;
+};
+
+cbuffer Material : register(b1)
+{
+    float4 ambient;
+    float4 diffuse;
+    float4 specular;
+};
+
+cbuffer Light : register(b2)
+{
+    float3 direction;
+    float3 color;
+    float3 ambientLight;
+};
+
+struct VSIn
+{
+    float4 pos : POSITION;
+    float4 normal : NORMAL;
+    float2 uv : TEXCOORD;
+};
+
+struct PSIn
+{
+    float4 svpos : SV_POSITION;
+    float4 pos : POSITION;
+    float4 normal : NORMAL;
+    float2 uv : TEXCOORD0;
+    float4 worldPos : TEXCOORD1;
+};
+
+float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal);
+float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float4 normal);
+float3 CalcLigFromDirectionLight(PSIn psIn);

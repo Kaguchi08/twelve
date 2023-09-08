@@ -151,7 +151,7 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="PlaneActor.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\Actor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -179,6 +179,12 @@
     <FxCompile Include="PMDVertexShader.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="PrimitiveVertexShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="PrimitivePixelShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Type.hlsli">
@@ -189,6 +195,9 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="PMDHeader.hlsli">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="PrimitiveHeader.hlsli">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

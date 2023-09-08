@@ -7,10 +7,11 @@ struct LightState
 	// ディレクションライト
 	DirectX::XMFLOAT3 direction;
 	float padding;
-	DirectX::XMFLOAT4 color;
-
+	DirectX::XMFLOAT3 color;
+	float padding2;
 	// 環境光
-	DirectX::XMFLOAT4 ambient;
+	DirectX::XMFLOAT3 ambient;
+	float padding3;
 };
 
 class Light

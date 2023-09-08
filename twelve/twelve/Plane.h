@@ -3,6 +3,7 @@
 #include <dxgi1_6.h>
 #include "XMFLOAT_Helper.h"
 #include "Primitive.h"
+#include "Dx12Wrapper.h"
 #include <memory>
 
 struct PlaneVertex
@@ -20,4 +21,6 @@ public:
 
 	bool CreateVertexBuffer(ID3D12Device* device) override;
 	bool CreateIndexBuffer(ID3D12Device* device) override;
+
+	bool CreateTextureAndView(Dx12Wrapper* dx12, const char* file_name) override;
 };

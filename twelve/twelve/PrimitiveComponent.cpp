@@ -43,6 +43,10 @@ void PrimitiveComponent::Draw()
 			cmd_list->IASetIndexBuffer(&primitive_->GetIndexBufferView());
 			cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+			cmd_list->SetDescriptorHeaps(1, primitive_->GetTextureSRVHeap().GetAddressOf());
+			auto handle = primitive_->GetTextureSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+			cmd_list->SetGraphicsRootDescriptorTable(2, handle);
+
 			cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
 
 			break;

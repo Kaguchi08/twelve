@@ -20,6 +20,9 @@ public:
 
 	void Draw();
 
+	PrimitiveType GetType() const { return type_; }
+	std::shared_ptr<Primitive> GetPrimitive() const { return primitive_; }
+
 private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;

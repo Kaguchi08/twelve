@@ -40,7 +40,7 @@ public:
 	void SetState(State state) { state_ = state; }
 
 	class Scene* GetScene() const { return scene_; }
-private:
+protected:
 	State state_;
 	class Scene* scene_;
 

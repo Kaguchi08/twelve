@@ -31,8 +31,8 @@ cbuffer Material : register(b2)
 cbuffer Light : register(b3)
 {
     float3 direction;
-    float4 color;
-    float4 ambientLight;
+    float3 color;
+    float3 ambientLight;
 };
 
 struct VSIn
@@ -55,6 +55,6 @@ struct PSIn
     uint instNo : SV_InstanceID;
 };
 
-float4 CalcLambertDiffuse(float3 lightDirection, float4 lightColor, float4 normal);
-float4 CalcPhongSpecular(float3 lightDirection, float4 lightColor, float4 worldPos, float4 normal);
-float4 CalcLigFromDirectionLight(PSIn psIn);
+float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal);
+float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float4 normal);
+float3 CalcLigFromDirectionLight(PSIn psIn);
