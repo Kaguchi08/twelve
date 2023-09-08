@@ -7,8 +7,6 @@
 #include "Game.h"
 #include "Helper.h"
 #include "ModelLoader.h"
-#include "PMDActor.h"
-#include "PMDRenderer.h"
 #include "Renderer.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
