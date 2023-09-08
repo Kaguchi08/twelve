@@ -438,6 +438,8 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "NORMAL",	  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,	  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC gps_desc = {};
@@ -714,8 +716,8 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 
 HRESULT Renderer::CreatePrimitiveRootSignature()
 {
-	const int num_ranges = 4;
-	const int num_root_params = 4;
+	const int num_ranges = 6;
+	const int num_root_params = 6;
 	const int num_samplers = 1;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -725,6 +727,8 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // マテリアル関連
 	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // テクスチャ
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // ライト
+	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // 法線マップ
+	range[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // ARMマップ
 
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
@@ -733,6 +737,8 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
 	root_param[2].InitAsDescriptorTable(1, &range[2]);
 	root_param[3].InitAsDescriptorTable(1, &range[3]);
+	root_param[4].InitAsDescriptorTable(1, &range[4]);
+	root_param[5].InitAsDescriptorTable(1, &range[5]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 

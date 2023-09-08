@@ -10,6 +10,7 @@ VSOut main(VSIn input)
     
     output.svpos = output.svpos = mul(mul(proj, view), input.pos);
     output.normal = input.normal;
+    output.uv = input.uv;
     
     return output;
 }

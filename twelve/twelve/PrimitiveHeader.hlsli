@@ -1,4 +1,6 @@
 Texture2D<float4> tex : register(t0);
+Texture2D<float4> normalMap : register(t1);
+Texture2D<float4> armMap : register(t2);
 
 SamplerState smp : register(s0);
 
@@ -27,19 +29,22 @@ cbuffer Light : register(b2)
 struct VSIn
 {
     float4 pos : POSITION;
-    float4 normal : NORMAL;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD;
+    float3 tangent : TANGENT;
+    float3 biNormal : BINORMAL;
 };
 
 struct PSIn
 {
     float4 svpos : SV_POSITION;
-    float4 pos : POSITION;
-    float4 normal : NORMAL;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
-    float4 worldPos : TEXCOORD1;
+    float3 worldPos : TEXCOORD1;
+    float3 tangent : TANGENT;
+    float3 biNormal : BINORMAL;
 };
 
-float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal);
-float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float4 normal);
-float3 CalcLigFromDirectionLight(PSIn psIn);
+float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float3 normal);
+float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float3 worldPos, float3 normal);
+float3 CalcLigFromDirectionLight(PSIn psIn, float3 normal);

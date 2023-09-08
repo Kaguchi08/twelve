@@ -63,6 +63,9 @@ bool GameScene::Initialize(const char* file_name)
 	{
 		std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
 		plane_actotr->SetTexture(tex_file_path.c_str());
+
+		std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
+		plane_actotr->SetNormalMap(normal_map_file_path.c_str());
 	}
 
 	return true;

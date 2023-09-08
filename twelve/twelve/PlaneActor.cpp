@@ -22,3 +22,8 @@ void PlaneActor::SetTexture(const char* file_name)
 {
 	primitive_->GetPrimitive()->CreateTextureAndView(scene_->GetGame()->GetDx12().get(), file_name);
 }
+
+void PlaneActor::SetNormalMap(const char* file_name)
+{
+	primitive_->GetPrimitive()->CreateNormalMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
+}

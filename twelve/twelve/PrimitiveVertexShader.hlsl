@@ -12,5 +12,8 @@ PSIn VSMain(VSIn vsIn)
     
     psIn.uv = vsIn.uv;
     
+    psIn.tangent = normalize(vsIn.tangent);
+    psIn.biNormal = normalize(vsIn.biNormal);
+    
     return psIn;
 }
