@@ -8,7 +8,7 @@ GameScene::GameScene(Game* game) :
 	Scene(game),
 	player_model_(nullptr),
 	fbx_model_(nullptr),
-	plane_actors_()
+	plane_info_table_()
 {
 	std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒNVer2.pmd";
 	//std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
@@ -54,18 +54,31 @@ bool GameScene::Initialize(const char* file_name)
 	//std::string fbx_model_path = "../Assets/fbx/forest_nature_set_all_in.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
 	//std::string fbx_model_path = "../Assets/fbx/France_GameMap.fbx";
-	fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());
+	/*fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());*/
 
-	plane_actors_.emplace_back(new PlaneActor(this));
+	PlaneInfo* plane_info = new PlaneInfo();
 
-	for (auto& plane_actotr : plane_actors_)
+	plane_info->tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
+	plane_info->normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
+	plane_info->arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";
+
+	plane_info->plane_actor = new PlaneActor(this);
+
+
+	plane_info_table_.push_back(plane_info);
+
+
+	for (auto& plane_info : plane_info_table_)
 	{
-		std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
-		plane_actotr->SetTexture(tex_file_path.c_str());
+		std::string tex_file_path = plane_info->tex_file_path;
+		plane_info->plane_actor->SetTexture(tex_file_path.c_str());
 
-		std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
-		plane_actotr->SetNormalMap(normal_map_file_path.c_str());
+		std::string normal_map_file_path = plane_info->normal_map_file_path;
+		plane_info->plane_actor->SetNormalMap(normal_map_file_path.c_str());
+
+		std::string arm_map_file_path = plane_info->arm_map_file_path;
+		plane_info->plane_actor->SetArmMap(arm_map_file_path.c_str());
 	}
 
 	return true;

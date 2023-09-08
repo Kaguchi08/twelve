@@ -27,3 +27,8 @@ void PlaneActor::SetNormalMap(const char* file_name)
 {
 	primitive_->GetPrimitive()->CreateNormalMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
 }
+
+void PlaneActor::SetArmMap(const char* file_name)
+{
+	primitive_->GetPrimitive()->CreateArmMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
+}
