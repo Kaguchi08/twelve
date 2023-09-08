@@ -39,6 +39,7 @@ public:
 	// 定数バッファをセットする
 	void SetPMDSceneCB();
 	void SetFBXSceneCB();
+	void SetPrimitiveSceneCB();
 
 	void EndDraw();
 	void ExecuteCommand();

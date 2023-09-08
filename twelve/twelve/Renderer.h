@@ -18,6 +18,7 @@ public:
 	void Initialize();
 	void BeforePMDDraw();
 	void BeforeFBXDraw();
+	void BeforePrimitiveDraw();
 
 	void Draw();
 
@@ -55,12 +56,14 @@ private:
 	// パイプライン
 	ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_2_ = nullptr;
 
 	// ルートシグネチャ
 	ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> primitive_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> screen_root_signature_ = nullptr;
 
 	// モデル
@@ -77,14 +80,14 @@ private:
 	// パイプライン初期化
 	HRESULT CreatePMDModelGraphicsPipeline();
 	HRESULT CreateFBXModelGraphicsPipeline();
+	HRESULT CreatePrimitiveGraphicsPipeline();
 	HRESULT CreateScreenGraphicsPipeline();
 
 	// ルートシグネチャ初期化
 	HRESULT CreatePMDModelRootSignature();
 	HRESULT CreateFBXModelRootSignature();
+	HRESULT CreatePrimitiveRootSignature();
 	HRESULT CreateScreenRootSignature();
-
-
 
 	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
 };
