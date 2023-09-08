@@ -163,9 +163,12 @@
     <ClCompile Include="MoveComponent.cpp" />
     <ClCompile Include="OrbitCameraComponent.cpp" />
     <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="PlaneActor.cpp" />
     <ClCompile Include="PlayerActor.cpp" />
     <ClCompile Include="PMDActor.cpp" />
     <ClCompile Include="PMDRenderer.cpp" />
+    <ClCompile Include="Primitive.cpp" />
+    <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -268,9 +271,12 @@
     <ClInclude Include="MoveComponent.h" />
     <ClInclude Include="OrbitCameraComponent.h" />
     <ClInclude Include="Plane.h" />
+    <ClInclude Include="PlaneActor.h" />
     <ClInclude Include="PlayerActor.h" />
     <ClInclude Include="PMDActor.h" />
     <ClInclude Include="PMDRenderer.h" />
+    <ClInclude Include="Primitive.h" />
+    <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />

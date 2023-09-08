@@ -37,6 +37,12 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{34b2862f-1848-4229-a8a8-d5bf06f9b152}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Primitive">
+      <UniqueIdentifier>{8e6b4db4-65f1-46f8-ad8d-3190fdb0d036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Primitive">
+      <UniqueIdentifier>{04494499-9838-4870-8a3f-f1fee885a74c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -135,7 +141,16 @@
     <ClCompile Include="Light.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Primitive.cpp">
+      <Filter>ソース ファイル\Primitive</Filter>
+    </ClCompile>
     <ClCompile Include="Plane.cpp">
+      <Filter>ソース ファイル\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimitiveComponent.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PlaneActor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -280,8 +295,17 @@
     <ClInclude Include="Light.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="PrimitiveComponent.h">
+      <Filter>ヘッダー ファイル\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitive.h">
+      <Filter>ヘッダー ファイル\Primitive</Filter>
+    </ClInclude>
     <ClInclude Include="Plane.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="PlaneActor.h">
+      <Filter>ヘッダー ファイル\Actor</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

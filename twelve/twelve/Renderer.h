@@ -5,6 +5,7 @@
 #include <memory>
 #include "Helper.h"
 #include "Model.h"
+#include "Primitive.h"
 
 
 using Microsoft::WRL::ComPtr;
@@ -23,9 +24,13 @@ public:
 	// •`‰æ
 	void DrawPMDModel();
 	void DrawFBXModel();
+	void DrawPrimitive();
 
 	void AddModelComponent(class ModelComponent* model, ModelType type);
 	void RemoveModelComponent(class ModelComponent* model);
+
+	void AddPrimitiveComponent(class PrimitiveComponent* primitive);
+	void RemovePrimitiveComponent(class PrimitiveComponent* primitive);
 
 	class Dx12Wrapper& GetDx() { return dx12_; }
 
@@ -60,10 +65,8 @@ private:
 
 	// ƒ‚ƒfƒ‹
 	std::vector<class ModelComponent*> pmd_models_;
-	std::vector<class ModelComponent*> pending_pmd_models_;
-
 	std::vector<class ModelComponent*> fbx_models_;
-	std::vector<class ModelComponent*> pending_fbx_models_;
+	std::vector<class PrimitiveComponent*> primitives_;
 
 	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);
 

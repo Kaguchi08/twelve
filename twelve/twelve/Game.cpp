@@ -151,6 +151,7 @@ void Game::GenerateOutput()
 	renderer_->BeforeFBXDraw();
 	dx12_->SetFBXSceneCB();
 	renderer_->DrawFBXModel();
+	renderer_->DrawPrimitive();
 
 	dx12_->DrawToPera2();
 

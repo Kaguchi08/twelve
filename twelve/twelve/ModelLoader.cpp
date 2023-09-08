@@ -905,8 +905,8 @@ void ModelLoader::LoadVertices(FbxMesh* mesh, FBXMeshData& mesh_data)
 
 		// 頂点座標の取得
 		vertex.pos[0] = static_cast<float>(-vertices[index][0]); // 左手系に変換
-		vertex.pos[1] = static_cast<float>(vertices[index][1]);
-		vertex.pos[2] = static_cast<float>(vertices[index][2]);
+		vertex.pos[1] = static_cast<float>(vertices[index][2]);
+		vertex.pos[2] = static_cast<float>(vertices[index][1]);
 
 		// 頂点テーブルに追加
 		mesh_data.vertices.push_back(vertex);

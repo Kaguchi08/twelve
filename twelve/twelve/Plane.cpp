@@ -19,6 +19,8 @@ bool Plane::CreateVertexBuffer(ID3D12Device* device)
 		{ { -0.5f, 0.0f, 0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },  // ç∂è„
 	};
 
+	vertex_num_ = sizeof(vertices) / sizeof(vertices[0]);
+
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertices));
 
@@ -64,6 +66,8 @@ bool Plane::CreateIndexBuffer(ID3D12Device* device)
 		0, 1, 3,
 		3, 1, 2,
 	};
+
+	index_num_ = sizeof(indices) / sizeof(indices[0]);
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(indices));

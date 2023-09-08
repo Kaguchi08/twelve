@@ -11,7 +11,14 @@
 using namespace DirectX;
 
 ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_name, int draw_order) :
-	Component(owner, draw_order)
+	Component(owner, draw_order),
+	pmd_model_(nullptr),
+	fbx_model_(nullptr),
+	mapped_matrices_(nullptr),
+	type_(type),
+	current_animation_idx_(0),
+	animation_idx_(0),
+	animation_time_(0.0f)
 {
 	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
 	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
@@ -34,7 +41,6 @@ ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_na
 		default:
 			break;
 	}
-
 
 	// 座標変換用リソース作成
 	auto result = CreateTransformResourceAndView();

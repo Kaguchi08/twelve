@@ -5,7 +5,10 @@
 #include <string>
 
 GameScene::GameScene(Game* game) :
-	Scene(game)
+	Scene(game),
+	player_model_(nullptr),
+	fbx_model_(nullptr),
+	plane_actors_()
 {
 	std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒNVer2.pmd";
 	//std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
@@ -47,12 +50,14 @@ bool GameScene::Initialize(const char* file_name)
 	player_model_ = new PlayerActor(this);
 	player_model_->SetPMDModel(file_name);
 
-	std::string fbx_model_path = "../Assets/fbx/MaterialBox.fbx";
+	std::string fbx_model_path = "../Assets/fbx/Plane.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/forest_nature_set_all_in.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
 	//std::string fbx_model_path = "../Assets/fbx/France_GameMap.fbx";
-	fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());
+	/*fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());*/
+
+	plane_actors_.emplace_back(new PlaneActor(this));
 
 	return true;
 }

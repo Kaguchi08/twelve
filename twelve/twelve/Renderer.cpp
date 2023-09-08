@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "Dx12Wrapper.h"
 #include "ModelComponent.h"
+#include "PrimitiveComponent.h"
 #include <d3dx12.h>
 #include <d3dcompiler.h>
 #include <string>
@@ -60,10 +61,10 @@ void Renderer::AddModelComponent(ModelComponent* model, ModelType type)
 	switch (type)
 	{
 		case PMD:
-			pending_pmd_models_.emplace_back(model);
+			pmd_models_.emplace_back(model);
 			break;
 		case FBX:
-			pending_fbx_models_.emplace_back(model);
+			fbx_models_.emplace_back(model);
 			break;
 		default:
 			break;
@@ -78,10 +79,24 @@ void Renderer::RemoveModelComponent(ModelComponent* model)
 		pmd_models_.erase(it);
 	}
 
-	it = std::find(pending_pmd_models_.begin(), pending_pmd_models_.end(), model);
-	if (it != pending_pmd_models_.end())
+	it = std::find(fbx_models_.begin(), fbx_models_.end(), model);
+	if (it != fbx_models_.end())
 	{
-		pending_pmd_models_.erase(it);
+		fbx_models_.erase(it);
+	}
+}
+
+void Renderer::AddPrimitiveComponent(PrimitiveComponent* primitive)
+{
+	primitives_.emplace_back(primitive);
+}
+
+void Renderer::RemovePrimitiveComponent(PrimitiveComponent* primitive)
+{
+	auto it = std::find(primitives_.begin(), primitives_.end(), primitive);
+	if (it != primitives_.end())
+	{
+		primitives_.erase(it);
 	}
 }
 
@@ -674,19 +689,10 @@ HRESULT Renderer::CreateScreenRootSignature()
 
 void Renderer::DrawPMDModel()
 {
-	auto command_list = dx12_.GetCommandList();
+	auto cmd_list = dx12_.GetCommandList();
 
-	command_list->SetPipelineState(pmd_model_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
-
-	// テスト用
-	// モデル追加
-	for (auto& model : pending_pmd_models_)
-	{
-		pmd_models_.emplace_back(model);
-	}
-
-	pending_pmd_models_.clear();
+	cmd_list->SetPipelineState(pmd_model_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
 
 	for (auto& model : pmd_models_)
 	{
@@ -696,23 +702,29 @@ void Renderer::DrawPMDModel()
 
 void Renderer::DrawFBXModel()
 {
-	auto command_list = dx12_.GetCommandList();
+	auto cmd_list = dx12_.GetCommandList();
 
-	command_list->SetPipelineState(fbx_model_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
-
-	// テスト用
-	// モデル追加
-	for (auto& model : pending_fbx_models_)
-	{
-		fbx_models_.emplace_back(model);
-	}
-
-	pending_fbx_models_.clear();
+	cmd_list->SetPipelineState(fbx_model_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
 
 	for (auto& model : fbx_models_)
 	{
 		model->DrawFBX();
+	}
+}
+
+void Renderer::DrawPrimitive()
+{
+	// fbxと同じパイプラインを使う
+
+	auto cmd_list = dx12_.GetCommandList();
+
+	cmd_list->SetPipelineState(fbx_model_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+
+	for (auto& primitive : primitives_)
+	{
+		primitive->Draw();
 	}
 }
 

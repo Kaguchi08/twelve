@@ -30,6 +30,7 @@ private:
 	// ƒ‚ƒfƒ‹
 	std::shared_ptr<PMDModel> pmd_model_;
 	std::shared_ptr<FBXModel> fbx_model_;
+	ModelType type_;
 
 	DirectX::XMMATRIX* mapped_matrices_;
 
