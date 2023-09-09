@@ -24,3 +24,14 @@ PSIn VSMain(VSIn vsIn)
     
     return psIn;
 }
+
+float4 VSShadow(VSIn vsIn)
+{
+    float w = vsIn.weight / 100.0f;
+    matrix bm = bones[vsIn.boneNo.x] * w + bones[vsIn.boneNo.y] * (1.0f - w);
+    
+    vsIn.pos = mul(bm, vsIn.pos);
+    vsIn.pos = mul(world, vsIn.pos);
+    
+    return mul(lightView, vsIn.pos);
+}

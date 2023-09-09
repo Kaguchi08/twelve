@@ -8,6 +8,7 @@ cbuffer Scene : register(b0)
 {
     matrix view;
     matrix proj;
+    matrix lightView;
     matrix shadow;
     float3 eye;
 };

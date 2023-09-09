@@ -4,13 +4,18 @@ VSOut main(VSIn input)
 {
     VSOut output;
     
-    float4 ambientC = ambient;
-    float4 diffuseC = diffuse;
-    float4 specularC = specular;
+    // todo ワールド行列
     
     output.svpos = output.svpos = mul(mul(proj, view), input.pos);
     output.normal = input.normal;
     output.uv = input.uv;
     
     return output;
+}
+
+float4 VSShadow(VSIn vsIn)
+{
+    // todo ワールド行列
+    
+    return mul(lightView, vsIn.pos);
 }
