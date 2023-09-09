@@ -461,6 +461,26 @@ bool Dx12Wrapper::CreateDepthBuffer()
 		return false;
 	}
 
+	// ライトデプス
+	res_desc.Width = 1024;
+	res_desc.Height = 1024;
+
+	result = dev_->CreateCommittedResource
+	(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&clear_val,
+		IID_PPV_ARGS(light_depth_buffer_.ReleaseAndGetAddressOf())
+	);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
 	return true;
 }
 

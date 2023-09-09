@@ -19,7 +19,7 @@ PSIn VSMain(VSIn vsIn)
     return psIn;
 }
 
-float4 VSShadow(VSIn vsIn)
+float4 VSShadow(VSIn vsIn) : SV_POSITION
 {
     // todo ƒ[ƒ‹ƒhs—ñ
     

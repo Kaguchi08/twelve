@@ -91,12 +91,18 @@ private:
 	ComPtr<ID3D12CommandQueue> cmd_queue_ = nullptr;
 
 	// 表示に関わるバッファ周り
-	ComPtr<ID3D12Resource> depth_buffer_ = nullptr;
 	std::vector<ID3D12Resource*> back_buffers_;
 	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
 	std::unique_ptr<D3D12_VIEWPORT> view_port_;
 	std::unique_ptr<D3D12_RECT> scissor_rect_;
+
+	// 深度値
+	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
+	ComPtr<ID3D12Resource> depth_buffer_ = nullptr;
+	ComPtr<ID3D12Resource> light_depth_buffer_ = nullptr;
+
+	// 深度値テクスチャ
+	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
 
 	// シーンを構成するバッファ周り
 	ComPtr<ID3D12Resource> scene_const_buff_ = nullptr;
@@ -168,9 +174,6 @@ private:
 	// 歪み
 	ComPtr<ID3D12Resource> effect_resource_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> effect_srv_heap_;
-
-	// 深度値テクスチャ
-	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
 
 	bool CreatePeraResourceAndView();
 	bool CreatePeraConstBufferAndView();

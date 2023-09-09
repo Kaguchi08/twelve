@@ -13,7 +13,7 @@ VSOut main(VSIn input)
     return output;
 }
 
-float4 VSShadow(VSIn vsIn)
+float4 VSShadow(VSIn vsIn) : SV_POSITION
 {
     // todo ƒ[ƒ‹ƒhs—ñ
     
