@@ -140,21 +140,36 @@ void Game::UpdateGame()
 
 void Game::GenerateOutput()
 {
+	dx12_->SetCameraSetting();
+
+	// ‰e‚Ì•`‰æ
+	renderer_->BeforeDrawPMDShadowMap();
+	dx12_->PreDrawShadow();
+	renderer_->DrawPMDModel(true);
+
+	/*renderer_->BeforeDrawFBXShadowMap();
+	dx12_->PreDrawShadow();
+	renderer_->DrawFBXModel(true);
+
+	renderer_->BeforeDrawPrimitiveShadowMap();
+	dx12_->PreDrawShadow();
+	renderer_->DrawPrimitive(true);*/
+
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();
 	dx12_->DrawToPera1();
 
 	renderer_->BeforePMDDraw();
-	dx12_->SetPMDSceneCB();
-	renderer_->DrawPMDModel();
+	dx12_->SetPMDBuffer();
+	renderer_->DrawPMDModel(false);
 
 	renderer_->BeforeFBXDraw();
-	dx12_->SetFBXSceneCB();
-	renderer_->DrawFBXModel();
+	dx12_->SetFBXBuffer();
+	renderer_->DrawFBXModel(false);
 
 	renderer_->BeforePrimitiveDraw();
-	dx12_->SetPrimitiveSceneCB();
-	renderer_->DrawPrimitive();
+	dx12_->SetPrimitiveBuffer();
+	renderer_->DrawPrimitive(false);
 
 	dx12_->DrawToPera2();
 

@@ -2,6 +2,7 @@ Texture2D<float4> tex : register(t0);
 Texture2D<float4> sph : register(t1);
 Texture2D<float4> spa : register(t2);
 Texture2D<float4> toon : register(t3);
+Texture2D<float4> shadowMap : register(t4);
 
 SamplerState smp : register(s0);
 SamplerState smpToon : register(s1);
@@ -43,7 +44,6 @@ struct VSIn
     float2 uv : TEXCOORD;
     min16int2 boneNo : BONENO;
     min16int weight : WEIGHT;
-    uint isntNo : SV_InstanceID;
 };
 
 struct PSIn
@@ -54,6 +54,7 @@ struct PSIn
     float4 normalInView : NORMAL1; // ÉJÉÅÉâãÛä‘ÇÃñ@ê¸
     float2 uv : TEXCOORD;
     uint instNo : SV_InstanceID;
+    float4 lightPos : LIGHTPOS;
 };
 
 float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal);

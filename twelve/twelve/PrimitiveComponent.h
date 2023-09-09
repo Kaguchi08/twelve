@@ -18,7 +18,7 @@ public:
 	PrimitiveComponent(class Actor* owner, PrimitiveType type, int draw_order = 100);
 	~PrimitiveComponent();
 
-	void Draw();
+	void Draw(bool is_shadow);
 
 	PrimitiveType GetType() const { return type_; }
 	std::shared_ptr<Primitive> GetPrimitive() const { return primitive_; }

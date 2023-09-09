@@ -1,4 +1,5 @@
 SamplerState smp : register(s0);
+Texture2D<float4> shadowMap : register(t0);
 
 cbuffer Scene : register(b0)
 {

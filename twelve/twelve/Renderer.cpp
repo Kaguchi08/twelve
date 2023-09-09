@@ -60,10 +60,34 @@ void Renderer::BeforePrimitiveDraw()
 	command_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
 }
 
-void Renderer::Draw()
+void Renderer::BeforeDrawPMDShadowMap()
 {
-	DrawPMDModel();
-	DrawFBXModel();
+	auto command_list = dx12_.GetCommandList();
+
+	command_list->SetPipelineState(pmd_shadow_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
+}
+
+void Renderer::BeforeDrawFBXShadowMap()
+{
+	auto command_list = dx12_.GetCommandList();
+
+	command_list->SetPipelineState(fbx_shadow_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+}
+
+void Renderer::BeforeDrawPrimitiveShadowMap()
+{
+	auto command_list = dx12_.GetCommandList();
+
+	command_list->SetPipelineState(primitive_shadow_pipeline_state_.Get());
+	command_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
+}
+
+void Renderer::Draw(bool is_shadow)
+{
+	DrawPMDModel(is_shadow);
+	DrawFBXModel(is_shadow);
 }
 
 void Renderer::AddModelComponent(ModelComponent* model, ModelType type)
@@ -723,8 +747,8 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 
 HRESULT Renderer::CreatePMDModelRootSignature()
 {
-	const int num_range = 5;
-	const int num_root_param = 4;
+	const int num_range = 6;
+	const int num_root_param = 5;
 	const int num_samplers = 2;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_range] = {};
@@ -733,12 +757,14 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // material_cbv
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0);
 	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 3); // light_cbv
+	range[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // シャドウマップ
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_param] = {};
 	root_param[0].InitAsDescriptorTable(1, &range[0]);
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
 	root_param[2].InitAsDescriptorTable(2, &range[2]); // マテリアル関連はまとめる
 	root_param[3].InitAsDescriptorTable(1, &range[4]);
+	root_param[4].InitAsDescriptorTable(1, &range[5]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 	sampler_desc[0].Init(0);
@@ -769,8 +795,8 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 
 HRESULT Renderer::CreateFBXModelRootSignature()
 {
-	const int num_ranges = 2;
-	const int num_root_params = 2;
+	const int num_ranges = 3;
+	const int num_root_params = 3;
 	const int num_samplers = 1;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -778,12 +804,14 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 	// 定数
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // シーン関連 
 	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // マテリアル関連
+	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // シャドウマップ用
 
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
 
 	root_param[0].InitAsDescriptorTable(1, &range[0]);
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
+	root_param[2].InitAsDescriptorTable(1, &range[2]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 
@@ -815,8 +843,8 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 
 HRESULT Renderer::CreatePrimitiveRootSignature()
 {
-	const int num_ranges = 6;
-	const int num_root_params = 6;
+	const int num_ranges = 7;
+	const int num_root_params = 7;
 	const int num_samplers = 1;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -828,6 +856,7 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2); // ライト
 	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // 法線マップ
 	range[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // ARMマップ
+	range[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // シャドウマップ
 
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
@@ -838,6 +867,7 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	root_param[3].InitAsDescriptorTable(1, &range[3]);
 	root_param[4].InitAsDescriptorTable(1, &range[4]);
 	root_param[5].InitAsDescriptorTable(1, &range[5]);
+	root_param[6].InitAsDescriptorTable(1, &range[6]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 
@@ -956,27 +986,27 @@ HRESULT Renderer::CreateScreenRootSignature()
 	return result;
 }
 
-void Renderer::DrawPMDModel()
+void Renderer::DrawPMDModel(bool is_shadow)
 {
 	for (auto& model : pmd_models_)
 	{
-		model->DrawPMD();
+		model->DrawPMD(is_shadow);
 	}
 }
 
-void Renderer::DrawFBXModel()
+void Renderer::DrawFBXModel(bool is_shadow)
 {
 	for (auto& model : fbx_models_)
 	{
-		model->DrawFBX();
+		model->DrawFBX(is_shadow);
 	}
 }
 
-void Renderer::DrawPrimitive()
+void Renderer::DrawPrimitive(bool is_shadow)
 {
 	for (auto& primitive : primitives_)
 	{
-		primitive->Draw();
+		primitive->Draw(is_shadow);
 	}
 }
 

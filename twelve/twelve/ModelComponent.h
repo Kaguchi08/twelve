@@ -17,8 +17,8 @@ public:
 
 	void Update(float delta_time) override;
 
-	void DrawPMD();
-	void DrawFBX();
+	void DrawPMD(bool is_shadow);
+	void DrawFBX(bool is_shadow);
 
 	unsigned int AddAnimation(const char* file_name, bool is_loop = true);
 	void DeleteAnimation(unsigned int idx);

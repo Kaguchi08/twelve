@@ -13,6 +13,12 @@ SamplerState smp : register(s0);
 
 float4 PeraPS(PeraType input) : SV_TARGET
 {
+    //float depth = depth_tex.Sample(smp, input.uv).r;
+    
+    //depth = pow(depth, 20);
+    
+    //return float4(depth, depth, depth, 1);
+    
     float4 col = tex.Sample(smp, input.uv);
     
     return col;

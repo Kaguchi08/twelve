@@ -16,6 +16,8 @@ PSIn VSMain(VSIn vsIn)
     psIn.tangent = normalize(vsIn.tangent);
     psIn.biNormal = normalize(vsIn.biNormal);
     
+    psIn.lightPos = mul(lightView, psIn.worldPos);
+    
     return psIn;
 }
 

@@ -31,15 +31,17 @@ public:
 	void DrawToPera1();
 	void DrawToPera2();
 
+	void PreDrawShadow();
+
 	bool Clear();
 
 	void DrawToBackBuffer();
 
 	void SetCameraSetting();
-	// 定数バッファをセットする
-	void SetPMDSceneCB();
-	void SetFBXSceneCB();
-	void SetPrimitiveSceneCB();
+	// バッファをセットする
+	void SetPMDBuffer();
+	void SetFBXBuffer();
+	void SetPrimitiveBuffer();
 
 	void EndDraw();
 	void ExecuteCommand();

@@ -2,11 +2,6 @@
 
 float4 PSMain(PSIn psIn) : SV_TARGET
 {
-    if (psIn.instNo > 0)
-    {
-        return float4(0, 0, 0, 1);
-    }
-   
     // ディレクションライトによるライティングを計算する
     float3 directionLig = CalcLigFromDirectionLight(psIn);
     
@@ -24,6 +19,18 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     
     // 光を乗算する
     finalColor.xyz *= finalLig;
+    
+    float2 shadowMapUV = psIn.lightPos.xy / psIn.lightPos.w;
+    shadowMapUV *= float2(0.5f, -0.5f);
+    shadowMapUV += 0.5f;
+    
+    float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
+    float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
+    
+    if ((zInLVP - 0.001f) > zInShadowMap)
+    {
+        finalColor.xyz *= 0.5f;
+    }
     
     return finalColor;
 }

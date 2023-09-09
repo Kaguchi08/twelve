@@ -167,6 +167,18 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     
     float4 finalColor = float4(lig, 1.0f);
     
+    float2 shadowMapUV = psIn.lightPos.xy / psIn.lightPos.w;
+    shadowMapUV *= float2(0.5f, -0.5f);
+    shadowMapUV += 0.5f;
+    
+    float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
+    float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
+    
+    if ((zInLVP - 0.001f) > zInShadowMap)
+    {
+        finalColor.xyz *= 0.5f;
+    }
+    
     // 以下は法線マップを利用したライティングの計算
     
     //float3 normal = psIn.normal;
@@ -204,7 +216,7 @@ float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float3 norma
     return lightColor * t;
 }
 
-float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float3 worldPos, float3 normal)
+float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float3 normal)
 {
     // 反射ベクトルを求める
     float3 refVec = reflect(lightDirection, normal);

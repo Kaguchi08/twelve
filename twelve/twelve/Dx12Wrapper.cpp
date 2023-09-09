@@ -199,6 +199,27 @@ void Dx12Wrapper::DrawToPera2()
 	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
+void Dx12Wrapper::PreDrawShadow()
+{
+	auto handle = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	cmd_list_->OMSetRenderTargets(0, nullptr, false, &handle);
+
+	cmd_list_->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	ID3D12DescriptorHeap* heaps[] = { scene_csv_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, heaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 1024, 1024);
+	cmd_list_->RSSetViewports(1, &viewport);
+
+	D3D12_RECT scissor = CD3DX12_RECT(0, 0, 1024, 1024);
+	cmd_list_->RSSetScissorRects(1, &scissor);
+}
+
 bool Dx12Wrapper::Clear()
 {
 	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -274,13 +295,11 @@ void Dx12Wrapper::SetCameraSetting()
 
 	scene_matrix_->light_view =
 		DirectX::XMMatrixLookAtLH(light_pos, DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_))
-		* DirectX::XMMatrixOrthographicLH(40, 40, 0.1f, 1000.0f);
+		* DirectX::XMMatrixOrthographicLH(320.0f, 180.0f, 0.1f, 1000.0f);
 }
 
-void Dx12Wrapper::SetPMDSceneCB()
+void Dx12Wrapper::SetPMDBuffer()
 {
-	SetCameraSetting();
-
 	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
@@ -290,12 +309,17 @@ void Dx12Wrapper::SetPMDSceneCB()
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+	// 一旦ここでシャドウマップテクスチャをセット
+	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
+	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	cmd_list_->SetGraphicsRootDescriptorTable(4, handle);
 }
 
-void Dx12Wrapper::SetFBXSceneCB()
+void Dx12Wrapper::SetFBXBuffer()
 {
-	SetCameraSetting();
-
 	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
@@ -305,12 +329,17 @@ void Dx12Wrapper::SetFBXSceneCB()
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());*/
+
+	// 一旦ここでシャドウマップテクスチャをセット
+	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
+	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	cmd_list_->SetGraphicsRootDescriptorTable(2, handle);
 }
 
-void Dx12Wrapper::SetPrimitiveSceneCB()
+void Dx12Wrapper::SetPrimitiveBuffer()
 {
-	SetCameraSetting();
-
 	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
@@ -320,6 +349,13 @@ void Dx12Wrapper::SetPrimitiveSceneCB()
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+	// 一旦ここでシャドウマップテクスチャをセット
+	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
+	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	cmd_list_->SetGraphicsRootDescriptorTable(6, handle);
 }
 
 void Dx12Wrapper::EndDraw()
@@ -486,7 +522,8 @@ bool Dx12Wrapper::CreateDepthBuffer()
 
 bool Dx12Wrapper::CreateDSV()
 {
-	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, dsv_heap_);
+	// 0番は通常深度、1番はライト深度
+	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, dsv_heap_);
 
 	if (FAILED(result))
 	{
@@ -500,7 +537,15 @@ bool Dx12Wrapper::CreateDSV()
 	dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
 
-	dev_->CreateDepthStencilView(depth_buffer_.Get(), &dsv_desc, dsv_heap_->GetCPUDescriptorHandleForHeapStart());
+	auto handle = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	// 通常深度
+	dev_->CreateDepthStencilView(depth_buffer_.Get(), &dsv_desc, handle);
+
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	// ライト深度
+	dev_->CreateDepthStencilView(light_depth_buffer_.Get(), &dsv_desc, handle);
 
 	return true;
 }
@@ -989,7 +1034,8 @@ bool Dx12Wrapper::CreatePeraVerTex()
 
 bool Dx12Wrapper::CreateDepthSRV()
 {
-	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, depth_srv_heap_);
+	// 0番は通常の深度、1番はライト深度
+	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, depth_srv_heap_);
 
 	if (FAILED(result))
 	{
@@ -1005,11 +1051,23 @@ bool Dx12Wrapper::CreateDepthSRV()
 
 	auto handle = depth_srv_heap_->GetCPUDescriptorHandleForHeapStart();
 
+	// 通常深度テクスチャ用
 	dev_->CreateShaderResourceView(
 		depth_buffer_.Get(),
 		&srv_desc,
 		handle
 	);
+
+	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// ライト深度テクスチャ用
+	dev_->CreateShaderResourceView(
+		light_depth_buffer_.Get(),
+		&srv_desc,
+		handle
+	);
+
+	return true;
 }
 
 bool Dx12Wrapper::InitializeImGui()

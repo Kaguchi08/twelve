@@ -32,7 +32,7 @@ PrimitiveComponent::~PrimitiveComponent()
 	renderer_->RemovePrimitiveComponent(this);
 }
 
-void PrimitiveComponent::Draw()
+void PrimitiveComponent::Draw(bool is_shadow)
 {
 	auto cmd_list = dx12_->GetCommandList();
 
@@ -43,22 +43,29 @@ void PrimitiveComponent::Draw()
 			cmd_list->IASetIndexBuffer(&primitive_->GetIndexBufferView());
 			cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			// テクスチャ
-			cmd_list->SetDescriptorHeaps(1, primitive_->GetTextureSRVHeap().GetAddressOf());
-			auto handle = primitive_->GetTextureSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-			cmd_list->SetGraphicsRootDescriptorTable(2, handle);
+			if (is_shadow)
+			{
+				cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
+			}
+			else
+			{
+				// テクスチャ
+				cmd_list->SetDescriptorHeaps(1, primitive_->GetTextureSRVHeap().GetAddressOf());
+				auto handle = primitive_->GetTextureSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+				cmd_list->SetGraphicsRootDescriptorTable(2, handle);
 
-			// 法線マップ
-			cmd_list->SetDescriptorHeaps(1, primitive_->GetNormalMapSRVHeap().GetAddressOf());
-			handle = primitive_->GetNormalMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-			cmd_list->SetGraphicsRootDescriptorTable(4, handle);
+				// 法線マップ
+				cmd_list->SetDescriptorHeaps(1, primitive_->GetNormalMapSRVHeap().GetAddressOf());
+				handle = primitive_->GetNormalMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+				cmd_list->SetGraphicsRootDescriptorTable(4, handle);
 
-			// ARMマップ
-			cmd_list->SetDescriptorHeaps(1, primitive_->GetArmMapSRVHeap().GetAddressOf());
-			handle = primitive_->GetArmMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-			cmd_list->SetGraphicsRootDescriptorTable(5, handle);
+				// ARMマップ
+				cmd_list->SetDescriptorHeaps(1, primitive_->GetArmMapSRVHeap().GetAddressOf());
+				handle = primitive_->GetArmMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+				cmd_list->SetGraphicsRootDescriptorTable(5, handle);
 
-			cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
+				cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
+			}
 
 			break;
 		default:

@@ -72,7 +72,7 @@ void ModelComponent::Update(float delta_time)
 	}
 }
 
-void ModelComponent::DrawPMD()
+void ModelComponent::DrawPMD(bool is_shadow)
 {
 	auto cmd_list = dx12_->GetCommandList();
 	cmd_list->IASetVertexBuffers(0, 1, &pmd_model_->vb_view);
@@ -90,18 +90,25 @@ void ModelComponent::DrawPMD()
 	// ƒ}ƒeƒŠƒAƒ‹‚Ì•`‰æ
 	auto handle = material_cbv_heap->GetGPUDescriptorHandleForHeapStart();
 	unsigned int idxOffset = 0;
-
 	auto inc_size = dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5;
-	for (auto& material : pmd_model_->material_table)
+
+	if (is_shadow)
 	{
-		cmd_list->SetGraphicsRootDescriptorTable(2, handle);
-		cmd_list->DrawIndexedInstanced(material.indices_num, 2, idxOffset, 0, 0);
-		handle.ptr += inc_size;
-		idxOffset += material.indices_num;
+		cmd_list->DrawIndexedInstanced(pmd_model_->indices_num, 1, 0, 0, 0);
+	}
+	else
+	{
+		for (auto& material : pmd_model_->material_table)
+		{
+			cmd_list->SetGraphicsRootDescriptorTable(2, handle);
+			cmd_list->DrawIndexedInstanced(material.indices_num, 1, idxOffset, 0, 0);
+			handle.ptr += inc_size;
+			idxOffset += material.indices_num;
+		}
 	}
 }
 
-void ModelComponent::DrawFBX()
+void ModelComponent::DrawFBX(bool is_shadow)
 {
 	for (auto& mesh : fbx_model_->mesh_data)
 	{
@@ -120,9 +127,16 @@ void ModelComponent::DrawFBX()
 		ID3D12DescriptorHeap* material_heaps[] = { fbx_model_->material_cbv_heap_table[mesh.material_name].Get() };
 
 		cmd_list->SetDescriptorHeaps(1, material_heaps);
-		cmd_list->SetGraphicsRootDescriptorTable(1, fbx_model_->material_cbv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
 
-		cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
+		if (is_shadow)
+		{
+			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
+		}
+		else
+		{
+			cmd_list->SetGraphicsRootDescriptorTable(1, fbx_model_->material_cbv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
+			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
+		}
 	}
 }
 

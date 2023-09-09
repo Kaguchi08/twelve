@@ -20,12 +20,16 @@ public:
 	void BeforeFBXDraw();
 	void BeforePrimitiveDraw();
 
-	void Draw();
+	void BeforeDrawPMDShadowMap();
+	void BeforeDrawFBXShadowMap();
+	void BeforeDrawPrimitiveShadowMap();
+
+	void Draw(bool is_shadow);
 
 	// •`‰æ
-	void DrawPMDModel();
-	void DrawFBXModel();
-	void DrawPrimitive();
+	void DrawPMDModel(bool is_shadow);
+	void DrawFBXModel(bool is_shadow);
+	void DrawPrimitive(bool is_shadow);
 
 	void AddModelComponent(class ModelComponent* model, ModelType type);
 	void RemoveModelComponent(class ModelComponent* model);
