@@ -283,6 +283,39 @@ HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 		return result;
 	}
 
+	// ‰e
+	result = D3DCompileFromFile(
+		L"PMDVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSShadow",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS.BytecodeLength = 0; // PS‚È‚µ
+	gps_desc.PS.pShaderBytecode = nullptr; // PS‚È‚µ
+	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
+
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
 	return result;
 }
 
@@ -380,6 +413,39 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 	gps_desc.pRootSignature = fbx_model_root_signature_.Get();
 
 	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_model_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// ‰e
+	result = result = D3DCompileFromFile(
+		L"FBXVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSShadow",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS.BytecodeLength = 0; // PS‚È‚µ
+	gps_desc.PS.pShaderBytecode = nullptr; // PS‚È‚µ
+	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
+
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -486,6 +552,39 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.pRootSignature = primitive_root_signature_.Get();
 
 	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// ‰e
+	result = D3DCompileFromFile(
+		L"PrimitiveVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSShadow",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS.BytecodeLength = 0; // PS‚È‚µ
+	gps_desc.PS.pShaderBytecode = nullptr; // PS‚È‚µ
+	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
+
+	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{

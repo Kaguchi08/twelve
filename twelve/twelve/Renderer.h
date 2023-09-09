@@ -60,6 +60,11 @@ private:
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_2_ = nullptr;
 
+	// 影用
+	ComPtr<ID3D12PipelineState> pmd_shadow_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> fbx_shadow_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_shadow_pipeline_state_ = nullptr;
+
 	// ルートシグネチャ
 	ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
