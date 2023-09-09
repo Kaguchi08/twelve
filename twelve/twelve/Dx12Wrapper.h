@@ -62,6 +62,7 @@ public:
 
 	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
 	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
+	void SetTarget(const DirectX::XMFLOAT3& target) { target_ = target; }
 
 private:
 	SIZE window_size_;
@@ -105,6 +106,7 @@ private:
 	{
 		DirectX::XMMATRIX view;
 		DirectX::XMMATRIX proj;
+		DirectX::XMMATRIX light_view;
 		DirectX::XMMATRIX shadow;
 		DirectX::XMFLOAT3 eye;
 	};

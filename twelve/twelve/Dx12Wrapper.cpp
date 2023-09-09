@@ -161,9 +161,7 @@ void Dx12Wrapper::DrawToPera1()
 
 	//SetScene();
 
-	//cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
 
-	//auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 }
 
 void Dx12Wrapper::DrawToPera2()
@@ -188,6 +186,10 @@ void Dx12Wrapper::DrawToPera2()
 	cmd_list_->SetDescriptorHeaps(1, pera_cbv_heap_.GetAddressOf());
 	handle = pera_cbv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list_->SetGraphicsRootDescriptorTable(0, handle);
+
+	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
+	handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	cmd_list_->SetGraphicsRootDescriptorTable(3, handle);
 
 	cmd_list_->SetPipelineState(renderer_->GetScreenPipelineState().Get());
 	cmd_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
@@ -257,14 +259,22 @@ void Dx12Wrapper::SetCameraSetting()
 		1000.0f
 	);
 
+	auto light_vec = DirectX::XMLoadFloat3(&light_->GetState()->direction);
+
+	auto light_pos = DirectX::XMLoadFloat3(&target_)
+		- DirectX::XMVector3Normalize(light_vec)
+		* DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&eye_))).m128_f32[0];
+
 	DirectX::XMFLOAT4 plane_normal_vec = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 	scene_matrix_->shadow = DirectX::XMMatrixShadow(
 		DirectX::XMLoadFloat4(&plane_normal_vec),
-		-DirectX::XMLoadFloat3(&light_->GetState()->direction)
+		-light_vec
 	);
 
-
+	scene_matrix_->light_view =
+		DirectX::XMMatrixLookAtLH(light_pos, DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_))
+		* DirectX::XMMatrixOrthographicLH(40, 40, 0.1f, 1000.0f);
 }
 
 void Dx12Wrapper::SetPMDSceneCB()
