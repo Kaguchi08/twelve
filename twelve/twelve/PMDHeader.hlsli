@@ -6,6 +6,7 @@ Texture2D<float4> shadowMap : register(t4);
 
 SamplerState smp : register(s0);
 SamplerState smpToon : register(s1);
+SamplerComparisonState smpShadow : register(s2);
 
 cbuffer Scene : register(b0)
 {

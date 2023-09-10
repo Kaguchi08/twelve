@@ -32,6 +32,7 @@ public:
 	void DrawToPera2();
 
 	void PreDrawShadow();
+	void SetSceneCB();
 
 	bool Clear();
 

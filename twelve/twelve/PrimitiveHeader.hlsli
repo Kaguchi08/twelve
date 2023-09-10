@@ -4,6 +4,7 @@ Texture2D<float4> armMap : register(t2);
 Texture2D<float4> shadowMap : register(t3);
 
 SamplerState smp : register(s0);
+SamplerComparisonState smpShadow : register(s1);
 
 cbuffer Scene : register(b0)
 {

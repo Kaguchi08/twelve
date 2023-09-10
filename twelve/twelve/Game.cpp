@@ -147,13 +147,13 @@ void Game::GenerateOutput()
 	dx12_->PreDrawShadow();
 	renderer_->DrawPMDModel(true);
 
-	/*renderer_->BeforeDrawFBXShadowMap();
-	dx12_->PreDrawShadow();
+	renderer_->BeforeDrawFBXShadowMap();
+	dx12_->SetSceneCB();
 	renderer_->DrawFBXModel(true);
 
 	renderer_->BeforeDrawPrimitiveShadowMap();
-	dx12_->PreDrawShadow();
-	renderer_->DrawPrimitive(true);*/
+	dx12_->SetSceneCB();
+	renderer_->DrawPrimitive(true);
 
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();

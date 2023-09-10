@@ -220,6 +220,14 @@ void Dx12Wrapper::PreDrawShadow()
 	cmd_list_->RSSetScissorRects(1, &scissor);
 }
 
+void Dx12Wrapper::SetSceneCB()
+{
+	ID3D12DescriptorHeap* heaps[] = { scene_csv_heap_.Get() };
+
+	cmd_list_->SetDescriptorHeaps(1, heaps);
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+}
+
 bool Dx12Wrapper::Clear()
 {
 	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);

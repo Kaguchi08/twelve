@@ -749,7 +749,7 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 {
 	const int num_range = 6;
 	const int num_root_param = 5;
-	const int num_samplers = 2;
+	const int num_samplers = 3;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_range] = {};
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // scene_cbv
@@ -769,6 +769,14 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 	sampler_desc[0].Init(0);
 	sampler_desc[1].Init(1, D3D12_FILTER_ANISOTROPIC, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+
+	sampler_desc[2].Init(2);
+	sampler_desc[2].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	sampler_desc[2].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[2].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[2].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[2].MaxAnisotropy = 1;
+	sampler_desc[2].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
 	root_signature_desc.Init(num_root_param, root_param, num_samplers, sampler_desc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -797,7 +805,7 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 {
 	const int num_ranges = 3;
 	const int num_root_params = 3;
-	const int num_samplers = 1;
+	const int num_samplers = 2;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
 
@@ -816,6 +824,13 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 
 	sampler_desc[0].Init(0);
+	sampler_desc[1].Init(1);
+	sampler_desc[1].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	sampler_desc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].MaxAnisotropy = 1;
+	sampler_desc[1].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
 
@@ -845,7 +860,7 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 {
 	const int num_ranges = 7;
 	const int num_root_params = 7;
-	const int num_samplers = 1;
+	const int num_samplers = 2;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
 
@@ -872,6 +887,13 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 
 	sampler_desc[0].Init(0);
+	sampler_desc[1].Init(1);
+	sampler_desc[1].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	sampler_desc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].MaxAnisotropy = 1;
+	sampler_desc[1].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
 
