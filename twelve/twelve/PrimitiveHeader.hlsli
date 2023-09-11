@@ -39,6 +39,7 @@ struct VSIn
     float4 pos : POSITION;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD;
+    float3 color : COLOR;
     float3 tangent : TANGENT;
     float3 biNormal : BINORMAL;
 };

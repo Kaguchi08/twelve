@@ -6,11 +6,12 @@
 #include "Dx12Wrapper.h"
 #include <memory>
 
-struct PlaneVertex
+struct PrimitiveVertex
 {
 	DirectX::XMFLOAT3 pos;
 	DirectX::XMFLOAT3 normal;
 	DirectX::XMFLOAT2 uv;
+	DirectX::XMFLOAT3 color;
 	DirectX::XMFLOAT3 tangent;
 	DirectX::XMFLOAT3 binormal;
 };

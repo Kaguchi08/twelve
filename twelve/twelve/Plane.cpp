@@ -12,17 +12,40 @@ Plane::~Plane()
 
 bool Plane::CreateVertexBuffer(ID3D12Device* device)
 {
-	PlaneVertex vertices[] = {
-		{ { -128.0f, -0.1f, -128.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }, // 左下
-		{ { 128.0f, -0.1f, -128.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },  // 右下
-		{ { 128.0f, -0.1f, 128.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },   // 右上
-		{ { -128.0f, -0.1f, 128.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },  // 左上
-	};
+	std::vector<PrimitiveVertex> vertices(4);
 
-	vertex_num_ = sizeof(vertices) / sizeof(vertices[0]);
+	// 左下
+	vertices[0].pos = { -128.0f, -0.1f, -128.0f };
+	vertices[0].normal = { 0.0f, 1.0f, 0.0f };
+	vertices[0].uv = { 0.0f, 0.0f };
+	vertices[0].tangent = { 1.0f, 0.0f, 0.0f };
+	vertices[0].binormal = { 0.0f, 0.0f, 1.0f };
+
+	// 右下
+	vertices[1].pos = { 128.0f, -0.1f, -128.0f };
+	vertices[1].normal = { 0.0f, 1.0f, 0.0f };
+	vertices[1].uv = { 1.0f, 0.0f };
+	vertices[1].tangent = { 1.0f, 0.0f, 0.0f };
+	vertices[1].binormal = { 0.0f, 0.0f, 1.0f };
+
+	// 右上
+	vertices[2].pos = { 128.0f, -0.1f, 128.0f };
+	vertices[2].normal = { 0.0f, 1.0f, 0.0f };
+	vertices[2].uv = { 1.0f, 1.0f };
+	vertices[2].tangent = { 1.0f, 0.0f, 0.0f };
+	vertices[2].binormal = { 0.0f, 0.0f, 1.0f };
+
+	// 左上
+	vertices[3].pos = { -128.0f, -0.1f, 128.0f };
+	vertices[3].normal = { 0.0f, 1.0f, 0.0f };
+	vertices[3].uv = { 0.0f, 1.0f };
+	vertices[3].tangent = { 1.0f, 0.0f, 0.0f };
+	vertices[3].binormal = { 0.0f, 0.0f, 1.0f };
+
+	vertex_num_ = vertices.size();
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertices));
+	auto buffer_desc = CD3DX12_RESOURCE_DESC::Buffer(vertex_num_ * sizeof(PrimitiveVertex));
 
 	auto result = device->CreateCommittedResource(
 		&heap_prop,
@@ -40,7 +63,7 @@ bool Plane::CreateVertexBuffer(ID3D12Device* device)
 	}
 
 	// バッファへの書き込み
-	PlaneVertex* map = nullptr;
+	PrimitiveVertex* map = nullptr;
 	result = vertex_buffer_->Map(0, nullptr, (void**)&map);
 	if (FAILED(result))
 	{
@@ -54,8 +77,8 @@ bool Plane::CreateVertexBuffer(ID3D12Device* device)
 
 	// 頂点バッファビューの設定
 	vertex_buffer_view_.BufferLocation = vertex_buffer_->GetGPUVirtualAddress();
-	vertex_buffer_view_.SizeInBytes = sizeof(vertices);
-	vertex_buffer_view_.StrideInBytes = sizeof(PlaneVertex);
+	vertex_buffer_view_.SizeInBytes = vertex_num_ * sizeof(PrimitiveVertex);
+	vertex_buffer_view_.StrideInBytes = sizeof(PrimitiveVertex);
 
 	return true;
 }
