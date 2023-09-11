@@ -803,8 +803,8 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 
 HRESULT Renderer::CreateFBXModelRootSignature()
 {
-	const int num_ranges = 3;
-	const int num_root_params = 3;
+	const int num_ranges = 4;
+	const int num_root_params = 4;
 	const int num_samplers = 2;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -813,6 +813,7 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // シーン関連 
 	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // マテリアル関連
 	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // シャドウマップ用
+	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // テクスチャ
 
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
@@ -820,6 +821,7 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 	root_param[0].InitAsDescriptorTable(1, &range[0]);
 	root_param[1].InitAsDescriptorTable(1, &range[1]);
 	root_param[2].InitAsDescriptorTable(1, &range[2]);
+	root_param[3].InitAsDescriptorTable(1, &range[3]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 

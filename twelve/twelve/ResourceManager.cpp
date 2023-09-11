@@ -152,6 +152,8 @@ ID3D12Resource* ResourceManager::CreateTextureFromFile(const char* tex_path)
 		return nullptr;
 	}
 
+	teexture_table_[tex_path] = texBuff;
+
 	return texBuff;
 }
 

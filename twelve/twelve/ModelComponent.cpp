@@ -124,9 +124,18 @@ void ModelComponent::DrawFBX(bool is_shadow)
 			assert(0);
 		}
 
-		ID3D12DescriptorHeap* material_heaps[] = { fbx_model_->material_cbv_heap_table[mesh.material_name].Get() };
+		// テクスチャをセット
+		result = CreateTextureView(mesh.material_name);
+		if (FAILED(result))
+		{
+			assert(0);
+		}
 
+		ID3D12DescriptorHeap* material_heaps[] = { fbx_model_->material_cbv_heap_table[mesh.material_name].Get() };
 		cmd_list->SetDescriptorHeaps(1, material_heaps);
+
+		ID3D12DescriptorHeap* texture_heaps[] = { fbx_model_->texture_srv_heap_table[mesh.material_name].Get() };
+		cmd_list->SetDescriptorHeaps(1, texture_heaps);
 
 		if (is_shadow)
 		{
@@ -135,6 +144,7 @@ void ModelComponent::DrawFBX(bool is_shadow)
 		else
 		{
 			cmd_list->SetGraphicsRootDescriptorTable(1, fbx_model_->material_cbv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
+			cmd_list->SetGraphicsRootDescriptorTable(3, fbx_model_->texture_srv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
 			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
 		}
 	}
@@ -284,6 +294,43 @@ HRESULT ModelComponent::CreateMaterialResourceAndView(std::string material_name)
 	dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, handle);
 
 	return S_OK;
+}
+
+HRESULT ModelComponent::CreateTextureView(std::string material_name)
+{
+	auto texture_resource_ = fbx_model_->texture_resource_table[material_name];
+
+	if (texture_resource_ == nullptr)
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタヒープの作成
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.NumDescriptors = 1;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heap_desc.NodeMask = 0;
+
+	auto result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(fbx_model_->texture_srv_heap_table[material_name].ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Format = texture_resource_->GetDesc().Format;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	dx12_->GetDevice()->CreateShaderResourceView(texture_resource_.Get(), &srv_desc, fbx_model_->texture_srv_heap_table[material_name]->GetCPUDescriptorHandleForHeapStart());
+
+	return true;
 }
 
 void ModelComponent::MotionUpdate(float delta_time)

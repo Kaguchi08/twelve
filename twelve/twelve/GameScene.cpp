@@ -50,7 +50,8 @@ bool GameScene::Initialize(const char* file_name)
 	player_model_ = new PlayerActor(this);
 	player_model_->SetPMDModel(file_name);
 
-	std::string fbx_model_path = "../Assets/fbx/Plane.fbx";
+	std::string fbx_model_path = "../Assets/fbx/Cube03.fbx";
+	//std::string fbx_model_path = "../Assets/fbx/building_04.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/forest_nature_set_all_in.fbx";
 	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
 	//std::string fbx_model_path = "../Assets/fbx/France_GameMap.fbx";

@@ -13,11 +13,11 @@ public:
 };
 
 /// <summary>
-	/// モデルのパスとテクスチャのパスから合成パスを取得する
-	/// </summary>
-	/// <param name="modelPath"></param>
-	/// <param name="texPath"></param>
-	/// <returns></returns>
+/// モデルのパスとテクスチャのパスから合成パスを取得する
+/// </summary>
+/// <param name="modelPath"></param>
+/// <param name="texPath"></param>
+/// <returns></returns>
 extern std::string GetTexturePathFromModelAndTexPath(const std::string& modelPath, const char* tex_path);
 
 /// <summary>
@@ -88,3 +88,7 @@ extern unsigned int(AligmentedValue(unsigned int size, unsigned int alignment = 
 extern std::vector<float> GetGaussianWeights(size_t count, float s);
 
 float GetYFromXOnBezier(float x, const DirectX::XMFLOAT2& a, const DirectX::XMFLOAT2& b, uint8_t n = 12);
+
+extern void Split(char split_char, char* buffer, std::vector<std::string>& out);
+
+extern void Replace(char search_char, char replace_char, char* buffer);

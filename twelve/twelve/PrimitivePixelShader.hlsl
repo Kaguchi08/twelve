@@ -212,14 +212,19 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     
     float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
     //float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
+    
+    if (shadowMapUV.x > 0.0f && shadowMapUV.x < 1.0f
+        && shadowMapUV.y > 0.0f && shadowMapUV.y < 1.0f)
+    {
+        float shadow = shadowMap.SampleCmpLevelZero(smpShadow, shadowMapUV, zInLVP - 0.001f);
+    
+        // 影が落ちているときの色を計算する
+        float3 shadowColor = finalColor.xyz * 0.5f;
+    
+        // 遮蔽率を使って線形補間
+        finalColor.xyz = lerp(shadowColor, finalColor.xyz, shadow);
+    }
 
-    float shadow = shadowMap.SampleCmpLevelZero(smpShadow, shadowMapUV, zInLVP - 0.001f);
-    
-    // 影が落ちているときの色を計算する
-    float3 shadowColor = finalColor.xyz * 0.5f;
-    
-    // 遮蔽率を使って線形補間
-    finalColor.xyz = lerp(shadowColor, finalColor.xyz, shadow);
     
     // 以下は法線マップを利用したライティングの計算
     

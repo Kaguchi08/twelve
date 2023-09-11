@@ -964,7 +964,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 bool Dx12Wrapper::CreateEffectResourceAndView()
 {
 	//effect_resource_ = CreateTextureFromFile("../normal/crack_n.png");
-	effect_resource_ = resource_manager_->CreateTextureFromFile("../normal/normalmap.jpg");
+	effect_resource_ = resource_manager_->GetTextureFromPath("../normal/normalmap.jpg");
 
 	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, effect_srv_heap_);
 

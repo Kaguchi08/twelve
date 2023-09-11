@@ -110,7 +110,7 @@ bool Plane::CreateIndexBuffer(ID3D12Device* device)
 
 bool Plane::CreateTextureAndView(Dx12Wrapper* dx12, const char* file_name)
 {
-	texture_resource_ = dx12->GetResourceManager()->CreateTextureFromFile(file_name);
+	texture_resource_ = dx12->GetResourceManager()->GetTextureFromPath(file_name);
 
 	if (texture_resource_ == nullptr)
 	{
@@ -147,7 +147,7 @@ bool Plane::CreateTextureAndView(Dx12Wrapper* dx12, const char* file_name)
 
 bool Plane::CreateNormalMapAndView(Dx12Wrapper* dx12, const char* file_name)
 {
-	normal_map_resource_ = dx12->GetResourceManager()->CreateTextureFromFile(file_name);
+	normal_map_resource_ = dx12->GetResourceManager()->GetTextureFromPath(file_name);
 
 	if (normal_map_resource_ == nullptr)
 	{
@@ -184,7 +184,7 @@ bool Plane::CreateNormalMapAndView(Dx12Wrapper* dx12, const char* file_name)
 
 bool Plane::CreateArmMapAndView(Dx12Wrapper* dx12, const char* file_name)
 {
-	arm_map_resource_ = dx12->GetResourceManager()->CreateTextureFromFile(file_name);
+	arm_map_resource_ = dx12->GetResourceManager()->GetTextureFromPath(file_name);
 
 	if (normal_map_resource_ == nullptr)
 	{

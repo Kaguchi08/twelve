@@ -45,6 +45,8 @@ private:
 
 	// FBXモデルのマテリアル関連
 	HRESULT CreateMaterialResourceAndView(std::string material_name);
+	// FBXモデルのテクスチャ関連
+	HRESULT CreateTextureView(std::string material_name);
 
 	// モーション
 	void MotionUpdate(float delta_time);

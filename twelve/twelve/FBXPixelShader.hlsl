@@ -2,7 +2,7 @@
 
 float4 main(VSOut input) : SV_TARGET
 {
-    float4 color = float4(1.0, 1.0, 1.0, 1.0);
+    float4 color = tex.Sample(smp, input.uv);
 
     //color *= diffuse;
     

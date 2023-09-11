@@ -793,6 +793,8 @@ bool ModelLoader::CreateFBXMesh(FbxMesh* mesh, struct FBXModel* model)
 	LoadIndices(mesh, mesh_data);
 	LoadVertices(mesh, mesh_data);
 	LoadNormals(mesh, mesh_data);
+	LoadUV(mesh, mesh_data);
+
 	SetMaterialName(mesh, mesh_data);
 
 	model->mesh_data.push_back(mesh_data);
@@ -944,6 +946,27 @@ void ModelLoader::LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data)
 	}
 }
 
+void ModelLoader::LoadUV(FbxMesh* mesh, FBXMeshData& mesh_data)
+{
+	FbxStringList uvset_names;
+	// UVSetの名前リストを取得
+	mesh->GetUVSetNames(uvset_names);
+
+	FbxArray<FbxVector2> uv_buffer;
+
+	// UVSetの名前からUVSetを取得する
+	mesh->GetPolygonVertexUVs(uvset_names.GetStringAt(0), uv_buffer);
+
+	for (int i = 0; i < uv_buffer.Size(); i++)
+	{
+		FbxVector2& uv = uv_buffer[i];
+
+		// そのまま使用して問題ない
+		mesh_data.vertices[i].uv[0] = (float)uv[0];
+		mesh_data.vertices[i].uv[1] = (float)(1.0 - uv[1]);
+	}
+}
+
 void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 {
 	FBXMaterial entry_material;
@@ -1022,6 +1045,76 @@ void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 	model->material_const_buffer_table[material->GetName()] = nullptr;
 	// ディスクリプタヒープを初期化しておく
 	model->material_cbv_heap_table[material->GetName()] = nullptr;
+
+	// テクスチャの読み込み
+	prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+	FbxFileTexture* texture = nullptr;
+	std::string tex_path;
+
+	int texture_num = prop.GetSrcObjectCount<FbxFileTexture>();
+	if (texture_num > 0)
+	{
+		texture = prop.GetSrcObject<FbxFileTexture>(0);
+	}
+	else
+	{
+		int layer_num = prop.GetSrcObjectCount<FbxLayeredTexture>();
+		if (layer_num > 0)
+		{
+			texture = prop.GetSrcObject<FbxFileTexture>(0);
+		}
+	}
+
+	if (texture != nullptr && CreateTexturePath(texture, tex_path))
+	{
+		// テクスチャの読み込み
+		model->texture_resource_table[material->GetName()] = dx12_.GetResourceManager()->GetTextureFromPath(tex_path.c_str());
+	}
+	else
+	{
+		model->texture_resource_table[material->GetName()] = nullptr;
+	}
+
+	// ディスクリプタヒープを初期化しておく
+	model->texture_srv_heap_table[material->GetName()] = nullptr;
+}
+
+bool ModelLoader::CreateTexturePath(FbxFileTexture* texture, std::string& tex_path)
+{
+	if (texture == nullptr)
+	{
+		return false;
+	}
+
+	// テクスチャのファイル名を取得
+	std::string file_path = texture->GetRelativeFileName();
+
+	// ファイル分解
+	char buffer[256];
+	ZeroMemory(buffer, sizeof(char) * 256);
+	memcpy(buffer, file_path.c_str(), sizeof(char) * 256);
+
+	// 記号統一
+	Replace('\\', '/', buffer);
+	std::vector<std::string> split_list;
+	std::string replace_file_name = buffer;
+	// 「/」で分解
+	Split('/', buffer, split_list);
+
+	std::string root_path = "../Assets/fbx/Texture/";
+
+	// 文字化け対策
+	char* file_name;
+	size_t size = 0;
+	FbxUTF8ToAnsi(split_list[split_list.size() - 1].c_str(), file_name, &size);
+
+	// ファイルパスの作成
+	tex_path = root_path + file_name;
+
+	// 拡張子の変更
+	tex_path.replace(tex_path.end() - 3, tex_path.end(), "png");
+
+	return true;
 }
 
 void ModelLoader::SetMaterialName(FbxMesh* mesh, FBXMeshData& mesh_data)

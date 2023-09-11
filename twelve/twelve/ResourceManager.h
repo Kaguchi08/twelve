@@ -27,7 +27,6 @@ public:
 	std::shared_ptr<FBXModel> LoadFBXModel(const char* file_path);
 	std::shared_ptr<VMDAnimation> LoadVMDAnimation(const char* file_path);
 
-	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
 
 private:
 	ComPtr<ID3D12Device> dev_ = nullptr;
@@ -41,5 +40,6 @@ private:
 	using LoadLambda_t = std::function<HRESULT(const std::wstring& path, DirectX::TexMetadata*, DirectX::ScratchImage&)>;
 	std::map<std::string, LoadLambda_t> mLoadLambdaTable;
 
+	ID3D12Resource* CreateTextureFromFile(const char* tex_path);
 	void CreateTextureLoaderTable();
 };
