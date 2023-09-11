@@ -29,6 +29,11 @@ cbuffer Light : register(b2)
     float3 ambientLight;
 };
 
+cbuffer Shadow : register(b3)
+{
+    matrix world;
+};
+
 struct VSIn
 {
     float4 pos : POSITION;
@@ -48,7 +53,3 @@ struct PSIn
     float3 biNormal : BINORMAL;
     float4 lightPos : LIGHTPOS;
 };
-
-float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float3 normal);
-float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float3 normal);
-float3 CalcLigFromDirectionLight(PSIn psIn, float3 normal);

@@ -63,8 +63,9 @@ bool GameScene::Initialize(const char* file_name)
 	plane_info->normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
 	plane_info->arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";
 
-	plane_info->plane_actor = new PlaneActor(this);
+	auto plane_actor = new PlaneActor(this);
 
+	plane_info->plane_actor = plane_actor;
 
 	plane_info_table_.push_back(plane_info);
 

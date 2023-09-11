@@ -1,40 +1,5 @@
 #include "PMDHeader.hlsli"
 
-float4 PSMain(PSIn psIn) : SV_TARGET
-{
-    // ディレクションライトによるライティングを計算する
-    float3 directionLig = CalcLigFromDirectionLight(psIn);
-    
-    // スフィアマップ用UV
-    float2 spUV = (psIn.normalInView.xy * float2(1, -1) + float2(1, 1)) * 0.5;
-    float4 sphCol = sph.Sample(smp, spUV);
-    float4 spaCol = spa.Sample(smp, spUV);
-    
-    float4 finalColor = tex.Sample(smp, psIn.uv);
-    float3 finalLig = directionLig + ambientLight;
-    
-    // スフィアマップ
-    finalColor *= sphCol;
-    finalColor += spaCol;
-    
-    // 光を乗算する
-    finalColor.xyz *= finalLig;
-    
-    float2 shadowMapUV = psIn.lightPos.xy / psIn.lightPos.w;
-    shadowMapUV *= float2(0.5f, -0.5f);
-    shadowMapUV += 0.5f;
-    
-    float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
-    float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
-    
-    if ((zInLVP - 0.001f) > zInShadowMap)
-    {
-        finalColor.xyz *= 0.5f;
-    }
-    
-    return finalColor;
-}
-
 float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal)
 {
     // ピクセルの法線とライトの方向の内積を計算する
@@ -90,4 +55,39 @@ float3 CalcLigFromDirectionLight(PSIn psIn)
     specDirection *= specular;
     
     return diffDirection + specDirection;
+}
+
+float4 PSMain(PSIn psIn) : SV_TARGET
+{
+    // ディレクションライトによるライティングを計算する
+    float3 directionLig = CalcLigFromDirectionLight(psIn);
+    
+    // スフィアマップ用UV
+    float2 spUV = (psIn.normalInView.xy * float2(1, -1) + float2(1, 1)) * 0.5;
+    float4 sphCol = sph.Sample(smp, spUV);
+    float4 spaCol = spa.Sample(smp, spUV);
+    
+    float4 finalColor = tex.Sample(smp, psIn.uv);
+    float3 finalLig = directionLig + ambientLight;
+    
+    // スフィアマップ
+    finalColor *= sphCol;
+    finalColor += spaCol;
+    
+    // 光を乗算する
+    finalColor.xyz *= finalLig;
+    
+    float2 shadowMapUV = psIn.lightPos.xy / psIn.lightPos.w;
+    shadowMapUV *= float2(0.5f, -0.5f);
+    shadowMapUV += 0.5f;
+    
+    float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
+    float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
+    
+    if ((zInLVP - 0.001f) > zInShadowMap)
+    {
+        finalColor.xyz *= 0.5f;
+    }
+    
+    return finalColor;
 }

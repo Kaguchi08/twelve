@@ -4,10 +4,10 @@ PSIn VSMain(VSIn vsIn)
 {
     PSIn psIn;
     
-    // todo ワールド行列
+    psIn.svpos = mul(world, vsIn.pos);
     
-    psIn.worldPos = vsIn.pos;
-    psIn.svpos = mul(view, vsIn.pos);
+    psIn.worldPos = psIn.svpos;
+    psIn.svpos = mul(view, psIn.svpos);
     psIn.svpos = mul(proj, psIn.svpos);
     psIn.normal = normalize(vsIn.normal);
     
@@ -23,7 +23,7 @@ PSIn VSMain(VSIn vsIn)
 
 float4 VSShadow(VSIn vsIn) : SV_POSITION
 {
-    // todo ワールド行列
+    vsIn.pos = mul(world, vsIn.pos);
     
     return mul(lightView, vsIn.pos);
 }

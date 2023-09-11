@@ -146,8 +146,6 @@ bool Dx12Wrapper::PreDrawToPera()
 
 	cmd_list_->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	/*SetScene();*/
-
 	return true;
 }
 
@@ -158,10 +156,6 @@ void Dx12Wrapper::DrawToPera1()
 
 	cmd_list_->RSSetViewports(1, view_port_.get());
 	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
-
-	//SetScene();
-
-
 }
 
 void Dx12Wrapper::DrawToPera2()

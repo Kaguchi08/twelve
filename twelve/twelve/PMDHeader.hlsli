@@ -57,7 +57,3 @@ struct PSIn
     uint instNo : SV_InstanceID;
     float4 lightPos : LIGHTPOS;
 };
-
-float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float4 normal);
-float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float4 normal);
-float3 CalcLigFromDirectionLight(PSIn psIn);
