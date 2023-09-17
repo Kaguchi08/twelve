@@ -7,7 +7,7 @@
 #include <string>
 #include <algorithm>
 
-Renderer::Renderer(class Dx12Wrapper& dx)
+Renderer::Renderer(class Dx12Wrapper* dx)
 	: dx12_(dx)
 {
 }
@@ -36,9 +36,26 @@ void Renderer::Initialize()
 	grad_texture_ = CreateGradTexture();
 }
 
+void Renderer::DrawToShadowMap()
+{
+	PrepareShadowMap();
+
+	// PMD
+	BeforeDrawPMDShadowMap();
+	DrawPMDModel(true);
+
+	// FBX
+	BeforeDrawFBXShadowMap();
+	DrawFBXModel(true);
+
+	// Primitive
+	BeforeDrawPrimitiveShadowMap();
+	DrawPrimitive(true);
+}
+
 void Renderer::BeforePMDDraw()
 {
-	auto command_list = dx12_.GetCommandList();
+	auto command_list = dx12_->GetCommandList();
 
 	command_list->SetPipelineState(pmd_model_pipeline_state_.Get());
 	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
@@ -46,7 +63,7 @@ void Renderer::BeforePMDDraw()
 
 void Renderer::BeforeFBXDraw()
 {
-	auto command_list = dx12_.GetCommandList();
+	auto command_list = dx12_->GetCommandList();
 
 	command_list->SetPipelineState(fbx_model_pipeline_state_.Get());
 	command_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
@@ -54,33 +71,9 @@ void Renderer::BeforeFBXDraw()
 
 void Renderer::BeforePrimitiveDraw()
 {
-	auto command_list = dx12_.GetCommandList();
+	auto command_list = dx12_->GetCommandList();
 
 	command_list->SetPipelineState(primitive_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
-}
-
-void Renderer::BeforeDrawPMDShadowMap()
-{
-	auto command_list = dx12_.GetCommandList();
-
-	command_list->SetPipelineState(pmd_shadow_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
-}
-
-void Renderer::BeforeDrawFBXShadowMap()
-{
-	auto command_list = dx12_.GetCommandList();
-
-	command_list->SetPipelineState(fbx_shadow_pipeline_state_.Get());
-	command_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
-}
-
-void Renderer::BeforeDrawPrimitiveShadowMap()
-{
-	auto command_list = dx12_.GetCommandList();
-
-	command_list->SetPipelineState(primitive_shadow_pipeline_state_.Get());
 	command_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
 }
 
@@ -140,7 +133,7 @@ ID3D12Resource* Renderer::CreateDefaultTexture(size_t width, size_t height)
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_CPU_PAGE_PROPERTY_WRITE_BACK, D3D12_MEMORY_POOL_L0);
 
 	ID3D12Resource* tex_buffer = nullptr;
-	auto result = dx12_.GetDevice()->CreateCommittedResource(
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
@@ -299,7 +292,7 @@ HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	gps_desc.pRootSignature = pmd_model_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_model_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_model_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -332,7 +325,7 @@ HRESULT Renderer::CreatePMDModelGraphicsPipeline()
 	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(pmd_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -436,7 +429,7 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	gps_desc.pRootSignature = fbx_model_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_model_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_model_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -469,7 +462,7 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -576,7 +569,7 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	gps_desc.pRootSignature = primitive_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -609,7 +602,7 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.NumRenderTargets = 0; // RTV‚È‚µ
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -701,7 +694,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 	gps_desc.pRootSignature = screen_root_signature_.Get();
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_.ReleaseAndGetAddressOf())
 	);
@@ -732,7 +725,7 @@ HRESULT Renderer::CreateScreenGraphicsPipeline()
 
 	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
 
-	result = dx12_.GetDevice()->CreateGraphicsPipelineState(
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(
 		&gps_desc,
 		IID_PPV_ARGS(screen_pipeline_state_2_.ReleaseAndGetAddressOf())
 	);
@@ -792,7 +785,7 @@ HRESULT Renderer::CreatePMDModelRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(pmd_model_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(pmd_model_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(SUCCEEDED(result));
@@ -849,7 +842,7 @@ HRESULT Renderer::CreateFBXModelRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(fbx_model_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(fbx_model_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(0);
@@ -914,7 +907,7 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(primitive_root_signature_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(primitive_root_signature_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		assert(0);
@@ -997,7 +990,7 @@ HRESULT Renderer::CreateScreenRootSignature()
 		return result;
 	}
 
-	result = dx12_.GetDevice()->CreateRootSignature(
+	result = dx12_->GetDevice()->CreateRootSignature(
 		0,
 		root_sig_blob->GetBufferPointer(),
 		root_sig_blob->GetBufferSize(),
@@ -1035,6 +1028,63 @@ void Renderer::DrawPrimitive(bool is_shadow)
 	{
 		primitive->Draw(is_shadow);
 	}
+}
+
+void Renderer::PrepareShadowMap()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	auto handle = dx12_->GetDSVHeap()->GetCPUDescriptorHandleForHeapStart();
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	cmd_list->OMSetRenderTargets(0, nullptr, false, &handle);
+
+	cmd_list->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 1024, 1024);
+	cmd_list->RSSetViewports(1, &viewport);
+
+	D3D12_RECT scissor = CD3DX12_RECT(0, 0, 1024, 1024);
+	cmd_list->RSSetScissorRects(1, &scissor);
+}
+
+void Renderer::BeforeDrawPMDShadowMap()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(pmd_shadow_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(pmd_model_root_signature_.Get());
+
+	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };
+
+	cmd_list->SetDescriptorHeaps(1, heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Renderer::BeforeDrawFBXShadowMap()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(fbx_shadow_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+
+	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };
+
+	cmd_list->SetDescriptorHeaps(1, heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Renderer::BeforeDrawPrimitiveShadowMap()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(primitive_shadow_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
+
+	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };
+
+	cmd_list->SetDescriptorHeaps(1, heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
 }
 
 bool Renderer::CheckShaderCompileResult(HRESULT result, ID3DBlob* error)

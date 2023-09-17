@@ -44,7 +44,7 @@ bool Game::Initialize()
 		return false;
 	}
 
-	renderer_.reset(new Renderer(*dx12_));
+	renderer_.reset(new Renderer(dx12_.get()));
 	renderer_->Initialize();
 
 	input_system_ = new InputSystem(this);
@@ -143,17 +143,7 @@ void Game::GenerateOutput()
 	dx12_->SetCameraSetting();
 
 	// ‰e‚Ì•`‰æ
-	renderer_->BeforeDrawPMDShadowMap();
-	dx12_->PreDrawShadow();
-	renderer_->DrawPMDModel(true);
-
-	renderer_->BeforeDrawFBXShadowMap();
-	dx12_->SetSceneCB();
-	renderer_->DrawFBXModel(true);
-
-	renderer_->BeforeDrawPrimitiveShadowMap();
-	dx12_->SetSceneCB();
-	renderer_->DrawPrimitive(true);
+	renderer_->DrawToShadowMap();
 
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();

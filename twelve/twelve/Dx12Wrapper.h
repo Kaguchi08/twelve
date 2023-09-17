@@ -56,6 +56,10 @@ public:
 
 	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
 
+	ComPtr<ID3D12DescriptorHeap> GetRTVHeap() { return rtv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
+
 	// リソースマネージャーを返す
 	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
 
@@ -109,7 +113,7 @@ private:
 
 	// シーンを構成するバッファ周り
 	ComPtr<ID3D12Resource> scene_const_buff_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> scene_csv_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> scene_cbv_heap_ = nullptr;
 
 	struct SceneMatrix
 	{
@@ -161,7 +165,8 @@ private:
 	HRESULT CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask = 0);
 	HRESULT CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle);
 
-	// テクスチャを張り付けるポリゴン
+	// オフスクリーンレンダリング
+	// todo: 配列にする
 	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
 	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> screen_rtv_heap_;
@@ -178,7 +183,7 @@ private:
 	ComPtr<ID3D12Resource> effect_resource_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> effect_srv_heap_;
 
-	bool CreatePeraResourceAndView();
+	bool CreateScreenResourceAndView();
 	bool CreatePeraConstBufferAndView();
 	bool CreateEffectResourceAndView();
 	bool CreatePeraVerTex();

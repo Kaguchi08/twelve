@@ -20,7 +20,7 @@ public:
 	bool LoadVMDFile(const char* file_name, struct VMDAnimation* anim);
 
 private:
-	class Dx12Wrapper& dx12_;
+	class Dx12Wrapper* dx12_;
 	class Renderer& renderer_;
 
 	HRESULT CreatePMDMaterialData(struct PMDModel* model);

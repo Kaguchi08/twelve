@@ -3,6 +3,16 @@
 #include <dxgi1_6.h>
 #include "Dx12Wrapper.h"
 
+struct PrimitiveVertex
+{
+	DirectX::XMFLOAT3 pos;
+	DirectX::XMFLOAT3 normal;
+	DirectX::XMFLOAT2 uv;
+	DirectX::XMFLOAT3 color;
+	DirectX::XMFLOAT3 tangent;
+	DirectX::XMFLOAT3 binormal;
+};
+
 class Primitive
 {
 public:

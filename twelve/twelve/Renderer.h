@@ -13,16 +13,16 @@ using Microsoft::WRL::ComPtr;
 class Renderer
 {
 public:
-	Renderer(class Dx12Wrapper& dx);
+	Renderer(class Dx12Wrapper* dx);
 	~Renderer();
 	void Initialize();
+
+	// シャドウマップへの描画
+	void DrawToShadowMap();
+
 	void BeforePMDDraw();
 	void BeforeFBXDraw();
 	void BeforePrimitiveDraw();
-
-	void BeforeDrawPMDShadowMap();
-	void BeforeDrawFBXShadowMap();
-	void BeforeDrawPrimitiveShadowMap();
 
 	void Draw(bool is_shadow);
 
@@ -37,7 +37,7 @@ public:
 	void AddPrimitiveComponent(class PrimitiveComponent* primitive);
 	void RemovePrimitiveComponent(class PrimitiveComponent* primitive);
 
-	class Dx12Wrapper& GetDx() { return dx12_; }
+	class Dx12Wrapper* GetDx() { return dx12_; }
 
 	// 汎用テクスチャ
 	ComPtr<ID3D12Resource> white_texture_ = nullptr;
@@ -56,7 +56,7 @@ public:
 
 
 private:
-	class Dx12Wrapper& dx12_;
+	class Dx12Wrapper* dx12_;
 	// パイプライン
 	ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
@@ -98,5 +98,12 @@ private:
 	HRESULT CreatePrimitiveRootSignature();
 	HRESULT CreateScreenRootSignature();
 
+	// シャドウマップ
+	void PrepareShadowMap();
+	void BeforeDrawPMDShadowMap();
+	void BeforeDrawFBXShadowMap();
+	void BeforeDrawPrimitiveShadowMap();
+
+	// Helperに移動してもいいかも
 	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
 };

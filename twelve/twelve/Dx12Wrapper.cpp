@@ -110,7 +110,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (!CreatePeraResourceAndView())
+	if (!CreateScreenResourceAndView())
 	{
 		return false;
 	}
@@ -202,10 +202,10 @@ void Dx12Wrapper::PreDrawShadow()
 
 	cmd_list_->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	ID3D12DescriptorHeap* heaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 1024, 1024);
 	cmd_list_->RSSetViewports(1, &viewport);
@@ -216,10 +216,10 @@ void Dx12Wrapper::PreDrawShadow()
 
 void Dx12Wrapper::SetSceneCB()
 {
-	ID3D12DescriptorHeap* heaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
 bool Dx12Wrapper::Clear()
@@ -302,10 +302,10 @@ void Dx12Wrapper::SetCameraSetting()
 
 void Dx12Wrapper::SetPMDBuffer()
 {
-	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
 
@@ -322,10 +322,10 @@ void Dx12Wrapper::SetPMDBuffer()
 
 void Dx12Wrapper::SetFBXBuffer()
 {
-	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	/*ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
 
@@ -342,10 +342,10 @@ void Dx12Wrapper::SetFBXBuffer()
 
 void Dx12Wrapper::SetPrimitiveBuffer()
 {
-	ID3D12DescriptorHeap* scene_heaps[] = { scene_csv_heap_.Get() };
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
 
@@ -444,11 +444,6 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 	auto handle = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 	auto inc_size = dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	// SRGBレンダーターゲットビューの設定
-	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
 	for (size_t i = 0; i < swap_chain_desc.BufferCount; ++i)
 	{
 		result = swap_chain_->GetBuffer(i, IID_PPV_ARGS(&back_buffers_[i]));
@@ -459,7 +454,7 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 			return result;
 		}
 
-		result = CreateRenderTargetViewWrapper(back_buffers_[i], back_buffers_[i]->GetDesc().Format, handle);
+		result = CreateRenderTargetViewWrapper(back_buffers_[i], DXGI_FORMAT_R8G8B8A8_UNORM, handle); // ガンマ補正をする場合はDXGI_FORMAT_R8G8B8A8_UNORM_SRGBを指定する
 		handle.ptr += inc_size;
 	}
 
@@ -692,7 +687,7 @@ HRESULT Dx12Wrapper::CreateSceneView()
 		return result;
 	}
 
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_csv_heap_);
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_cbv_heap_);
 
 	if (FAILED(result))
 	{
@@ -700,7 +695,7 @@ HRESULT Dx12Wrapper::CreateSceneView()
 		return result;
 	}
 
-	auto handle = scene_csv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto handle = scene_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
 	view_desc.BufferLocation = scene_const_buff_->GetGPUVirtualAddress();
@@ -776,7 +771,7 @@ HRESULT Dx12Wrapper::CreateLight()
 	return result;
 }
 
-bool Dx12Wrapper::CreatePeraResourceAndView()
+bool Dx12Wrapper::CreateScreenResourceAndView()
 {
 	// 使っているバックバッファーの情報を利用
 	auto& b_buff = back_buffers_[0];
@@ -873,7 +868,8 @@ HRESULT Dx12Wrapper::InitializeDebug()
 
 HRESULT Dx12Wrapper::InitializeRenderer()
 {
-	renderer_.reset(new Renderer(*this));
+	// 修正予定
+	renderer_.reset(new Renderer(this));
 	renderer_->Initialize();
 	model_loader_.reset(new ModelLoader(*renderer_));
 	resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));

@@ -92,7 +92,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(vertices[0]));
 
-	auto result = dx12_.GetDevice()->CreateCommittedResource(
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
@@ -141,7 +141,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	// インデックスバッファの作成
 	res_desc = CD3DX12_RESOURCE_DESC::Buffer(indices.size() * sizeof(indices[0]));
 
-	result = dx12_.GetDevice()->CreateCommittedResource(
+	result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
@@ -202,7 +202,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 		sprintf_s(toonFileName, 32, "toon%02d.bmp", material_table[i].toon_idx + 1);
 		toonFilePath += toonFileName;
 
-		model->toon_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(toonFilePath.c_str());
+		model->toon_resources[i] = dx12_->GetResourceManager()->GetTextureFromPath(toonFilePath.c_str());
 
 		if (strlen(material_table[i].tex_path) == 0)
 		{
@@ -262,19 +262,19 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 		if (texFileName != "")
 		{
 			auto texFilePath = GetTexturePathFromModelAndTexPath(strModelPath, texFileName.c_str());
-			model->texture_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(texFilePath.c_str());
+			model->texture_resources[i] = dx12_->GetResourceManager()->GetTextureFromPath(texFilePath.c_str());
 		}
 
 		if (sphFileName != "")
 		{
 			auto sphFilePath = GetTexturePathFromModelAndTexPath(strModelPath, sphFileName.c_str());
-			model->sph_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(sphFilePath.c_str());
+			model->sph_resources[i] = dx12_->GetResourceManager()->GetTextureFromPath(sphFilePath.c_str());
 		}
 
 		if (spaFileName != "")
 		{
 			auto spaFilePaht = GetTexturePathFromModelAndTexPath(strModelPath, spaFileName.c_str());
-			model->spa_resources[i] = dx12_.GetResourceManager()->GetTextureFromPath(spaFilePaht.c_str());
+			model->spa_resources[i] = dx12_->GetResourceManager()->GetTextureFromPath(spaFilePaht.c_str());
 		}
 	}
 
@@ -629,7 +629,7 @@ HRESULT ModelLoader::CreatePMDMaterialData(struct PMDModel* model)
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(material_buffer_size * model->material_table.size());
 
-	auto result = dx12_.GetDevice()->CreateCommittedResource(
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&resDesc,
@@ -676,7 +676,7 @@ HRESULT ModelLoader::CreatePMDMaterialAndView(struct PMDModel* model)
 	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heap_desc.NodeMask = 0;
 
-	auto result = dx12_.GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(model->material_cbv_heap.ReleaseAndGetAddressOf()));
+	auto result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(model->material_cbv_heap.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -697,59 +697,59 @@ HRESULT ModelLoader::CreatePMDMaterialAndView(struct PMDModel* model)
 	srv_desc.Texture2D.MipLevels = 1;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(model->material_cbv_heap->GetCPUDescriptorHandleForHeapStart());
-	auto inc_size = dx12_.GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	auto inc_size = dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	for (int i = 0; i < model->material_table.size(); ++i)
 	{
-		dx12_.GetDevice()->CreateConstantBufferView(&cbv_desc, handle);
+		dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, handle);
 		handle.ptr += inc_size; // Offset()でもいける
 		cbv_desc.BufferLocation += material_buffer_size;
 
 		if (model->texture_resources[i] == nullptr)
 		{
 			srv_desc.Format = renderer_.white_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
 			srv_desc.Format = model->texture_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->texture_resources[i].Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(model->texture_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->sph_resources[i] == nullptr)
 		{
 			srv_desc.Format = renderer_.white_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(renderer_.white_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
 			srv_desc.Format = model->sph_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->sph_resources[i].Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(model->sph_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->spa_resources[i] == nullptr)
 		{
 			srv_desc.Format = renderer_.black_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.black_texture_.Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(renderer_.black_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
 			srv_desc.Format = model->spa_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->spa_resources[i].Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(model->spa_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 
 		if (model->toon_resources[i] == nullptr)
 		{
 			srv_desc.Format = renderer_.grad_texture_->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(renderer_.grad_texture_.Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(renderer_.grad_texture_.Get(), &srv_desc, handle);
 		}
 		else
 		{
 			srv_desc.Format = model->toon_resources[i]->GetDesc().Format;
-			dx12_.GetDevice()->CreateShaderResourceView(model->toon_resources[i].Get(), &srv_desc, handle);
+			dx12_->GetDevice()->CreateShaderResourceView(model->toon_resources[i].Get(), &srv_desc, handle);
 		}
 		handle.ptr += inc_size;
 	}
@@ -810,7 +810,7 @@ bool ModelLoader::CreateFBXVertexBuffers(FBXModel* model)
 		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(mesh.vertices.size() * sizeof(FBXVertex));
 
-		auto result = dx12_.GetDevice()->CreateCommittedResource(
+		auto result = dx12_->GetDevice()->CreateCommittedResource(
 			&heap_prop,
 			D3D12_HEAP_FLAG_NONE,
 			&res_desc,
@@ -858,7 +858,7 @@ bool ModelLoader::CreateFBXIndexBuffers(FBXModel* model)
 		auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(mesh.indices.size() * sizeof(unsigned int));
 
-		auto result = dx12_.GetDevice()->CreateCommittedResource(
+		auto result = dx12_->GetDevice()->CreateCommittedResource(
 			&heap_prop,
 			D3D12_HEAP_FLAG_NONE,
 			&res_desc,
@@ -1068,7 +1068,7 @@ void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 	if (texture != nullptr && CreateTexturePath(texture, tex_path))
 	{
 		// テクスチャの読み込み
-		model->texture_resource_table[material->GetName()] = dx12_.GetResourceManager()->GetTextureFromPath(tex_path.c_str());
+		model->texture_resource_table[material->GetName()] = dx12_->GetResourceManager()->GetTextureFromPath(tex_path.c_str());
 	}
 	else
 	{
