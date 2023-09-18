@@ -22,10 +22,5 @@ void ModelActor::UpdateActor(float delta_time)
 
 void ModelActor::SetPMDModel(const char* file_name)
 {
-	model_ = new ModelComponent(this, ModelType::PMD, file_name);
-}
-
-void ModelActor::SetFBXModel(const char* file_name)
-{
-	model_ = new ModelComponent(this, ModelType::FBX, file_name);
+	model_ = new ModelComponent(this, file_name);
 }

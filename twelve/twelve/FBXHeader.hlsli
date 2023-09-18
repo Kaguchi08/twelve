@@ -20,6 +20,11 @@ cbuffer Material : register(b1)
     float4 specular;
 };
 
+cbuffer Shadow : register(b2)
+{
+    matrix world;
+};
+
 struct VSIn
 {
     float4 pos : POSITION;
@@ -27,7 +32,7 @@ struct VSIn
     float2 uv : TEXCOORD;
 };
 
-struct VSOut
+struct PSIn
 {
     float4 svpos : SV_POSITION;
     float4 pos : POSITION;

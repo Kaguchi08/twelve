@@ -10,11 +10,10 @@
 
 using namespace DirectX;
 
-ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_name, int draw_order) :
+ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) :
 	Component(owner, draw_order),
 	pmd_model_(nullptr),
 	mapped_matrices_(nullptr),
-	type_(type),
 	current_animation_idx_(0),
 	animation_idx_(0),
 	animation_time_(0.0f)
@@ -22,22 +21,12 @@ ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_na
 	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
 	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
 
-	renderer_->AddModelComponent(this, type);
+	renderer_->AddModelComponent(this);
 
 	// モデル
-	switch (type)
-	{
-		case PMD:
-			pmd_model_ = dx12_->GetResourceManager()->LoadPMDModel(file_name);
-			bone_matrices_.resize(pmd_model_->bone_name_array.size());
-			std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
-
-			break;
-		case FBX:
-			break;
-		default:
-			break;
-	}
+	pmd_model_ = dx12_->GetResourceManager()->LoadPMDModel(file_name);
+	bone_matrices_.resize(pmd_model_->bone_name_array.size());
+	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
 
 	// 座標変換用リソース作成
 	auto result = CreateTransformResourceAndView();

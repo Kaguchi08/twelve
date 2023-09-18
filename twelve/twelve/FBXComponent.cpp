@@ -33,9 +33,11 @@ void FBXComponent::Update(float delta_time)
 	// ワールド行列の更新
 	auto pos = owner_->GetPosition();
 	auto rot = owner_->GetRotation();
+	auto scale = owner_->GetScale();
 
 	*world_matrix_ = DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z)
-		* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+		* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z)
+		* DirectX::XMMatrixScaling(scale, scale, scale);
 }
 
 void FBXComponent::Draw(bool is_shadow)
@@ -60,6 +62,11 @@ void FBXComponent::Draw(bool is_shadow)
 		{
 			assert(0);
 		}
+
+		// ワールド行列
+		ID3D12DescriptorHeap* trans_heaps[] = { transform_cbv_heap_.Get() };
+		cmd_list->SetDescriptorHeaps(1, trans_heaps);
+		cmd_list->SetGraphicsRootDescriptorTable(4, transform_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 		if (is_shadow)
 		{

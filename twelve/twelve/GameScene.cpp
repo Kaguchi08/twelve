@@ -53,6 +53,7 @@ bool GameScene::Initialize(const char* file_name)
 	std::string fbx_model_path = "../Assets/fbx/horse_statue_01_4k.fbx";
 	fbx_model_ = new FBXActor(this);
 	fbx_model_->SetFBXModel(fbx_model_path.c_str());
+	fbx_model_->SetScale(100);
 
 	PlaneInfo* plane_info = new PlaneInfo();
 

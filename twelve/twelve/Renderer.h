@@ -31,7 +31,7 @@ public:
 	void DrawFBXModel(bool is_shadow);
 	void DrawPrimitive(bool is_shadow);
 
-	void AddModelComponent(class ModelComponent* model, ModelType type);
+	void AddModelComponent(class ModelComponent* model);
 	void RemoveModelComponent(class ModelComponent* model);
 
 	void AddFBXComponent(class FBXComponent* model);

@@ -1,21 +1,29 @@
 #include "FBXHeader.hlsli"
 
-VSOut main(VSIn input)
+PSIn main(VSIn vsIn)
 {
-    VSOut output;
+    PSIn psIn;
     
-    // todo ワールド行列
+    psIn.svpos = mul(world, vsIn.pos);
     
-    output.svpos = output.svpos = mul(mul(proj, view), input.pos);
-    output.normal = input.normal;
-    output.uv = input.uv;
+    //psIn.worldPos = psIn.svpos;
+    psIn.svpos = mul(view, psIn.svpos);
+    psIn.svpos = mul(proj, psIn.svpos);
+    psIn.normal = normalize(mul(world, vsIn.normal));
     
-    return output;
+    psIn.uv = vsIn.uv;
+    
+    //psIn.tangent = normalize(mul(world, vsIn.tangent));
+    //psIn.biNormal = normalize(mul(world, vsIn.biNormal));
+    
+    //psIn.lightPos = mul(lightView, psIn.worldPos);
+    
+    return psIn;
 }
 
 float4 VSShadow(VSIn vsIn) : SV_POSITION
 {
-    // todo ワールド行列
+    vsIn.pos = mul(world, vsIn.pos);
     
     return mul(lightView, vsIn.pos);
 }

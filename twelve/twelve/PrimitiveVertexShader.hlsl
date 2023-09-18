@@ -9,12 +9,12 @@ PSIn VSMain(VSIn vsIn)
     psIn.worldPos = psIn.svpos;
     psIn.svpos = mul(view, psIn.svpos);
     psIn.svpos = mul(proj, psIn.svpos);
-    psIn.normal = normalize(vsIn.normal);
+    psIn.normal = normalize(mul(world, vsIn.normal));
     
     psIn.uv = vsIn.uv;
     
-    psIn.tangent = normalize(vsIn.tangent);
-    psIn.biNormal = normalize(vsIn.biNormal);
+    psIn.tangent = normalize(mul(world, vsIn.tangent));
+    psIn.biNormal = normalize(mul(world, vsIn.biNormal));
     
     psIn.lightPos = mul(lightView, psIn.worldPos);
     

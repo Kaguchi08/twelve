@@ -10,7 +10,6 @@ public:
 	void UpdateActor(float delta_time) override;
 
 	void SetPMDModel(const char* file_name);
-	void SetFBXModel(const char* file_name);
 
 private:
 	class ModelComponent* model_;
