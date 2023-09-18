@@ -13,7 +13,6 @@ using namespace DirectX;
 ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_name, int draw_order) :
 	Component(owner, draw_order),
 	pmd_model_(nullptr),
-	fbx_model_(nullptr),
 	mapped_matrices_(nullptr),
 	type_(type),
 	current_animation_idx_(0),
@@ -35,8 +34,6 @@ ModelComponent::ModelComponent(Actor* owner, ModelType type, const char* file_na
 
 			break;
 		case FBX:
-			fbx_model_ = dx12_->GetResourceManager()->LoadFBXModel(file_name);
-
 			break;
 		default:
 			break;
@@ -104,48 +101,6 @@ void ModelComponent::DrawPMD(bool is_shadow)
 			cmd_list->DrawIndexedInstanced(material.indices_num, 1, idxOffset, 0, 0);
 			handle.ptr += inc_size;
 			idxOffset += material.indices_num;
-		}
-	}
-}
-
-void ModelComponent::DrawFBX(bool is_shadow)
-{
-	for (auto& mesh : fbx_model_->mesh_data)
-	{
-		auto cmd_list = dx12_->GetCommandList();
-		cmd_list->IASetVertexBuffers(0, 1, &mesh.vb_view);
-		cmd_list->IASetIndexBuffer(&mesh.ib_view);
-		cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-		// ここでバッファをセット
-		auto result = CreateMaterialResourceAndView(mesh.material_name);
-		if (FAILED(result))
-		{
-			assert(0);
-		}
-
-		// テクスチャをセット
-		result = CreateTextureView(mesh.material_name);
-		if (FAILED(result))
-		{
-			assert(0);
-		}
-
-		ID3D12DescriptorHeap* material_heaps[] = { fbx_model_->material_cbv_heap_table[mesh.material_name].Get() };
-		cmd_list->SetDescriptorHeaps(1, material_heaps);
-
-		ID3D12DescriptorHeap* texture_heaps[] = { fbx_model_->texture_srv_heap_table[mesh.material_name].Get() };
-		cmd_list->SetDescriptorHeaps(1, texture_heaps);
-
-		if (is_shadow)
-		{
-			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
-		}
-		else
-		{
-			cmd_list->SetGraphicsRootDescriptorTable(1, fbx_model_->material_cbv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
-			cmd_list->SetGraphicsRootDescriptorTable(3, fbx_model_->texture_srv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
-			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
 		}
 	}
 }
@@ -229,108 +184,6 @@ HRESULT ModelComponent::CreateTransformResourceAndView()
 	dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, transform_cbv_heap_->GetCPUDescriptorHandleForHeapStart());
 
 	return S_OK;
-}
-
-HRESULT ModelComponent::CreateMaterialResourceAndView(std::string material_name)
-{
-	// マテリアルバッファの作成
-	auto material_buffer_size = AligmentedValue(sizeof(FBXMaterial), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT); // 256の倍数にする
-
-	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(material_buffer_size);
-
-	auto result = dx12_->GetDevice()->CreateCommittedResource(
-		&heap_prop,
-		D3D12_HEAP_FLAG_NONE,
-		&res_desc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(fbx_model_->material_const_buffer_table[material_name].ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return result;
-	}
-
-	// マテリアルバッファのマップ
-	char* mapped_material = nullptr;
-
-	result = fbx_model_->material_const_buffer_table[material_name]->Map(0, nullptr, (void**)&mapped_material);
-	if (FAILED(result))
-	{
-		assert(0);
-		return result;
-	}
-
-	// マテリアルバッファへの書き込み
-	*((FBXMaterial*)mapped_material) = fbx_model_->material_table[material_name];
-
-	// マテリアルバッファのアンマップ
-	fbx_model_->material_const_buffer_table[material_name]->Unmap(0, nullptr);
-
-	// ディスクリプタヒープの作成
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.NumDescriptors = 1;
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heap_desc.NodeMask = 0;
-
-	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(fbx_model_->material_cbv_heap_table[material_name].ReleaseAndGetAddressOf()));
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return result;
-	}
-
-	// View 作成
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
-	cbv_desc.BufferLocation = fbx_model_->material_const_buffer_table[material_name]->GetGPUVirtualAddress();
-	cbv_desc.SizeInBytes = material_buffer_size;
-
-	auto handle = fbx_model_->material_cbv_heap_table[material_name]->GetCPUDescriptorHandleForHeapStart();
-	dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, handle);
-
-	return S_OK;
-}
-
-HRESULT ModelComponent::CreateTextureView(std::string material_name)
-{
-	auto texture_resource_ = fbx_model_->texture_resource_table[material_name];
-
-	if (texture_resource_ == nullptr)
-	{
-		assert(0);
-		return false;
-	}
-
-	// ディスクリプタヒープの作成
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.NumDescriptors = 1;
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heap_desc.NodeMask = 0;
-
-	auto result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(fbx_model_->texture_srv_heap_table[material_name].ReleaseAndGetAddressOf()));
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	// ディスクリプタの設定
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.Format = texture_resource_->GetDesc().Format;
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Texture2D.MipLevels = 1;
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-	dx12_->GetDevice()->CreateShaderResourceView(texture_resource_.Get(), &srv_desc, fbx_model_->texture_srv_heap_table[material_name]->GetCPUDescriptorHandleForHeapStart());
-
-	return true;
 }
 
 void ModelComponent::MotionUpdate(float delta_time)

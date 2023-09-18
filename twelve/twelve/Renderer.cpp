@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "Dx12Wrapper.h"
 #include "ModelComponent.h"
+#include "FBXComponent.h"
 #include "PrimitiveComponent.h"
 #include <d3dx12.h>
 #include <d3dcompiler.h>
@@ -91,7 +92,6 @@ void Renderer::AddModelComponent(ModelComponent* model, ModelType type)
 			pmd_models_.emplace_back(model);
 			break;
 		case FBX:
-			fbx_models_.emplace_back(model);
 			break;
 		default:
 			break;
@@ -105,8 +105,16 @@ void Renderer::RemoveModelComponent(ModelComponent* model)
 	{
 		pmd_models_.erase(it);
 	}
+}
 
-	it = std::find(fbx_models_.begin(), fbx_models_.end(), model);
+void Renderer::AddFBXComponent(FBXComponent* model)
+{
+	fbx_models_.emplace_back(model);
+}
+
+void Renderer::RemoveFBXComponent(FBXComponent* model)
+{
+	auto it = std::find(fbx_models_.begin(), fbx_models_.end(), model);
 	if (it != fbx_models_.end())
 	{
 		fbx_models_.erase(it);
@@ -1018,7 +1026,7 @@ void Renderer::DrawFBXModel(bool is_shadow)
 {
 	for (auto& model : fbx_models_)
 	{
-		model->DrawFBX(is_shadow);
+		model->Draw(is_shadow);
 	}
 }
 

@@ -18,7 +18,6 @@ public:
 	void Update(float delta_time) override;
 
 	void DrawPMD(bool is_shadow);
-	void DrawFBX(bool is_shadow);
 
 	unsigned int AddAnimation(const char* file_name, bool is_loop = true);
 	void DeleteAnimation(unsigned int idx);
@@ -29,7 +28,6 @@ private:
 
 	// モデル
 	std::shared_ptr<PMDModel> pmd_model_;
-	std::shared_ptr<FBXModel> fbx_model_;
 	ModelType type_;
 
 	DirectX::XMMATRIX* mapped_matrices_;
@@ -43,18 +41,11 @@ private:
 
 	HRESULT CreateTransformResourceAndView();
 
-	// FBXモデルのマテリアル関連
-	HRESULT CreateMaterialResourceAndView(std::string material_name);
-	// FBXモデルのテクスチャ関連
-	HRESULT CreateTextureView(std::string material_name);
-
 	// モーション
 	void MotionUpdate(float delta_time);
 	void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);
 
-
 	std::unordered_map<unsigned int, Animation> animations_;
-
 
 	unsigned int current_animation_idx_ = 0;
 	unsigned int animation_idx_ = 0;

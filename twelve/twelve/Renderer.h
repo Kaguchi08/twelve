@@ -34,6 +34,9 @@ public:
 	void AddModelComponent(class ModelComponent* model, ModelType type);
 	void RemoveModelComponent(class ModelComponent* model);
 
+	void AddFBXComponent(class FBXComponent* model);
+	void RemoveFBXComponent(class FBXComponent* model);
+
 	void AddPrimitiveComponent(class PrimitiveComponent* primitive);
 	void RemovePrimitiveComponent(class PrimitiveComponent* primitive);
 
@@ -77,7 +80,7 @@ private:
 
 	// ƒ‚ƒfƒ‹
 	std::vector<class ModelComponent*> pmd_models_;
-	std::vector<class ModelComponent*> fbx_models_;
+	std::vector<class FBXComponent*> fbx_models_;
 	std::vector<class PrimitiveComponent*> primitives_;
 
 	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);

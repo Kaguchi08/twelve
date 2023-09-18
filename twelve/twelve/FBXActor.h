@@ -12,5 +12,5 @@ public:
 	void SetFBXModel(const char* file_name);
 
 private:
-	class ModelComponent* model_;
+	class FBXComponent* model_;
 };

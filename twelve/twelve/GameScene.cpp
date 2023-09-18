@@ -1,5 +1,4 @@
 #include "GameScene.h"
-#include "ModelActor.h"
 #include "InputSystem.h"
 #include "Game.h"
 #include <string>
@@ -50,13 +49,10 @@ bool GameScene::Initialize(const char* file_name)
 	player_model_ = new PlayerActor(this);
 	player_model_->SetPMDModel(file_name);
 
-	std::string fbx_model_path = "../Assets/fbx/Cube03.fbx";
-	//std::string fbx_model_path = "../Assets/fbx/building_04.fbx";
-	//std::string fbx_model_path = "../Assets/fbx/forest_nature_set_all_in.fbx";
-	//std::string fbx_model_path = "../Assets/fbx/Floor.FBX";
-	//std::string fbx_model_path = "../Assets/fbx/France_GameMap.fbx";
-	/*fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());*/
+	//std::string fbx_model_path = "../Assets/fbx/Cube03.fbx";
+	std::string fbx_model_path = "../Assets/fbx/horse_statue_01_4k.fbx";
+	fbx_model_ = new FBXActor(this);
+	fbx_model_->SetFBXModel(fbx_model_path.c_str());
 
 	PlaneInfo* plane_info = new PlaneInfo();
 
