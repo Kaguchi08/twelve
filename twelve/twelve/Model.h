@@ -164,9 +164,9 @@ struct FBXModel
 	std::unordered_map<std::string, ComPtr<ID3D12Resource>> material_const_buffer_table;
 	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> material_cbv_heap_table;
 
-	// テクスチャ関連
-	std::unordered_map<std::string, ComPtr<ID3D12Resource>> texture_resource_table; // テクスチャ名とテクスチャリソースの対応表
-	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> texture_srv_heap_table; // テクスチャ名とテクスチャSRVヒープの対応表
+	// テクスチャ
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> texture_resource_table; // マテリアル名とテクスチャリソースの対応表
+	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> texture_srv_heap_table; //マテリアル名とテクスチャSRVヒープの対応表
 };
 
 struct VMDAnimation

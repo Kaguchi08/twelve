@@ -86,6 +86,80 @@ void FBXComponent::Draw(bool is_shadow)
 	}
 }
 
+bool FBXComponent::CreateNormalMapAndView(const char* file_name)
+{
+	normal_map_resource_ = dx12_->GetResourceManager()->GetTextureFromPath(file_name);
+
+	if (normal_map_resource_ == nullptr)
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタヒープの作成
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.NumDescriptors = 1;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heap_desc.NodeMask = 0;
+
+	auto result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(normal_map_srv_heap_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Format = normal_map_resource_->GetDesc().Format;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	dx12_->GetDevice()->CreateShaderResourceView(normal_map_resource_.Get(), &srv_desc, normal_map_srv_heap_->GetCPUDescriptorHandleForHeapStart());
+
+	return true;
+}
+
+bool FBXComponent::CreateArmMapAndView(const char* file_name)
+{
+	arm_map_resource_ = dx12_->GetResourceManager()->GetTextureFromPath(file_name);
+
+	if (arm_map_resource_ == nullptr)
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタヒープの作成
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.NumDescriptors = 1;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heap_desc.NodeMask = 0;
+
+	auto result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(arm_map_srv_heap_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// ディスクリプタの設定
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Format = arm_map_resource_->GetDesc().Format;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	dx12_->GetDevice()->CreateShaderResourceView(arm_map_resource_.Get(), &srv_desc, arm_map_srv_heap_->GetCPUDescriptorHandleForHeapStart());
+
+	return true;
+}
+
 HRESULT FBXComponent::CreateTransformResourceAndView()
 {
 	// GPUバッファの作成

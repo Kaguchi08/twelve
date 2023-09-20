@@ -42,6 +42,8 @@ private:
 	void LoadUV(FbxMesh* mesh, FBXMeshData& mesh_data);
 
 	void LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model);
+	void LoadTexture(FbxSurfaceMaterial* material, FBXModel* model);
+
 	bool CreateTexturePath(FbxFileTexture* texture, std::string& tex_path);
 
 	void SetMaterialName(FbxMesh* mesh, FBXMeshData& mesh_data);

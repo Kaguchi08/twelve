@@ -20,3 +20,23 @@ void FBXActor::SetFBXModel(const char* file_name)
 {
 	model_ = new FBXComponent(this, file_name);
 }
+
+void FBXActor::SetNormalMap(const char* file_name)
+{
+	if (model_ == nullptr)
+	{
+		return;
+	}
+
+	model_->CreateNormalMapAndView(file_name);
+}
+
+void FBXActor::SetArmMap(const char* file_name)
+{
+	if (model_ == nullptr)
+	{
+		return;
+	}
+
+	model_->CreateArmMapAndView(file_name);
+}

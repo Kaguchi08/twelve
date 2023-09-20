@@ -19,6 +19,9 @@ public:
 
 	void Draw(bool is_shadow);
 
+	// 各種マップテクスチャの作成
+	bool CreateNormalMapAndView(const char* file_name);
+	bool CreateArmMapAndView(const char* file_name);
 
 private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
@@ -31,6 +34,13 @@ private:
 	DirectX::XMMATRIX* world_matrix_ = nullptr;
 	ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
+
+	// 各種マップリソース
+	ComPtr<ID3D12Resource> normal_map_resource_ = nullptr;
+	ComPtr<ID3D12Resource> arm_map_resource_ = nullptr;
+
+	ComPtr<ID3D12DescriptorHeap> normal_map_srv_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> arm_map_srv_heap_ = nullptr;
 
 	HRESULT CreateTransformResourceAndView();
 

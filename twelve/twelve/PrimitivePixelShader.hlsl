@@ -161,7 +161,7 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     // 法線を計算
     float3 normal = GetNormal(psIn.normal, psIn.tangent, psIn.biNormal, psIn.uv);
     
-    // アルベドカラー、スペキュラカラー、金属度、滑らかさをサンプリング
+    // アルベドカラー
     float4 albedoColor = tex.Sample(smp, psIn.uv);
     
     // スペキュラカラー

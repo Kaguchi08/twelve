@@ -24,10 +24,15 @@ public:
 
 private:
 	PlayerActor* player_model_;
-	FBXActor* fbx_model_;
 
 	std::vector<PlaneInfo*> plane_info_table_;
+	std::vector<FBXActor*> fbx_actor_table;
 
 	bool Initialize(const char* file_name);
 	void UpdateActor(float deltaTime) override;
+
+	FBXActor* CreateFBXActor(const char* model, const char* normal, const char* arm,
+							 const float scale = 1.0f,
+							 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+							 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 };

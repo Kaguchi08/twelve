@@ -6,7 +6,6 @@
 GameScene::GameScene(Game* game) :
 	Scene(game),
 	player_model_(nullptr),
-	fbx_model_(nullptr),
 	plane_info_table_()
 {
 	std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒNVer2.pmd";
@@ -51,9 +50,20 @@ bool GameScene::Initialize(const char* file_name)
 
 	//std::string fbx_model_path = "../Assets/fbx/Cube03.fbx";
 	std::string fbx_model_path = "../Assets/fbx/horse_statue_01_4k.fbx";
-	fbx_model_ = new FBXActor(this);
-	fbx_model_->SetFBXModel(fbx_model_path.c_str());
-	fbx_model_->SetScale(100);
+
+	std::string normal_map_path = "../Assets/fbx/Texture/horse_statue_01_nor_dx_4k.png";
+	std::string arm_map_path = "../Assets/fbx/Texture/horse_statue_01_arm_4k.png";
+
+	fbx_actor_table.push_back
+	(
+		CreateFBXActor
+		(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			200
+		)
+	);
 
 	PlaneInfo* plane_info = new PlaneInfo();
 
@@ -85,4 +95,18 @@ bool GameScene::Initialize(const char* file_name)
 
 void GameScene::UpdateActor(float deltaTime)
 {
+}
+
+FBXActor* GameScene::CreateFBXActor(const char* model, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot)
+{
+	FBXActor* fbx_actor = new FBXActor(this);
+
+	fbx_actor->SetFBXModel(model);
+	fbx_actor->SetNormalMap(normal);
+	fbx_actor->SetArmMap(arm);
+	fbx_actor->SetScale(scale);
+	fbx_actor->SetPosition(pos);
+	fbx_actor->SetRotation(rot);
+
+	return fbx_actor;
 }

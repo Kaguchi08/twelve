@@ -1046,8 +1046,13 @@ void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 	// ディスクリプタヒープを初期化しておく
 	model->material_cbv_heap_table[material->GetName()] = nullptr;
 
+	LoadTexture(material, model);
+}
+
+void ModelLoader::LoadTexture(FbxSurfaceMaterial* material, FBXModel* model)
+{
 	// テクスチャの読み込み
-	prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+	auto prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
 	FbxFileTexture* texture = nullptr;
 	std::string tex_path;
 
@@ -1067,7 +1072,6 @@ void ModelLoader::LoadMaterial(FbxSurfaceMaterial* material, FBXModel* model)
 
 	if (texture != nullptr && CreateTexturePath(texture, tex_path))
 	{
-		// テクスチャの読み込み
 		model->texture_resource_table[material->GetName()] = dx12_->GetResourceManager()->GetTextureFromPath(tex_path.c_str());
 	}
 	else

@@ -209,7 +209,7 @@ bool Plane::CreateArmMapAndView(Dx12Wrapper* dx12, const char* file_name)
 {
 	arm_map_resource_ = dx12->GetResourceManager()->GetTextureFromPath(file_name);
 
-	if (normal_map_resource_ == nullptr)
+	if (arm_map_resource_ == nullptr)
 	{
 		assert(0);
 		return false;
