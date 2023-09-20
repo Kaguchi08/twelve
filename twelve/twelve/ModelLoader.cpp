@@ -906,9 +906,10 @@ void ModelLoader::LoadVertices(FbxMesh* mesh, FBXMeshData& mesh_data)
 		int index = indices[i];
 
 		// 頂点座標の取得
-		vertex.pos[0] = static_cast<float>(-vertices[index][0]); // 左手系に変換
-		vertex.pos[1] = static_cast<float>(vertices[index][2]);
-		vertex.pos[2] = static_cast<float>(vertices[index][1]);
+		// 右手系z軸upから左手系y軸upに変換
+		vertex.pos.x = static_cast<float>(vertices[index][0]);
+		vertex.pos.y = static_cast<float>(vertices[index][2]);
+		vertex.pos.z = static_cast<float>(vertices[index][1]);
 
 		// 頂点テーブルに追加
 		mesh_data.vertices.push_back(vertex);
@@ -940,9 +941,10 @@ void ModelLoader::LoadNormals(FbxMesh* mesh, FBXMeshData& mesh_data)
 		FbxVector4 normal = normals[i];
 
 		// 頂点テーブルに追加
-		mesh_data.vertices[i].normal[0] = static_cast<float>(-normal[0]); // 左手系に変換
-		mesh_data.vertices[i].normal[1] = static_cast<float>(normal[1]);
-		mesh_data.vertices[i].normal[2] = static_cast<float>(normal[2]);
+		// 右手系z軸upから左手系y軸upに変換
+		mesh_data.vertices[i].normal.x = static_cast<float>(normal[0]);
+		mesh_data.vertices[i].normal.y = static_cast<float>(normal[2]);
+		mesh_data.vertices[i].normal.z = static_cast<float>(normal[1]);
 	}
 }
 
@@ -962,8 +964,8 @@ void ModelLoader::LoadUV(FbxMesh* mesh, FBXMeshData& mesh_data)
 		FbxVector2& uv = uv_buffer[i];
 
 		// そのまま使用して問題ない
-		mesh_data.vertices[i].uv[0] = (float)uv[0];
-		mesh_data.vertices[i].uv[1] = (float)(1.0 - uv[1]);
+		mesh_data.vertices[i].uv.x = (float)uv[0];
+		mesh_data.vertices[i].uv.y = (float)(1.0 - uv[1]);
 	}
 }
 

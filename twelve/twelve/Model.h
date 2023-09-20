@@ -94,9 +94,11 @@ struct VMDIKEnable
 // FBXモデルの頂点データ
 struct FBXVertex
 {
-	float pos[3]; // x, y, z // 座標
-	float normal[3]; // nx, ny, nz // 法線ベクトル
-	float uv[2]; // u, v // UV座標
+	DirectX::XMFLOAT3 pos; // x, y, z // 座標
+	DirectX::XMFLOAT3 normal; // nx, ny, nz // 法線ベクトル
+	DirectX::XMFLOAT2 uv; // u, v // UV座標
+	DirectX::XMFLOAT3 tangent; // tx, ty, tz // 接ベクトル
+	DirectX::XMFLOAT3 binormal; // bx, by, bz // 従法線ベクトル
 };
 
 // PMDモデル情報をまとめた構造体

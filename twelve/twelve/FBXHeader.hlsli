@@ -3,6 +3,8 @@ SamplerComparisonState smpShadow : register(s1);
 
 Texture2D<float4> shadowMap : register(t0);
 Texture2D<float4> tex : register(t1);
+Texture2D<float4> normalMap : register(t2);
+Texture2D<float4> armMap : register(t3);
 
 cbuffer Scene : register(b0)
 {
@@ -28,14 +30,18 @@ cbuffer Shadow : register(b2)
 struct VSIn
 {
     float4 pos : POSITION;
-    float4 normal : NORMAL;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD;
+    float3 tangent : TANGENT;
+    float3 biNormal : BINORMAL;
 };
 
 struct PSIn
 {
     float4 svpos : SV_POSITION;
-    float4 pos : POSITION;
-    float4 normal : NORMAL;
+    float4 worldPos : POSITION;
+    float3 normal : NORMAL;
     float2 uv : TEXCOORD;
+    float3 tangent : TANGENT;
+    float3 biNormal : BINORMAL;
 };

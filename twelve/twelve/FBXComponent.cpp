@@ -8,6 +8,9 @@
 #include <d3dx12.h>
 #include <d3d12.h>
 
+// "-" オペランド等が使えないため
+using namespace DirectX;
+
 FBXComponent::FBXComponent(Actor* owner, const char* file_name, int draw_order) :
 	Component(owner, draw_order),
 	fbx_model_(nullptr),
@@ -21,6 +24,11 @@ FBXComponent::FBXComponent(Actor* owner, const char* file_name, int draw_order) 
 	fbx_model_ = dx12_->GetResourceManager()->LoadFBXModel(file_name);
 
 	CreateTransformResourceAndView();
+
+	for (auto& mesh : fbx_model_->mesh_data)
+	{
+		CalculateTangentAndBinormal(mesh);
+	}
 }
 
 FBXComponent::~FBXComponent()
@@ -35,9 +43,9 @@ void FBXComponent::Update(float delta_time)
 	auto rot = owner_->GetRotation();
 	auto scale = owner_->GetScale();
 
-	*world_matrix_ = DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z)
-		* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z)
-		* DirectX::XMMatrixScaling(scale, scale, scale);
+	*world_matrix_ = DirectX::XMMatrixScaling(scale, scale, scale)
+		* DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z)
+		* DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 }
 
 void FBXComponent::Draw(bool is_shadow)
@@ -81,6 +89,15 @@ void FBXComponent::Draw(bool is_shadow)
 			ID3D12DescriptorHeap* texture_heaps[] = { fbx_model_->texture_srv_heap_table[mesh.material_name].Get() };
 			cmd_list->SetDescriptorHeaps(1, texture_heaps);
 			cmd_list->SetGraphicsRootDescriptorTable(3, fbx_model_->texture_srv_heap_table[mesh.material_name]->GetGPUDescriptorHandleForHeapStart());
+
+			// 法線マップ
+			cmd_list->SetDescriptorHeaps(1, normal_map_srv_heap_.GetAddressOf());
+			cmd_list->SetGraphicsRootDescriptorTable(5, normal_map_srv_heap_->GetGPUDescriptorHandleForHeapStart());
+
+			// ARMマップ
+			cmd_list->SetDescriptorHeaps(1, arm_map_srv_heap_.GetAddressOf());
+			cmd_list->SetGraphicsRootDescriptorTable(6, arm_map_srv_heap_->GetGPUDescriptorHandleForHeapStart());
+
 			cmd_list->DrawIndexedInstanced(mesh.indices.size(), 1, 0, 0, 0);
 		}
 	}
@@ -317,4 +334,48 @@ HRESULT FBXComponent::CreateTextureView(std::string material_name)
 	dx12_->GetDevice()->CreateShaderResourceView(texture_resource_.Get(), &srv_desc, fbx_model_->texture_srv_heap_table[material_name]->GetCPUDescriptorHandleForHeapStart());
 
 	return S_OK;
+}
+
+void FBXComponent::CalculateTangentAndBinormal(FBXMeshData& mesh_data)
+{
+	// MikkTSpaceアルゴリズムに基づいて計算
+
+	// ポリゴン数を取得（インデックス数を3で割る）
+	auto numPolygon = mesh_data.indices.size() / 3;
+
+	for (auto polyNo = 0; polyNo < numPolygon; polyNo++)
+	{
+		auto no = polyNo * 3;
+		auto& vert_0 = mesh_data.vertices[mesh_data.indices[no]];
+		auto& vert_1 = mesh_data.vertices[mesh_data.indices[no + 1]];
+		auto& vert_2 = mesh_data.vertices[mesh_data.indices[no + 2]];
+
+		DirectX::XMFLOAT3 deltaPos1 = ToXMFLOAT3(ToXMVECTOR(vert_1.pos) - ToXMVECTOR(vert_0.pos));
+		DirectX::XMFLOAT3 deltaPos2 = ToXMFLOAT3(ToXMVECTOR(vert_2.pos) - ToXMVECTOR(vert_0.pos));
+		DirectX::XMFLOAT2 deltaUV1 = ToXMFLOAT2(ToXMVECTOR(vert_1.uv) - ToXMVECTOR(vert_0.uv));
+		DirectX::XMFLOAT2 deltaUV2 = ToXMFLOAT2(ToXMVECTOR(vert_2.uv) - ToXMVECTOR(vert_0.uv));
+
+		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+
+		DirectX::XMFLOAT3 tangent = ToXMFLOAT3((ToXMVECTOR(deltaPos1) * deltaUV2.y - ToXMVECTOR(deltaPos2) * deltaUV1.y) * r);
+		DirectX::XMFLOAT3 binormal = ToXMFLOAT3((ToXMVECTOR(deltaPos2) * deltaUV1.x - ToXMVECTOR(deltaPos1) * deltaUV2.x) * r);
+
+		tangent = ToXMFLOAT3(ToNormalizeXMVECTOR(tangent));
+		binormal = ToXMFLOAT3(ToNormalizeXMVECTOR(binormal));
+
+		vert_0.tangent += tangent;
+		vert_1.tangent += tangent;
+		vert_2.tangent += tangent;
+
+		vert_0.binormal += binormal;
+		vert_1.binormal += binormal;
+		vert_2.binormal += binormal;
+	}
+
+	// 接ベクトルと従法線ベクトルを正規化
+	for (auto& vert : mesh_data.vertices)
+	{
+		vert.tangent = ToXMFLOAT3(ToNormalizeXMVECTOR(vert.tangent));
+		vert.binormal = ToXMFLOAT3(ToNormalizeXMVECTOR(vert.binormal));
+	}
 }

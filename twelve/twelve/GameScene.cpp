@@ -48,7 +48,6 @@ bool GameScene::Initialize(const char* file_name)
 	player_model_ = new PlayerActor(this);
 	player_model_->SetPMDModel(file_name);
 
-	//std::string fbx_model_path = "../Assets/fbx/Cube03.fbx";
 	std::string fbx_model_path = "../Assets/fbx/horse_statue_01_4k.fbx";
 
 	std::string normal_map_path = "../Assets/fbx/Texture/horse_statue_01_nor_dx_4k.png";
@@ -61,7 +60,8 @@ bool GameScene::Initialize(const char* file_name)
 			fbx_model_path.c_str(),
 			normal_map_path.c_str(),
 			arm_map_path.c_str(),
-			200
+			200,
+			DirectX::XMFLOAT3(-20, 0, 0)
 		)
 	);
 

@@ -48,4 +48,6 @@ private:
 	HRESULT CreateMaterialResourceAndView(std::string material_name);
 	// FBXモデルのテクスチャ関連
 	HRESULT CreateTextureView(std::string material_name);
+
+	void CalculateTangentAndBinormal(FBXMeshData& mesh_data);
 };
