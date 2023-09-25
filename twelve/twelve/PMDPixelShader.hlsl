@@ -68,7 +68,7 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     float4 spaCol = spa.Sample(smp, spUV);
     
     float4 finalColor = tex.Sample(smp, psIn.uv);
-    float3 finalLig = directionLig + ambientLight;
+    float3 finalLig = directionLig + ambientLight * ambient;
     
     // スフィアマップ
     finalColor *= sphCol;

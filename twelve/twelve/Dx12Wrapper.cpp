@@ -300,64 +300,24 @@ void Dx12Wrapper::SetCameraSetting()
 		* DirectX::XMMatrixOrthographicLH(320.0f, 180.0f, 0.1f, 1000.0f);
 }
 
-void Dx12Wrapper::SetPMDBuffer()
+void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index)
 {
 	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(scene_index, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(light_index, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
 
 	// 一旦ここでシャドウマップテクスチャをセット
 	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
 	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	cmd_list_->SetGraphicsRootDescriptorTable(4, handle);
-}
-
-void Dx12Wrapper::SetFBXBuffer()
-{
-	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
-
-	/*ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, light_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());*/
-
-	// 一旦ここでシャドウマップテクスチャをセット
-	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
-	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	cmd_list_->SetGraphicsRootDescriptorTable(2, handle);
-}
-
-void Dx12Wrapper::SetPrimitiveBuffer()
-{
-	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
-
-	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, light_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(3, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
-
-	// 一旦ここでシャドウマップテクスチャをセット
-	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
-	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	cmd_list_->SetGraphicsRootDescriptorTable(6, handle);
+	cmd_list_->SetGraphicsRootDescriptorTable(depth_index, handle);
 }
 
 void Dx12Wrapper::EndDraw()

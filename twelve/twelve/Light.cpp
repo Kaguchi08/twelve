@@ -24,7 +24,7 @@ void Light::InitDirectionalLight(LightState& state)
 
 void Light::InitAmbientLight(LightState& state)
 {
-	state.ambient.x = 0.3f;
-	state.ambient.y = 0.3f;
-	state.ambient.z = 0.3f;
+	state.ambient.x = 1.0f;
+	state.ambient.y = 1.0f;
+	state.ambient.z = 1.0f;
 }

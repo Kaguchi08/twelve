@@ -150,15 +150,15 @@ void Game::GenerateOutput()
 	dx12_->DrawToPera1();
 
 	renderer_->BeforePMDDraw();
-	dx12_->SetPMDBuffer();
+	dx12_->SetCommonBuffer(0, 3, 4);
 	renderer_->DrawPMDModel(false);
 
 	renderer_->BeforeFBXDraw();
-	dx12_->SetFBXBuffer();
+	dx12_->SetCommonBuffer(0, 7, 2);
 	renderer_->DrawFBXModel(false);
 
 	renderer_->BeforePrimitiveDraw();
-	dx12_->SetPrimitiveBuffer();
+	dx12_->SetCommonBuffer(0, 3, 6);
 	renderer_->DrawPrimitive(false);
 
 	dx12_->DrawToPera2();

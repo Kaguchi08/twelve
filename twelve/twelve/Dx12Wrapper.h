@@ -40,9 +40,7 @@ public:
 
 	void SetCameraSetting();
 	// バッファをセットする
-	void SetPMDBuffer();
-	void SetFBXBuffer();
-	void SetPrimitiveBuffer();
+	void SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index);
 
 	void EndDraw();
 	void ExecuteCommand();

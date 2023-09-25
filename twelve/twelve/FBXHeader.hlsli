@@ -27,6 +27,13 @@ cbuffer Shadow : register(b2)
     matrix world;
 };
 
+cbuffer Light : register(b3)
+{
+    float3 direction;
+    float3 color;
+    float3 ambientLight;
+};
+
 struct VSIn
 {
     float4 pos : POSITION;
@@ -44,4 +51,5 @@ struct PSIn
     float2 uv : TEXCOORD;
     float3 tangent : TANGENT;
     float3 biNormal : BINORMAL;
+    float4 lightPos : LIGHTPOS;
 };
