@@ -544,7 +544,6 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice()
 
 	result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(dxgi_factory_.ReleaseAndGetAddressOf()));
 
-	//DirectX12まわり初期化
 	//フィーチャレベル列挙
 	D3D_FEATURE_LEVEL levels[] = {
 		D3D_FEATURE_LEVEL_12_1,
@@ -554,37 +553,42 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice()
 	};
 
 
-	//Direct3Dデバイスの初期化
-	std::vector <IDXGIAdapter*> adapters;
-	IDXGIAdapter* tmpAdapter = nullptr;
-	for (int i = 0; dxgi_factory_->EnumAdapters(i, &tmpAdapter) != DXGI_ERROR_NOT_FOUND; ++i)
+	// ハードウェアアダプタの検索
+	ComPtr<IDXGIAdapter1> useAdapter;
+	D3D_FEATURE_LEVEL level;
 	{
-		adapters.push_back(tmpAdapter);
-	}
-
-	for (auto adpt : adapters)
-	{
-		DXGI_ADAPTER_DESC adesc = {};
-		adpt->GetDesc(&adesc);
-		std::wstring strDesc = adesc.Description;
-		if (strDesc.find(L"NVIDIA") != std::string::npos)
+		UINT adapterIndex = 0;
+		ComPtr<IDXGIAdapter1> adapter;
+		while (DXGI_ERROR_NOT_FOUND != dxgi_factory_->EnumAdapters1(adapterIndex, &adapter))
 		{
-			tmpAdapter = adpt;
-			break;
+			DXGI_ADAPTER_DESC1 desc1{};
+			adapter->GetDesc1(&desc1);
+			++adapterIndex;
+			if (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				continue;
+			}
+
+			for (auto l : levels)
+			{
+				// D3D12は使用可能か
+				result = D3D12CreateDevice(adapter.Get(), l, __uuidof(ID3D12Device), nullptr);
+				if (SUCCEEDED(result))
+				{
+					level = l;
+					break;
+				}
+			}
+			if (SUCCEEDED(result))
+			{
+				break;
+			}
 		}
+		adapter.As(&useAdapter); // 使用するアダプター
 	}
 
-	result = S_FALSE;
-
-	for (auto l : levels)
-	{
-		if (SUCCEEDED(D3D12CreateDevice(tmpAdapter, l, IID_PPV_ARGS(dev_.ReleaseAndGetAddressOf()))))
-		{
-			result = S_OK;
-			break;
-		}
-	}
-
+	// Direct3Dデバイスの作成
+	result = D3D12CreateDevice(useAdapter.Get(), level, IID_PPV_ARGS(dev_.ReleaseAndGetAddressOf()));
 	if (FAILED(result))
 	{
 		return result;
