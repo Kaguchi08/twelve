@@ -19,6 +19,11 @@ Renderer::~Renderer()
 
 void Renderer::Initialize()
 {
+	// レンダーターゲットの初期化
+	CreateRenderTarget();
+
+	CreateScreenResourceAndView();
+
 	// ルートシグネチャの初期化
 	CreatePMDModelRootSignature();
 	CreateFBXModelRootSignature();
@@ -1086,6 +1091,165 @@ HRESULT Renderer::CreateScreenRootSignature()
 	return result;
 }
 
+HRESULT Renderer::CreateRenderTarget()
+{
+	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
+	auto s = dx12_->GetSwapChain();
+
+	auto result = s->GetDesc1(&swap_chain_desc);
+
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	heap_desc.NodeMask = 0;
+	heap_desc.NumDescriptors = swap_chain_desc.BufferCount;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(rtv_heap_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	render_targets_.resize(swap_chain_desc.BufferCount);
+
+	auto handle = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto inc_size = dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	for (size_t i = 0; i < swap_chain_desc.BufferCount; ++i)
+	{
+		result = dx12_->GetSwapChain()->GetBuffer(i, IID_PPV_ARGS(&render_targets_[i]));
+		assert(SUCCEEDED(result));
+		if (FAILED(result))
+		{
+			assert(0);
+			return result;
+		}
+
+		D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+		rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // ガンマ補正をする場合はDXGI_FORMAT_R8G8B8A8_UNORM_SRGBを指定する
+		rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+		dx12_->GetDevice()->CreateRenderTargetView(render_targets_[i], &rtv_desc, handle);
+
+		handle.ptr += inc_size;
+	}
+
+
+	SIZE window_size = dx12_->GetWindowSize();
+	view_port_.reset(new CD3DX12_VIEWPORT(0.0f, 0.0f, window_size.cx, window_size.cy));
+	scissor_rect_.reset(new CD3DX12_RECT(0.0f, 0.0f, window_size.cx, window_size.cy));
+
+	return result;
+}
+
+bool Renderer::CreateScreenResourceAndView()
+{
+	// 使っているバックバッファーの情報を利用
+	auto& b_buff = render_targets_[0];
+	auto res_desc = b_buff->GetDesc();
+
+	D3D12_HEAP_PROPERTIES heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	D3D12_CLEAR_VALUE clear_value = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, clear_color);
+
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		&clear_value,
+		IID_PPV_ARGS(screen_resource_.ReleaseAndGetAddressOf())
+	);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	result = dx12_->GetDevice()->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		&clear_value,
+		IID_PPV_ARGS(screen_resource_2_.ReleaseAndGetAddressOf())
+	);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// RTV作成
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	heap_desc.NodeMask = 0;
+	heap_desc.NumDescriptors = 2;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(screen_rtv_heap_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	auto handle = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+	rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+	dx12_->GetDevice()->CreateRenderTargetView(screen_resource_.Get(), &rtv_desc, handle);
+
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	dx12_->GetDevice()->CreateRenderTargetView(screen_resource_2_.Get(), &rtv_desc, handle);
+
+	// SRV作成
+	heap_desc = {};
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	heap_desc.NodeMask = 0;
+	heap_desc.NumDescriptors = 2;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(sceen_srv_heap_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+	handle = sceen_srv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	dx12_->GetDevice()->CreateShaderResourceView(screen_resource_.Get(), &srv_desc, handle);
+
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	dx12_->GetDevice()->CreateShaderResourceView(screen_resource_2_.Get(), &srv_desc, handle);
+
+	return true;
+}
+
+void Renderer::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
+{
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource, before, after);
+	dx12_->GetCommandList()->ResourceBarrier(1, &barrier);
+}
+
 void Renderer::DrawPMDModel(bool is_shadow)
 {
 	for (auto& model : pmd_models_)
@@ -1108,6 +1272,131 @@ void Renderer::DrawPrimitive(bool is_shadow)
 	{
 		primitive->Draw(is_shadow);
 	}
+}
+
+bool Renderer::PreDrawToPera()
+{
+	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto dsvH = dx12_->GetDSVHeap()->GetCPUDescriptorHandleForHeapStart();
+	dx12_->GetCommandList()->OMSetRenderTargets(1, &rtvH, false, &dsvH);
+
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	dx12_->GetCommandList()->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
+
+	dx12_->GetCommandList()->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	return true;
+}
+
+void Renderer::DrawToPera1()
+{
+	dx12_->GetCommandList()->RSSetViewports(1, view_port_.get());
+	dx12_->GetCommandList()->RSSetScissorRects(1, scissor_rect_.get());
+}
+
+void Renderer::DrawToPera2()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	rtvH.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	cmd_list->OMSetRenderTargets(1, &rtvH, false, nullptr);
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	cmd_list->SetGraphicsRootSignature(screen_root_signature_.Get());
+	cmd_list->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
+
+	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
+
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetPeraCBVHeap().GetAddressOf());
+	handle = dx12_->GetPeraCBVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
+
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetDepthSRVHeap().GetAddressOf());
+	handle = dx12_->GetDepthSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(3, handle);
+
+	cmd_list->SetPipelineState(screen_pipeline_state_.Get());
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+
+	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+}
+
+bool Renderer::Clear()
+{
+	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	auto bbIdx = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
+
+	BarrierTransResource(render_targets_[bbIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto rtvH = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	rtvH.ptr += bbIdx * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	dx12_->GetCommandList()->OMSetRenderTargets(1, &rtvH, false, nullptr);
+
+	float clear_color[] = { 0.2f, 0.5f, 0.5f, 1.0f };
+	dx12_->GetCommandList()->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
+
+	return true;
+}
+
+void Renderer::DrawToBackBuffer()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	cmd_list->SetGraphicsRootSignature(screen_root_signature_.Get());
+	cmd_list->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
+
+	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
+
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetPeraCBVHeap().GetAddressOf());
+	handle = dx12_->GetPeraCBVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
+
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetEffectSRVHeap().GetAddressOf());
+	handle = dx12_->GetEffectSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(2, handle);
+
+	cmd_list->SetPipelineState(screen_pipeline_state_2_.Get());
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+}
+
+void Renderer::EndDraw()
+{
+	auto bbIdx = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
+
+	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
+	(
+		render_targets_[bbIdx],
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_STATE_PRESENT
+	);
+
+	dx12_->GetCommandList()->ResourceBarrier(1, &barrier);
 }
 
 void Renderer::PrepareShadowMap()
@@ -1177,8 +1466,8 @@ void Renderer::PrepareZPrepass()
 
 	cmd_list->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	cmd_list->RSSetViewports(1, dx12_->GetViewPort().get());
-	cmd_list->RSSetScissorRects(1, dx12_->GetScissorRect().get());
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
 }
 
 void Renderer::BeforeDrawFBXZPrepass()

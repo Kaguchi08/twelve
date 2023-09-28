@@ -48,12 +48,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (FAILED(InitializeRenderer()))
-	{
-		assert(0);
-		return false;
-	}
-
 	if (FAILED(InitializeCommand()))
 	{
 		assert(0);
@@ -66,7 +60,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (FAILED(CreateRenderTarget()))
+	if (FAILED(InitializeRenderer()))
 	{
 		assert(0);
 		return false;
@@ -110,11 +104,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (!CreateScreenResourceAndView())
-	{
-		return false;
-	}
-
 	if (!CreatePeraConstBufferAndView())
 	{
 		return false;
@@ -133,118 +122,12 @@ bool Dx12Wrapper::Initialize()
 	return true;
 }
 
-bool Dx12Wrapper::PreDrawToPera()
-{
-	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-	auto dsvH = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
-	cmd_list_->OMSetRenderTargets(1, &rtvH, false, &dsvH);
-
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	cmd_list_->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
-
-	cmd_list_->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	return true;
-}
-
-void Dx12Wrapper::DrawToPera1()
-{
-	Game game;
-	auto window_size = game.GetWindowSize();
-
-	cmd_list_->RSSetViewports(1, view_port_.get());
-	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
-}
-
-void Dx12Wrapper::DrawToPera2()
-{
-	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	rtvH.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	cmd_list_->OMSetRenderTargets(1, &rtvH, false, nullptr);
-
-	cmd_list_->RSSetViewports(1, view_port_.get());
-	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
-
-	cmd_list_->SetGraphicsRootSignature(renderer_->GetScreenRootSignature().Get());
-	cmd_list_->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
-
-	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(1, handle);
-
-	cmd_list_->SetDescriptorHeaps(1, pera_cbv_heap_.GetAddressOf());
-	handle = pera_cbv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(0, handle);
-
-	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
-	handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(3, handle);
-
-	cmd_list_->SetPipelineState(renderer_->GetScreenPipelineState().Get());
-	cmd_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	cmd_list_->IASetVertexBuffers(0, 1, &screen_vertex_buffer_view_);
-	cmd_list_->DrawInstanced(4, 1, 0, 0);
-
-	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-}
-
 void Dx12Wrapper::SetSceneCB()
 {
 	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
-}
-
-bool Dx12Wrapper::Clear()
-{
-	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-	auto bbIdx = swap_chain_->GetCurrentBackBufferIndex();
-
-	BarrierTransResource(render_targets_[bbIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto rtvH = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-	rtvH.ptr += bbIdx * dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	cmd_list_->OMSetRenderTargets(1, &rtvH, false, nullptr);
-
-	float clear_color[] = { 0.2f, 0.5f, 0.5f, 1.0f };
-	cmd_list_->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
-
-	return true;
-}
-
-void Dx12Wrapper::DrawToBackBuffer()
-{
-	cmd_list_->RSSetViewports(1, view_port_.get());
-	cmd_list_->RSSetScissorRects(1, scissor_rect_.get());
-
-	cmd_list_->SetGraphicsRootSignature(renderer_->GetScreenRootSignature().Get());
-	cmd_list_->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
-
-	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(0, handle);
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	cmd_list_->SetGraphicsRootDescriptorTable(1, handle);
-
-	cmd_list_->SetDescriptorHeaps(1, pera_cbv_heap_.GetAddressOf());
-	handle = pera_cbv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(0, handle);
-
-	cmd_list_->SetDescriptorHeaps(1, effect_srv_heap_.GetAddressOf());
-	handle = effect_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list_->SetGraphicsRootDescriptorTable(2, handle);
-
-	cmd_list_->SetPipelineState(renderer_->GetScreenPipelineState2().Get());
-	cmd_list_->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	cmd_list_->IASetVertexBuffers(0, 1, &screen_vertex_buffer_view_);
-	cmd_list_->DrawInstanced(4, 1, 0, 0);
 }
 
 void Dx12Wrapper::SetCameraSetting()
@@ -299,22 +182,6 @@ void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth
 	cmd_list_->SetGraphicsRootDescriptorTable(depth_index, handle);
 }
 
-void Dx12Wrapper::EndDraw()
-{
-	auto bbIdx = swap_chain_->GetCurrentBackBufferIndex();
-
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
-	(
-		render_targets_[bbIdx],
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PRESENT
-	);
-
-	cmd_list_->ResourceBarrier(1, &barrier);
-
-	ExecuteCommand();
-}
-
 void Dx12Wrapper::ExecuteCommand()
 {
 	cmd_list_->Close();
@@ -357,52 +224,6 @@ void Dx12Wrapper::RenderImgui()
 	cmd_list_->SetDescriptorHeaps(1, imgui_heap_.GetAddressOf());
 
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list_.Get());
-}
-
-void Dx12Wrapper::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after)
-{
-	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource, before, after);
-	cmd_list_->ResourceBarrier(1, &barrier);
-}
-
-HRESULT Dx12Wrapper::CreateRenderTarget()
-{
-	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-	auto result = swap_chain_->GetDesc1(&swap_chain_desc);
-
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, swap_chain_desc.BufferCount, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, rtv_heap_);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return result;
-	}
-
-	render_targets_.resize(swap_chain_desc.BufferCount);
-
-	auto handle = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-	auto inc_size = dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	for (size_t i = 0; i < swap_chain_desc.BufferCount; ++i)
-	{
-		result = swap_chain_->GetBuffer(i, IID_PPV_ARGS(&render_targets_[i]));
-		assert(SUCCEEDED(result));
-		if (FAILED(result))
-		{
-			assert(0);
-			return result;
-		}
-
-		result = CreateRenderTargetViewWrapper(render_targets_[i], DXGI_FORMAT_R8G8B8A8_UNORM, handle); // ガンマ補正をする場合はDXGI_FORMAT_R8G8B8A8_UNORM_SRGBを指定する
-		handle.ptr += inc_size;
-	}
-
-
-	// ビューポート
-	view_port_.reset(new CD3DX12_VIEWPORT(0.0f, 0.0f, window_size_.cx, window_size_.cy));
-	scissor_rect_.reset(new CD3DX12_RECT(0.0f, 0.0f, window_size_.cx, window_size_.cy));
-
-	return result;
 }
 
 bool Dx12Wrapper::CreateDepthBuffer()
@@ -712,90 +533,6 @@ HRESULT Dx12Wrapper::CreateLight()
 	light_const_buffer_->Unmap(0, nullptr);
 
 	return result;
-}
-
-bool Dx12Wrapper::CreateScreenResourceAndView()
-{
-	// 使っているバックバッファーの情報を利用
-	auto& b_buff = render_targets_[0];
-	auto res_desc = b_buff->GetDesc();
-
-	D3D12_HEAP_PROPERTIES heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	D3D12_CLEAR_VALUE clear_value = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, clear_color);
-
-	auto result = dev_->CreateCommittedResource(
-		&heap_prop,
-		D3D12_HEAP_FLAG_NONE,
-		&res_desc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&clear_value,
-		IID_PPV_ARGS(screen_resource_.ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	result = dev_->CreateCommittedResource(
-		&heap_prop,
-		D3D12_HEAP_FLAG_NONE,
-		&res_desc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		&clear_value,
-		IID_PPV_ARGS(screen_resource_2_.ReleaseAndGetAddressOf())
-	);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	// RTV作成
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, screen_rtv_heap_);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	auto handle = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	CreateRenderTargetViewWrapper(screen_resource_.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, handle);
-
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	CreateRenderTargetViewWrapper(screen_resource_2_.Get(), DXGI_FORMAT_R8G8B8A8_UNORM, handle);
-
-	// SRV作成
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, sceen_srv_heap_);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	srv_desc.Texture2D.MipLevels = 1;
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-	handle = sceen_srv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	dev_->CreateShaderResourceView(screen_resource_.Get(), &srv_desc, handle);
-
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	dev_->CreateShaderResourceView(screen_resource_2_.Get(), &srv_desc, handle);
-
-	return true;
 }
 
 HRESULT Dx12Wrapper::InitializeDebug()

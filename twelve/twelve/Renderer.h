@@ -34,6 +34,15 @@ public:
 	void DrawFBXModel(bool is_shadow);
 	void DrawPrimitive(bool is_shadow);
 
+	bool PreDrawToPera();
+	void DrawToPera1();
+	void DrawToPera2();
+
+	bool Clear();
+
+	void DrawToBackBuffer();
+	void EndDraw();
+
 	void AddModelComponent(class ModelComponent* model);
 	void RemoveModelComponent(class ModelComponent* model);
 
@@ -90,6 +99,21 @@ private:
 	std::vector<class FBXComponent*> fbx_models_;
 	std::vector<class PrimitiveComponent*> primitives_;
 
+	// レンダーターゲット
+	std::vector<ID3D12Resource*> render_targets_;
+	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
+
+	// オフスクリーンレンダリング
+	// todo: 配列にする
+	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
+	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> screen_rtv_heap_;
+	ComPtr<ID3D12DescriptorHeap> sceen_srv_heap_;
+
+
+	std::unique_ptr<D3D12_VIEWPORT> view_port_;
+	std::unique_ptr<D3D12_RECT> scissor_rect_;
+
 	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);
 
 	ID3D12Resource* CreateWhiteTexture();
@@ -107,6 +131,13 @@ private:
 	HRESULT CreateFBXModelRootSignature();
 	HRESULT CreatePrimitiveRootSignature();
 	HRESULT CreateScreenRootSignature();
+
+	// レンダーターゲット
+	HRESULT CreateRenderTarget();
+
+	bool CreateScreenResourceAndView();
+
+	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
 	// シャドウマップ
 	void PrepareShadowMap();

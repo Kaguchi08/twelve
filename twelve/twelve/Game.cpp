@@ -149,8 +149,8 @@ void Game::GenerateOutput()
 	renderer_->DrawToZPrepass();
 
 	// 1–‡–Ú
-	dx12_->PreDrawToPera();
-	dx12_->DrawToPera1();
+	renderer_->PreDrawToPera();
+	renderer_->DrawToPera1();
 
 	renderer_->BeforePMDDraw();
 	dx12_->SetCommonBuffer(0, 3, 4);
@@ -164,10 +164,10 @@ void Game::GenerateOutput()
 	dx12_->SetCommonBuffer(0, 3, 6);
 	renderer_->DrawPrimitive(false);
 
-	dx12_->DrawToPera2();
+	renderer_->DrawToPera2();
 
-	dx12_->Clear();
-	dx12_->DrawToBackBuffer();
+	renderer_->Clear();
+	renderer_->DrawToBackBuffer();
 
 	if (game_state_ == GameState::kPause)
 	{
@@ -176,7 +176,8 @@ void Game::GenerateOutput()
 		dx12_->RenderImgui();
 	}
 
-	dx12_->EndDraw();
+	renderer_->EndDraw();
+	dx12_->ExecuteCommand();
 
 
 	// ƒtƒŠƒbƒv

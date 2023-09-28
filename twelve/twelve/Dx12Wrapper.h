@@ -27,21 +27,12 @@ public:
 
 	bool Initialize();
 
-	bool PreDrawToPera();
-	void DrawToPera1();
-	void DrawToPera2();
-
 	void SetSceneCB();
-
-	bool Clear();
-
-	void DrawToBackBuffer();
 
 	void SetCameraSetting();
 	// バッファをセットする
 	void SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index);
 
-	void EndDraw();
 	void ExecuteCommand();
 
 	void CreateImguiWindow();
@@ -53,14 +44,17 @@ public:
 
 	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
 
-	ComPtr<IDXGISwapChain> GetSwapChain() { return swap_chain_.Get(); }
+	ComPtr<IDXGISwapChain4> GetSwapChain() { return swap_chain_.Get(); }
 
-	ComPtr<ID3D12DescriptorHeap> GetRTVHeap() { return rtv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
 
-	std::unique_ptr<D3D12_VIEWPORT>& GetViewPort() { return view_port_; }
-	std::unique_ptr<D3D12_RECT>& GetScissorRect() { return scissor_rect_; }
+	ComPtr<ID3D12DescriptorHeap> GetPeraCBVHeap() { return pera_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetEffectSRVHeap() { return effect_srv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetDepthSRVHeap() { return depth_srv_heap_; }
+
+	D3D12_VERTEX_BUFFER_VIEW GetScreenVertexBufferView() { return screen_vertex_buffer_view_; }
+
 
 	// リソースマネージャーを返す
 	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
@@ -99,12 +93,6 @@ private:
 	ComPtr<ID3D12GraphicsCommandList> cmd_list_ = nullptr;
 	ComPtr<ID3D12CommandQueue> cmd_queue_ = nullptr;
 
-	// 表示に関わるバッファ周り
-	std::vector<ID3D12Resource*> render_targets_;
-	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
-	std::unique_ptr<D3D12_VIEWPORT> view_port_;
-	std::unique_ptr<D3D12_RECT> scissor_rect_;
-
 	// 深度値
 	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
 	ComPtr<ID3D12Resource> depth_buffer_ = nullptr; // Zprepassでも使用
@@ -139,8 +127,6 @@ private:
 	ComPtr<ID3D12Fence> fence_ = nullptr;
 	UINT64 fence_val_ = 0;
 
-	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
-
 	// レンダーターゲットの生成
 	HRESULT CreateRenderTarget();
 	// 深度バッファの作成
@@ -167,13 +153,6 @@ private:
 	HRESULT CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask = 0);
 	HRESULT CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle);
 
-	// オフスクリーンレンダリング
-	// todo: 配列にする
-	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
-	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> screen_rtv_heap_;
-	ComPtr<ID3D12DescriptorHeap> sceen_srv_heap_;
-
 	ComPtr<ID3D12Resource> screen_vertex_buffer_ = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
 
@@ -185,7 +164,6 @@ private:
 	ComPtr<ID3D12Resource> effect_resource_ = nullptr;
 	ComPtr<ID3D12DescriptorHeap> effect_srv_heap_;
 
-	bool CreateScreenResourceAndView();
 	bool CreatePeraConstBufferAndView();
 	bool CreateEffectResourceAndView();
 	bool CreatePeraVerTex();
