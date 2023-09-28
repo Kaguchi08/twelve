@@ -27,3 +27,11 @@ float4 VSShadow(VSIn vsIn) : SV_POSITION
     
     return mul(lightView, vsIn.pos);
 }
+
+float4 VSZPrepass(VSIn vsIn) : SV_POSITION
+{
+    vsIn.pos = mul(world, vsIn.pos);
+    vsIn.pos = mul(view, vsIn.pos);
+    
+    return mul(proj, vsIn.pos);
+}

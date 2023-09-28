@@ -193,27 +193,6 @@ void Dx12Wrapper::DrawToPera2()
 	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
-void Dx12Wrapper::PreDrawShadow()
-{
-	auto handle = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
-	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-
-	cmd_list_->OMSetRenderTargets(0, nullptr, false, &handle);
-
-	cmd_list_->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
-
-	cmd_list_->SetDescriptorHeaps(1, heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
-
-	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 1024, 1024);
-	cmd_list_->RSSetViewports(1, &viewport);
-
-	D3D12_RECT scissor = CD3DX12_RECT(0, 0, 1024, 1024);
-	cmd_list_->RSSetScissorRects(1, &scissor);
-}
-
 void Dx12Wrapper::SetSceneCB()
 {
 	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
@@ -228,7 +207,7 @@ bool Dx12Wrapper::Clear()
 
 	auto bbIdx = swap_chain_->GetCurrentBackBufferIndex();
 
-	BarrierTransResource(back_buffers_[bbIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	BarrierTransResource(render_targets_[bbIdx], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
 	auto rtvH = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 	rtvH.ptr += bbIdx * dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -326,7 +305,7 @@ void Dx12Wrapper::EndDraw()
 
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition
 	(
-		back_buffers_[bbIdx],
+		render_targets_[bbIdx],
 		D3D12_RESOURCE_STATE_RENDER_TARGET,
 		D3D12_RESOURCE_STATE_PRESENT
 	);
@@ -399,14 +378,14 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 		return result;
 	}
 
-	back_buffers_.resize(swap_chain_desc.BufferCount);
+	render_targets_.resize(swap_chain_desc.BufferCount);
 
 	auto handle = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 	auto inc_size = dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	for (size_t i = 0; i < swap_chain_desc.BufferCount; ++i)
 	{
-		result = swap_chain_->GetBuffer(i, IID_PPV_ARGS(&back_buffers_[i]));
+		result = swap_chain_->GetBuffer(i, IID_PPV_ARGS(&render_targets_[i]));
 		assert(SUCCEEDED(result));
 		if (FAILED(result))
 		{
@@ -414,7 +393,7 @@ HRESULT Dx12Wrapper::CreateRenderTarget()
 			return result;
 		}
 
-		result = CreateRenderTargetViewWrapper(back_buffers_[i], DXGI_FORMAT_R8G8B8A8_UNORM, handle); // ガンマ補正をする場合はDXGI_FORMAT_R8G8B8A8_UNORM_SRGBを指定する
+		result = CreateRenderTargetViewWrapper(render_targets_[i], DXGI_FORMAT_R8G8B8A8_UNORM, handle); // ガンマ補正をする場合はDXGI_FORMAT_R8G8B8A8_UNORM_SRGBを指定する
 		handle.ptr += inc_size;
 	}
 
@@ -738,7 +717,7 @@ HRESULT Dx12Wrapper::CreateLight()
 bool Dx12Wrapper::CreateScreenResourceAndView()
 {
 	// 使っているバックバッファーの情報を利用
-	auto& b_buff = back_buffers_[0];
+	auto& b_buff = render_targets_[0];
 	auto res_desc = b_buff->GetDesc();
 
 	D3D12_HEAP_PROPERTIES heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);

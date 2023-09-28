@@ -31,7 +31,6 @@ public:
 	void DrawToPera1();
 	void DrawToPera2();
 
-	void PreDrawShadow();
 	void SetSceneCB();
 
 	bool Clear();
@@ -48,6 +47,8 @@ public:
 	void CreateImguiWindow();
 	void RenderImgui();
 
+	SIZE GetWindowSize() const { return window_size_; }
+
 	ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
 
 	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
@@ -57,6 +58,9 @@ public:
 	ComPtr<ID3D12DescriptorHeap> GetRTVHeap() { return rtv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
+
+	std::unique_ptr<D3D12_VIEWPORT>& GetViewPort() { return view_port_; }
+	std::unique_ptr<D3D12_RECT>& GetScissorRect() { return scissor_rect_; }
 
 	// リソースマネージャーを返す
 	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
@@ -96,14 +100,14 @@ private:
 	ComPtr<ID3D12CommandQueue> cmd_queue_ = nullptr;
 
 	// 表示に関わるバッファ周り
-	std::vector<ID3D12Resource*> back_buffers_;
+	std::vector<ID3D12Resource*> render_targets_;
 	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
 	std::unique_ptr<D3D12_VIEWPORT> view_port_;
 	std::unique_ptr<D3D12_RECT> scissor_rect_;
 
 	// 深度値
 	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
-	ComPtr<ID3D12Resource> depth_buffer_ = nullptr;
+	ComPtr<ID3D12Resource> depth_buffer_ = nullptr; // Zprepassでも使用
 	ComPtr<ID3D12Resource> light_depth_buffer_ = nullptr;
 
 	// 深度値テクスチャ

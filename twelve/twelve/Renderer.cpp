@@ -54,6 +54,19 @@ void Renderer::DrawToShadowMap()
 	DrawPrimitive(true);
 }
 
+void Renderer::DrawToZPrepass()
+{
+	PrepareZPrepass();
+
+	// FBX
+	BeforeDrawFBXZPrepass();
+	DrawFBXModel(true);
+
+	// Primitive
+	BeforeDrawPrimitiveZPrepass();
+	DrawPrimitive(true);
+}
+
 void Renderer::BeforePMDDraw()
 {
 	auto command_list = dx12_->GetCommandList();
@@ -471,6 +484,35 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 		return result;
 	}
 
+	// Zprepass
+	result = result = D3DCompileFromFile(
+		L"FBXVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSZPrepass",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_zprepass_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
 	return result;
 }
 
@@ -604,6 +646,35 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN; // RTV‚È‚µ
 
 	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_shadow_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// Zprepass
+	result = result = D3DCompileFromFile(
+		L"PrimitiveVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSZPrepass",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_zprepass_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -1088,6 +1159,46 @@ void Renderer::BeforeDrawPrimitiveShadowMap()
 	auto cmd_list = dx12_->GetCommandList();
 
 	cmd_list->SetPipelineState(primitive_shadow_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
+
+	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };
+
+	cmd_list->SetDescriptorHeaps(1, heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Renderer::PrepareZPrepass()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	auto handle = dx12_->GetDSVHeap()->GetCPUDescriptorHandleForHeapStart();
+
+	cmd_list->OMSetRenderTargets(0, nullptr, false, &handle);
+
+	cmd_list->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+	cmd_list->RSSetViewports(1, dx12_->GetViewPort().get());
+	cmd_list->RSSetScissorRects(1, dx12_->GetScissorRect().get());
+}
+
+void Renderer::BeforeDrawFBXZPrepass()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(fbx_zprepass_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+
+	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };
+
+	cmd_list->SetDescriptorHeaps(1, heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Renderer::BeforeDrawPrimitiveZPrepass()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(primitive_zprepass_pipeline_state_.Get());
 	cmd_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
 
 	ID3D12DescriptorHeap* heaps[] = { dx12_->GetSceneCBVHeap().Get() };

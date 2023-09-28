@@ -20,6 +20,9 @@ public:
 	// シャドウマップへの描画
 	void DrawToShadowMap();
 
+	// ZPrepass
+	void DrawToZPrepass();
+
 	void BeforePMDDraw();
 	void BeforeFBXDraw();
 	void BeforePrimitiveDraw();
@@ -72,6 +75,10 @@ private:
 	ComPtr<ID3D12PipelineState> fbx_shadow_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> primitive_shadow_pipeline_state_ = nullptr;
 
+	// ZPrepass
+	ComPtr<ID3D12PipelineState> fbx_zprepass_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_zprepass_pipeline_state_ = nullptr;
+
 	// ルートシグネチャ
 	ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
@@ -106,6 +113,11 @@ private:
 	void BeforeDrawPMDShadowMap();
 	void BeforeDrawFBXShadowMap();
 	void BeforeDrawPrimitiveShadowMap();
+
+	// Zprepass
+	void PrepareZPrepass();
+	void BeforeDrawFBXZPrepass();
+	void BeforeDrawPrimitiveZPrepass();
 
 	// Helperに移動してもいいかも
 	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);

@@ -145,6 +145,9 @@ void Game::GenerateOutput()
 	// ‰e‚Ì•`‰æ
 	renderer_->DrawToShadowMap();
 
+	// ZPrepass
+	renderer_->DrawToZPrepass();
+
 	// 1–‡–Ú
 	dx12_->PreDrawToPera();
 	dx12_->DrawToPera1();
