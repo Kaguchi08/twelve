@@ -22,18 +22,20 @@ void Renderer::Initialize()
 	// レンダーターゲットの初期化
 	CreateRenderTarget();
 
-	CreateScreenResourceAndView();
+	CreateOffScreenResourceAndView();
 
 	// ルートシグネチャの初期化
 	CreatePMDModelRootSignature();
 	CreateFBXModelRootSignature();
 	CreatePrimitiveRootSignature();
+	CreateDeferredLightingRootSignature();
 	CreateScreenRootSignature();
 
 	// パイプラインの初期化
 	CreatePMDModelGraphicsPipeline();
 	CreateFBXModelGraphicsPipeline();
 	CreatePrimitiveGraphicsPipeline();
+	CreateDefferedLightingGraphicsPipeline();
 	CreateScreenGraphicsPipeline();
 
 	// 汎用テクスチャの初期化
@@ -70,6 +72,70 @@ void Renderer::DrawToZPrepass()
 	// Primitive
 	BeforeDrawPrimitiveZPrepass();
 	DrawPrimitive(true);
+}
+
+void Renderer::DrawToGBuffer()
+{
+	PrepareGBuffer();
+
+	// FBX
+	BeforeDrawFBXGBuffer();
+	dx12_->SetCommonBuffer(0, 7, 2);
+	DrawFBXModel(false);
+
+	// Primitive
+	BeforeDrawPrimitiveGBuffer();
+	dx12_->SetCommonBuffer(0, 3, 6);
+	DrawPrimitive(false);
+
+	EndDrawGBuffer();
+}
+
+void Renderer::DrawDeferredLighting()
+{
+	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto cmd_list = dx12_->GetCommandList();
+	auto rtv_handle = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	// レンダーターゲットの設定
+	cmd_list->OMSetRenderTargets(1, &rtv_handle, false, nullptr);
+
+	// レンダーターゲットのクリア
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+
+	cmd_list->ClearRenderTargetView(rtv_handle, clear_color, 0, nullptr);
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	// ルートシグネチャの設定
+	cmd_list->SetGraphicsRootSignature(deferred_lighting_root_signature_.Get());
+	// パイプラインステートの設定
+	cmd_list->SetPipelineState(deferred_lighting_pipeline_state_.Get());
+
+	// 共通バッファを設定
+	dx12_->SetCommonBuffer(0, 1, 6);
+
+	// G-Bufferに出力されたテスクチャの設定
+	// ディスクリプタヒープの設定
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
+
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += 2 * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	for (int i = 0; i < kNumGBuffer; ++i)
+	{
+		cmd_list->SetGraphicsRootDescriptorTable(i + 2, handle); // 0, 1は定数バッファ
+		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+
+	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 void Renderer::BeforePMDDraw()
@@ -518,6 +584,64 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 		return result;
 	}
 
+	// G-Buffer
+	result = result = D3DCompileFromFile(
+		L"FBXVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"main",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = result = D3DCompileFromFile(
+		L"FBXPixelShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"PSGBuffer",
+		"ps_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&ps_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
+
+	gps_desc.NumRenderTargets = kNumGBuffer;
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // アルベド
+	gps_desc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // 法線
+	gps_desc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM; // ワールド座標
+	gps_desc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM; // 金属度 + 滑らかさ
+
+	// ZPrepassで書き込んだ深度バッファを使う
+	gps_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 読み取り専用
+	gps_desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(fbx_gbuffer_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
 	return result;
 }
 
@@ -680,6 +804,164 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
 
 	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_zprepass_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// G-Buffer
+	result = result = D3DCompileFromFile(
+		L"PrimitiveVertexShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSMain",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = result = D3DCompileFromFile(
+		L"PrimitivePixelShader.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"PSGBuffer",
+		"ps_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&ps_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
+
+	gps_desc.NumRenderTargets = kNumGBuffer;
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // アルベド
+	gps_desc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // 法線
+	gps_desc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM; // ワールド座標
+	gps_desc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM; // 金属度 + 滑らかさ
+
+	// ZPrepassで書き込んだ深度バッファを使う
+	gps_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 読み取り専用
+	gps_desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(primitive_gbuffer_pipeline_state_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	return result;
+}
+
+HRESULT Renderer::CreateDefferedLightingGraphicsPipeline()
+{
+	ComPtr<ID3DBlob> vs_blob = nullptr;
+	ComPtr<ID3DBlob> ps_blob = nullptr;
+	ComPtr<ID3DBlob> error_blob = nullptr;
+
+	auto result = D3DCompileFromFile(
+		L"DefferedLighting.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"VSMain",
+		"vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&vs_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = D3DCompileFromFile(
+		L"DefferedLighting.hlsl",
+		nullptr,
+		D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		"PSMain",
+		"ps_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
+		0,
+		&ps_blob,
+		&error_blob
+	);
+
+	if (!(CheckShaderCompileResult(result, error_blob.Get())))
+	{
+		assert(0);
+		return result;
+	}
+
+	// 頂点レイアウトの定義
+	D3D12_INPUT_ELEMENT_DESC input_elem_desc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,	  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC gps_desc = {};
+
+	gps_desc.InputLayout.pInputElementDescs = input_elem_desc;
+	gps_desc.InputLayout.NumElements = _countof(input_elem_desc);
+	gps_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	gps_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+
+	// シェーダ
+	gps_desc.VS = CD3DX12_SHADER_BYTECODE(vs_blob.Get());
+	gps_desc.PS = CD3DX12_SHADER_BYTECODE(ps_blob.Get());
+
+	// ラスタライザ
+	gps_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	gps_desc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+
+	// 出力
+	gps_desc.NumRenderTargets = 1;
+	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	gps_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	gps_desc.BlendState.RenderTarget[0].BlendEnable = true;
+	gps_desc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	gps_desc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	gps_desc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	gps_desc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+	gps_desc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	gps_desc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+
+	// 深度ステンシル
+	gps_desc.DepthStencilState.DepthEnable = false;
+	gps_desc.DepthStencilState.StencilEnable = false;
+
+	// 全体的な設定
+	gps_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	gps_desc.NodeMask = 0;
+	gps_desc.SampleDesc.Count = 1;
+	gps_desc.SampleDesc.Quality = 0;
+	gps_desc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	gps_desc.pRootSignature = deferred_lighting_root_signature_.Get();
+
+	result = dx12_->GetDevice()->CreateGraphicsPipelineState(&gps_desc, IID_PPV_ARGS(deferred_lighting_pipeline_state_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -1002,6 +1284,68 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 	return result;
 }
 
+HRESULT Renderer::CreateDeferredLightingRootSignature()
+{
+	const int num_ranges = 7;
+	const int num_root_params = 7;
+	const int num_samplers = 2;
+
+	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
+
+	// 定数
+	range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); // シーン関連 
+	range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1); // ライト
+	range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // アルベド
+	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // 法線
+	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // ワールド座標
+	range[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // ARMマップ
+	range[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // シャドウマップ
+
+	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
+
+	root_param[0].InitAsDescriptorTable(1, &range[0]);
+	root_param[1].InitAsDescriptorTable(1, &range[1]);
+	root_param[2].InitAsDescriptorTable(1, &range[2]);
+	root_param[3].InitAsDescriptorTable(1, &range[3]);
+	root_param[4].InitAsDescriptorTable(1, &range[4]);
+	root_param[5].InitAsDescriptorTable(1, &range[5]);
+	root_param[6].InitAsDescriptorTable(1, &range[6]);
+
+	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
+
+	sampler_desc[0].Init(0);
+	sampler_desc[1].Init(1);
+	sampler_desc[1].Filter = D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	sampler_desc[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	sampler_desc[1].MaxAnisotropy = 1;
+	sampler_desc[1].ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+
+	CD3DX12_ROOT_SIGNATURE_DESC root_signature_desc = {};
+
+	root_signature_desc.Init(num_root_params, root_param, num_samplers, sampler_desc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+	ComPtr<ID3DBlob> root_sig_blob;
+	ComPtr<ID3DBlob> error_blob;
+
+	auto result = D3D12SerializeRootSignature(&root_signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &root_sig_blob, &error_blob);
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = dx12_->GetDevice()->CreateRootSignature(0, root_sig_blob->GetBufferPointer(), root_sig_blob->GetBufferSize(), IID_PPV_ARGS(deferred_lighting_root_signature_.ReleaseAndGetAddressOf()));
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	return result;
+}
+
 HRESULT Renderer::CreateScreenRootSignature()
 {
 	D3D12_DESCRIPTOR_RANGE range[4] = {};
@@ -1144,9 +1488,10 @@ HRESULT Renderer::CreateRenderTarget()
 	return result;
 }
 
-bool Renderer::CreateScreenResourceAndView()
+bool Renderer::CreateOffScreenResourceAndView()
 {
-	// 使っているバックバッファーの情報を利用
+	// レンダーターゲットの作成
+	// 使っているレンダーターゲットの情報を利用
 	auto& b_buff = render_targets_[0];
 	auto res_desc = b_buff->GetDesc();
 
@@ -1155,13 +1500,14 @@ bool Renderer::CreateScreenResourceAndView()
 	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	D3D12_CLEAR_VALUE clear_value = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, clear_color);
 
+	// ディファードライティング用
 	auto result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		&clear_value,
-		IID_PPV_ARGS(screen_resource_.ReleaseAndGetAddressOf())
+		IID_PPV_ARGS(deferred_lighting_render_target.ReleaseAndGetAddressOf())
 	);
 
 	if (FAILED(result))
@@ -1170,14 +1516,49 @@ bool Renderer::CreateScreenResourceAndView()
 		return false;
 	}
 
+	// ポストエフェクト用
 	result = dx12_->GetDevice()->CreateCommittedResource(
 		&heap_prop,
 		D3D12_HEAP_FLAG_NONE,
 		&res_desc,
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		&clear_value,
-		IID_PPV_ARGS(screen_resource_2_.ReleaseAndGetAddressOf())
+		IID_PPV_ARGS(post_effect_.ReleaseAndGetAddressOf())
 	);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// G-Buffer用
+	for (auto& g_buffer : g_buffers_)
+	{
+		result = dx12_->GetDevice()->CreateCommittedResource(
+			&heap_prop,
+			D3D12_HEAP_FLAG_NONE,
+			&res_desc,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			&clear_value,
+			IID_PPV_ARGS(g_buffer.ReleaseAndGetAddressOf())
+		);
+
+		if (FAILED(result))
+		{
+			assert(0);
+			return false;
+		}
+	}
+
+	// ディスクリプタヒープの作成（RTV）
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	heap_desc.NodeMask = 0;
+	heap_desc.NumDescriptors = 2 + kNumGBuffer; // ディファードライティング用 + ポストエフェクト用 + G-Buffer用
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(off_screen_rtv_heap_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -1186,40 +1567,35 @@ bool Renderer::CreateScreenResourceAndView()
 	}
 
 	// RTV作成
-	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	heap_desc.NodeMask = 0;
-	heap_desc.NumDescriptors = 2;
-	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(screen_rtv_heap_.ReleaseAndGetAddressOf()));
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	auto handle = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-
 	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
 	rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-	dx12_->GetDevice()->CreateRenderTargetView(screen_resource_.Get(), &rtv_desc, handle);
+	auto handle = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 
-	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	// ディファードライティング用
+	dx12_->GetDevice()->CreateRenderTargetView(deferred_lighting_render_target.Get(), &rtv_desc, handle);
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	dx12_->GetDevice()->CreateRenderTargetView(screen_resource_2_.Get(), &rtv_desc, handle);
+	// ポストエフェクト用
+	dx12_->GetDevice()->CreateRenderTargetView(post_effect_.Get(), &rtv_desc, handle);
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-	// SRV作成
+	// G-Buffer用
+	for (auto& g_buffer : g_buffers_)
+	{
+		dx12_->GetDevice()->CreateRenderTargetView(g_buffer.Get(), &rtv_desc, handle);
+		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
+
+	// ディスクリプタヒープの作成（SRV）
 	heap_desc = {};
 	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	heap_desc.NodeMask = 0;
-	heap_desc.NumDescriptors = 2;
+	heap_desc.NumDescriptors = 2 + kNumGBuffer; // ディファードライティング用 + ポストエフェクト用 + G-Buffer用
 	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(sceen_srv_heap_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(off_sceen_srv_heap_.ReleaseAndGetAddressOf()));
 
 	if (FAILED(result))
 	{
@@ -1227,19 +1603,29 @@ bool Renderer::CreateScreenResourceAndView()
 		return false;
 	}
 
+	// SRV作成
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	srv_desc.Texture2D.MipLevels = 1;
 	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-	handle = sceen_srv_heap_->GetCPUDescriptorHandleForHeapStart();
+	handle = off_sceen_srv_heap_->GetCPUDescriptorHandleForHeapStart();
 
-	dx12_->GetDevice()->CreateShaderResourceView(screen_resource_.Get(), &srv_desc, handle);
-
+	// ディファードライティング用
+	dx12_->GetDevice()->CreateShaderResourceView(deferred_lighting_render_target.Get(), &srv_desc, handle);
 	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-	dx12_->GetDevice()->CreateShaderResourceView(screen_resource_2_.Get(), &srv_desc, handle);
+	// ポストエフェクト用
+	dx12_->GetDevice()->CreateShaderResourceView(post_effect_.Get(), &srv_desc, handle);
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// G-Buffer用
+	for (auto& g_buffer : g_buffers_)
+	{
+		dx12_->GetDevice()->CreateShaderResourceView(g_buffer.Get(), &srv_desc, handle);
+		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 
 	return true;
 }
@@ -1276,14 +1662,14 @@ void Renderer::DrawPrimitive(bool is_shadow)
 
 bool Renderer::PreDrawToPera()
 {
-	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto rtvH = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 	auto dsvH = dx12_->GetDSVHeap()->GetCPUDescriptorHandleForHeapStart();
 	dx12_->GetCommandList()->OMSetRenderTargets(1, &rtvH, false, &dsvH);
 
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	dx12_->GetCommandList()->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
+	/*float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	dx12_->GetCommandList()->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);*/
 
 	dx12_->GetCommandList()->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
@@ -1300,9 +1686,9 @@ void Renderer::DrawToPera2()
 {
 	auto cmd_list = dx12_->GetCommandList();
 
-	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	BarrierTransResource(post_effect_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-	auto rtvH = screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto rtvH = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
 
 	rtvH.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
@@ -1312,9 +1698,9 @@ void Renderer::DrawToPera2()
 	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
 
 	cmd_list->SetGraphicsRootSignature(screen_root_signature_.Get());
-	cmd_list->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
 
-	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
 
 	cmd_list->SetDescriptorHeaps(1, dx12_->GetPeraCBVHeap().GetAddressOf());
@@ -1332,12 +1718,12 @@ void Renderer::DrawToPera2()
 	cmd_list->IASetVertexBuffers(0, 1, &view);
 	cmd_list->DrawInstanced(4, 1, 0, 0);
 
-	BarrierTransResource(screen_resource_2_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	BarrierTransResource(post_effect_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 bool Renderer::Clear()
 {
-	BarrierTransResource(screen_resource_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	auto bbIdx = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
 
@@ -1348,7 +1734,7 @@ bool Renderer::Clear()
 
 	dx12_->GetCommandList()->OMSetRenderTargets(1, &rtvH, false, nullptr);
 
-	float clear_color[] = { 0.2f, 0.5f, 0.5f, 1.0f };
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	dx12_->GetCommandList()->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
 
 	return true;
@@ -1362,9 +1748,9 @@ void Renderer::DrawToBackBuffer()
 	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
 
 	cmd_list->SetGraphicsRootSignature(screen_root_signature_.Get());
-	cmd_list->SetDescriptorHeaps(1, sceen_srv_heap_.GetAddressOf());
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
 
-	auto handle = sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
 	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
@@ -1494,6 +1880,66 @@ void Renderer::BeforeDrawPrimitiveZPrepass()
 
 	cmd_list->SetDescriptorHeaps(1, heaps);
 	cmd_list->SetGraphicsRootDescriptorTable(0, dx12_->GetSceneCBVHeap()->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Renderer::PrepareGBuffer()
+{
+	// バリア
+	for (auto& g_buffer : g_buffers_)
+	{
+		BarrierTransResource(g_buffer.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	}
+
+	auto cmd_list = dx12_->GetCommandList();
+	auto rtv_handle = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto dsv_handle = dx12_->GetDSVHeap()->GetCPUDescriptorHandleForHeapStart(); // ZPrepassで設定したものをそのまま使う
+
+	rtv_handle.ptr += static_cast<unsigned long long>(dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)) * 2; // ディファードライティング用 + ポストエフェクト用
+
+	D3D12_CPU_DESCRIPTOR_HANDLE g_buffer_handles[kNumGBuffer]{};
+	for (int i = 0; i < kNumGBuffer; ++i)
+	{
+		g_buffer_handles[i] = rtv_handle;
+		rtv_handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	}
+
+	// レンダーターゲットの設定
+	cmd_list->OMSetRenderTargets(kNumGBuffer, g_buffer_handles, false, &dsv_handle);
+
+	// レンダーターゲットのクリア
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	for (int i = 0; i < kNumGBuffer; ++i)
+	{
+		cmd_list->ClearRenderTargetView(g_buffer_handles[i], clear_color, 0, nullptr);
+	}
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+}
+
+void Renderer::BeforeDrawFBXGBuffer()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(fbx_gbuffer_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(fbx_model_root_signature_.Get());
+}
+
+void Renderer::BeforeDrawPrimitiveGBuffer()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	cmd_list->SetPipelineState(primitive_gbuffer_pipeline_state_.Get());
+	cmd_list->SetGraphicsRootSignature(primitive_root_signature_.Get());
+}
+
+void Renderer::EndDrawGBuffer()
+{
+	// バリア
+	for (auto& g_buffer : g_buffers_)
+	{
+		BarrierTransResource(g_buffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
 }
 
 bool Renderer::CheckShaderCompileResult(HRESULT result, ID3DBlob* error)

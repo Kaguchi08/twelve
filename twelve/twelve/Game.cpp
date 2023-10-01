@@ -148,21 +148,27 @@ void Game::GenerateOutput()
 	// ZPrepass
 	renderer_->DrawToZPrepass();
 
-	// 1枚目
+	// G-Buffer
+	renderer_->DrawToGBuffer();
+
+	// ディファードレンダリング
+	renderer_->DrawDeferredLighting();
+
 	renderer_->PreDrawToPera();
 	renderer_->DrawToPera1();
 
+	// フォワードレンダリング
 	renderer_->BeforePMDDraw();
 	dx12_->SetCommonBuffer(0, 3, 4);
 	renderer_->DrawPMDModel(false);
 
-	renderer_->BeforeFBXDraw();
+	/*renderer_->BeforeFBXDraw();
 	dx12_->SetCommonBuffer(0, 7, 2);
 	renderer_->DrawFBXModel(false);
 
 	renderer_->BeforePrimitiveDraw();
 	dx12_->SetCommonBuffer(0, 3, 6);
-	renderer_->DrawPrimitive(false);
+	renderer_->DrawPrimitive(false);*/
 
 	renderer_->DrawToPera2();
 

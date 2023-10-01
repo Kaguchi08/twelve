@@ -378,4 +378,11 @@ void FBXComponent::CalculateTangentAndBinormal(FBXMeshData& mesh_data)
 		vert.tangent = ToXMFLOAT3(ToNormalizeXMVECTOR(vert.tangent));
 		vert.binormal = ToXMFLOAT3(ToNormalizeXMVECTOR(vert.binormal));
 	}
+
+	// 頂点バッファへの書き込み
+	FBXVertex* vertex_map = nullptr;
+	mesh_data.vertex_buffer->Map(0, nullptr, (void**)(&vertex_map));
+
+	std::copy(mesh_data.vertices.begin(), mesh_data.vertices.end(), vertex_map);
+	mesh_data.vertex_buffer->Unmap(0, nullptr);
 }

@@ -109,7 +109,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (!CreatePeraVerTex())
+	if (!CreateOffScreenVertex())
 	{
 		return false;
 	}
@@ -164,17 +164,19 @@ void Dx12Wrapper::SetCameraSetting()
 
 void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index)
 {
+	// シーン定数バッファをセット
 	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, scene_heaps);
 	cmd_list_->SetGraphicsRootDescriptorTable(scene_index, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-	ID3D12DescriptorHeap* light_heaps[] = { light_csv_heap_.Get() };
+	// ライト定数バッファをセット
+	ID3D12DescriptorHeap* light_heaps[] = { light_cbv_heap_.Get() };
 
 	cmd_list_->SetDescriptorHeaps(1, light_heaps);
-	cmd_list_->SetGraphicsRootDescriptorTable(light_index, light_csv_heap_->GetGPUDescriptorHandleForHeapStart());
+	cmd_list_->SetGraphicsRootDescriptorTable(light_index, light_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-	// 一旦ここでシャドウマップテクスチャをセット
+	// シャドウマップテクスチャをセット
 	cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
 	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -503,7 +505,7 @@ HRESULT Dx12Wrapper::CreateLight()
 		return result;
 	}
 
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, light_csv_heap_);
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, light_cbv_heap_);
 
 	if (FAILED(result))
 	{
@@ -511,7 +513,7 @@ HRESULT Dx12Wrapper::CreateLight()
 		return result;
 	}
 
-	auto handle = light_csv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto handle = light_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
 	view_desc.BufferLocation = light_const_buffer_->GetGPUVirtualAddress();
@@ -665,15 +667,15 @@ bool Dx12Wrapper::CreateEffectResourceAndView()
 	return true;
 }
 
-bool Dx12Wrapper::CreatePeraVerTex()
+bool Dx12Wrapper::CreateOffScreenVertex()
 {
-	struct PeraVertex
+	struct OffScreenVertex
 	{
 		DirectX::XMFLOAT3 pos;
 		DirectX::XMFLOAT2 uv;
 	};
 
-	PeraVertex pv[4] = {
+	OffScreenVertex vertex[4] = {
 		{{-1, -1, 0.1}, {0, 1}},
 		{{-1, 1, 0.1}, {0, 0}},
 		{{1, -1, 0.1}, {1, 1}},
@@ -681,7 +683,7 @@ bool Dx12Wrapper::CreatePeraVerTex()
 	};
 
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(pv));
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertex));
 
 	auto result = dev_->CreateCommittedResource(
 		&heap_prop,
@@ -698,14 +700,14 @@ bool Dx12Wrapper::CreatePeraVerTex()
 		return false;
 	}
 
-	PeraVertex* map = nullptr;
+	OffScreenVertex* map = nullptr;
 	screen_vertex_buffer_->Map(0, nullptr, (void**)&map);
-	std::copy(std::begin(pv), std::end(pv), map);
+	std::copy(std::begin(vertex), std::end(vertex), map);
 	screen_vertex_buffer_->Unmap(0, nullptr);
 
 	screen_vertex_buffer_view_.BufferLocation = screen_vertex_buffer_->GetGPUVirtualAddress();
-	screen_vertex_buffer_view_.SizeInBytes = sizeof(pv);
-	screen_vertex_buffer_view_.StrideInBytes = sizeof(PeraVertex);
+	screen_vertex_buffer_view_.SizeInBytes = sizeof(vertex);
+	screen_vertex_buffer_view_.StrideInBytes = sizeof(OffScreenVertex);
 
 	return true;
 }

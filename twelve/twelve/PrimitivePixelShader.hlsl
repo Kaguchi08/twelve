@@ -251,3 +251,24 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     return finalColor;
 }
 
+PSOut PSGBuffer(PSIn psIn)
+{
+    PSOut psOut;
+    
+    // アルベドカラーを出力
+    psOut.albedo = tex.Sample(smp, psIn.uv);
+    
+    // 法線を出力
+    psOut.normal = float4(GetNormal(psIn.normal, psIn.tangent, psIn.biNormal, psIn.uv), 1.0f);
+    // 法線の範囲を-1～1から0～1に変換
+    psOut.normal.xyz = psOut.normal.xyz * 0.5f + 0.5f;
+    
+    // ARMマップを出力
+    psOut.arm = armMap.Sample(smp, psIn.uv);
+    
+    // ワールド座標を出力
+    psOut.worldPos = psIn.worldPos;
+    
+    return psOut;
+}
+

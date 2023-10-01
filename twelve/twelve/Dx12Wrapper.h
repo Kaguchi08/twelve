@@ -41,20 +41,17 @@ public:
 	SIZE GetWindowSize() const { return window_size_; }
 
 	ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
-
 	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
-
 	ComPtr<IDXGISwapChain4> GetSwapChain() { return swap_chain_.Get(); }
 
 	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
-
 	ComPtr<ID3D12DescriptorHeap> GetPeraCBVHeap() { return pera_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetLightCBVHeap() { return light_cbv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetEffectSRVHeap() { return effect_srv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetDepthSRVHeap() { return depth_srv_heap_; }
 
 	D3D12_VERTEX_BUFFER_VIEW GetScreenVertexBufferView() { return screen_vertex_buffer_view_; }
-
 
 	// リソースマネージャーを返す
 	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
@@ -78,7 +75,7 @@ private:
 	// ライト
 	std::unique_ptr<class Light> light_ = nullptr;
 	ComPtr<ID3D12Resource> light_const_buffer_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> light_csv_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> light_cbv_heap_ = nullptr;
 
 	std::shared_ptr<class Renderer> renderer_ = nullptr;
 	std::unique_ptr<class ModelLoader> model_loader_;
@@ -166,7 +163,7 @@ private:
 
 	bool CreatePeraConstBufferAndView();
 	bool CreateEffectResourceAndView();
-	bool CreatePeraVerTex();
+	bool CreateOffScreenVertex();
 	bool CreateDepthSRV();
 
 	// imgui

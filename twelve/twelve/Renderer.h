@@ -3,6 +3,7 @@
 #include <wrl.h>
 #include <vector>
 #include <memory>
+#include <array>
 #include "Helper.h"
 #include "Model.h"
 #include "Primitive.h"
@@ -22,6 +23,12 @@ public:
 
 	// ZPrepass
 	void DrawToZPrepass();
+
+	// G-Buffer
+	void DrawToGBuffer();
+
+	// ディファードライティング
+	void DrawDeferredLighting();
 
 	void BeforePMDDraw();
 	void BeforeFBXDraw();
@@ -71,11 +78,22 @@ public:
 
 
 private:
+	// G-Buffer の定義
+	enum GBuffer
+	{
+		kAlbedo,
+		kNormal,
+		kWorldPos,
+		kArm,
+		kNumGBuffer,
+	};
+
 	class Dx12Wrapper* dx12_;
 	// パイプライン
 	ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> primitive_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> deferred_lighting_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> screen_pipeline_state_2_ = nullptr;
 
@@ -88,10 +106,15 @@ private:
 	ComPtr<ID3D12PipelineState> fbx_zprepass_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> primitive_zprepass_pipeline_state_ = nullptr;
 
+	// G-Buffer
+	ComPtr<ID3D12PipelineState> fbx_gbuffer_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_gbuffer_pipeline_state_ = nullptr;
+
 	// ルートシグネチャ
 	ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> primitive_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> deferred_lighting_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> screen_root_signature_ = nullptr;
 
 	// モデル
@@ -104,12 +127,11 @@ private:
 	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
 
 	// オフスクリーンレンダリング
-	// todo: 配列にする
-	ComPtr<ID3D12Resource> screen_resource_ = nullptr;
-	ComPtr<ID3D12Resource> screen_resource_2_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> screen_rtv_heap_;
-	ComPtr<ID3D12DescriptorHeap> sceen_srv_heap_;
-
+	ComPtr<ID3D12Resource> deferred_lighting_render_target = nullptr;
+	ComPtr<ID3D12Resource> post_effect_ = nullptr;
+	std::array<ComPtr<ID3D12Resource>, kNumGBuffer> g_buffers_;
+	ComPtr<ID3D12DescriptorHeap> off_screen_rtv_heap_;
+	ComPtr<ID3D12DescriptorHeap> off_sceen_srv_heap_;
 
 	std::unique_ptr<D3D12_VIEWPORT> view_port_;
 	std::unique_ptr<D3D12_RECT> scissor_rect_;
@@ -124,18 +146,20 @@ private:
 	HRESULT CreatePMDModelGraphicsPipeline();
 	HRESULT CreateFBXModelGraphicsPipeline();
 	HRESULT CreatePrimitiveGraphicsPipeline();
+	HRESULT CreateDefferedLightingGraphicsPipeline();
 	HRESULT CreateScreenGraphicsPipeline();
 
 	// ルートシグネチャ初期化
 	HRESULT CreatePMDModelRootSignature();
 	HRESULT CreateFBXModelRootSignature();
 	HRESULT CreatePrimitiveRootSignature();
+	HRESULT CreateDeferredLightingRootSignature();
 	HRESULT CreateScreenRootSignature();
 
 	// レンダーターゲット
 	HRESULT CreateRenderTarget();
 
-	bool CreateScreenResourceAndView();
+	bool CreateOffScreenResourceAndView();
 
 	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
@@ -149,6 +173,12 @@ private:
 	void PrepareZPrepass();
 	void BeforeDrawFBXZPrepass();
 	void BeforeDrawPrimitiveZPrepass();
+
+	// G-Buffer
+	void PrepareGBuffer();
+	void BeforeDrawFBXGBuffer();
+	void BeforeDrawPrimitiveGBuffer();
+	void EndDrawGBuffer();
 
 	// Helperに移動してもいいかも
 	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);

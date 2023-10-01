@@ -53,3 +53,11 @@ struct PSIn
     float3 biNormal : BINORMAL;
     float4 lightPos : LIGHTPOS;
 };
+
+struct PSOut
+{
+    float4 albedo : SV_TARGET0;
+    float4 normal : SV_TARGET1;
+    float4 worldPos : SV_TARGET2;
+    float4 arm : SV_TARGET3;
+};

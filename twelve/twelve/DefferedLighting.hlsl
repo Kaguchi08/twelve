@@ -1,16 +1,41 @@
-#include "FBXHeader.hlsli"
+SamplerState smp : register(s0);
+SamplerComparisonState smpShadow : register(s1);
+
+Texture2D<float4> albedoTex : register(t0);
+Texture2D<float4> normalTex : register(t1);
+Texture2D<float4> worldPosTex : register(t2);
+Texture2D<float4> armTex : register(t3);
+Texture2D<float4> shadowMap : register(t4);
+
+cbuffer Scene : register(b0)
+{
+    matrix view;
+    matrix proj;
+    matrix lightView;
+    matrix shadow;
+    float3 eye;
+};
+
+cbuffer Light : register(b1)
+{
+    float3 direction;
+    float3 color;
+    float3 ambientLight;
+};
+
+struct VSIn
+{
+    float4 pos : POSITION;
+    float2 uv : TEXCOORD;
+};
+
+struct PSIn
+{
+    float4 svpos : SV_POSITION;
+    float2 uv : TEXCOORD;
+};
 
 static const float PI = 3.1415926f;
-
-float3 GetNormal(float3 normal, float3 tangent, float3 biNormal, float2 uv)
-{
-    float3 binSpaceNormal = normalMap.SampleLevel(smp, uv, 0.0f).xyz;
-    binSpaceNormal = (binSpaceNormal * 2.0f) - 1.0f;
-
-    float3 newNormal = tangent * binSpaceNormal.x + biNormal * binSpaceNormal.y + normal * binSpaceNormal.z;
-    
-    return newNormal;
-}
 
 // ベックマン分布を計算する
 float Beckmann(float m, float t)
@@ -83,7 +108,7 @@ float CalcDiffuseFromFresnel(float3 N, float3 L, float3 V, PSIn psIn)
     float3 H = normalize(L + V);
 
     // 粗さは0.5で固定。
-    float roughness = armMap.Sample(smp, psIn.uv).g;
+    float roughness = armTex.Sample(smp, psIn.uv).g;
 
     float energyBias = lerp(0.0f, 0.5f, roughness);
     float energyFactor = lerp(1.0, 1.0 / 1.51, roughness);
@@ -108,76 +133,42 @@ float CalcDiffuseFromFresnel(float3 N, float3 L, float3 V, PSIn psIn)
     return (FL * FV * energyFactor);
 }
 
-float3 CalcLambertDiffuse(float3 lightDirection, float3 lightColor, float3 normal)
+PSIn VSMain(VSIn vsIn)
 {
-    // ピクセルの法線とライトの方向の内積を計算する
-    float t = dot(normal, lightDirection) * -1.0;
-    
-    // 内積が負の場合は0を返す
-    t = max(t, 0.0);
-    
-    // 拡散反射光を計算する
-    return lightColor * t;
+    PSIn psIn;
+    psIn.svpos = vsIn.pos;
+    psIn.uv = vsIn.uv;
+    return psIn;
 }
 
-float3 CalcPhongSpecular(float3 lightDirection, float3 lightColor, float4 worldPos, float3 normal)
+float4 PSMain(PSIn psIn) : SV_TARGET
 {
-    // 反射ベクトルを求める
-    float3 refVec = reflect(lightDirection, normal);
-
-    // 光が当たったサーフェイスから視点に伸びるベクトルを求める
-    float3 toEye = eye - worldPos;
-    toEye = normalize(toEye);
-
-    // 鏡面反射の強さを求める
-    float t = dot(refVec, toEye);
-
-    // 鏡面反射の強さを0以上の数値にする
-    t = max(0.0f, t);
-
-    // 鏡面反射の強さを絞る
-    t = pow(t, 5);
-
-    // 鏡面反射光を求める
-    return lightColor * t;
-}
-
-float3 CalcLigFromDirectionLight(PSIn psIn, float3 normal)
-{
-    float3 light = normalize(direction);
-    
-    // ディレクションライトによるLambert拡散反射光を計算する
-    float3 diffDirection = CalcLambertDiffuse(light, color, normal);
-    
-    // ディレクションライトによるPhong鏡面反射光を計算する
-    float3 specDirection = CalcPhongSpecular(light, color, psIn.worldPos, normal);
-    
-    return diffDirection + specDirection;
-}
-
-
-float4 main(PSIn psIn) : SV_TARGET
-{
-    // 法線を計算
-    float3 normal = GetNormal(psIn.normal, psIn.tangent, psIn.biNormal, psIn.uv);
-    
+    // G-Bufferの内容を使ってライティング
     // アルベドカラー
-    float4 albedoColor = tex.Sample(smp, psIn.uv);
+    float4 albedoColor = albedoTex.Sample(smp, psIn.uv);
+    
+    // 法線
+    float3 normal = normalTex.Sample(smp, psIn.uv).xyz;
+    // 法線を0～1の範囲から-1～1の範囲に変換
+    normal = normal * 2.0f - 1.0f;
+    
+    // ワールド座標
+    float3 worldPos = worldPosTex.Sample(smp, psIn.uv).xyz;
     
     // スペキュラカラー
-    float3 specColor = albedoColor;
+    float3 specularColor = albedoColor;
     
     // 金属度
-    float metallic = armMap.Sample(smp, psIn.uv).b;
+    float metallic = armTex.Sample(smp, psIn.uv).b;
     
     // 滑らかさ
-    float smooth = 1 - armMap.Sample(smp, psIn.uv).g;
+    float smoothness = 1 - armTex.Sample(smp, psIn.uv).g;
     
     // 視線に向かって伸びるベクトルを計算する
-    float3 toEye = normalize(eye - psIn.worldPos);
+    float3 toEye = normalize(eye - worldPos);
     
     float3 lig = 0;
-
+    
     // シンプルなディズニーベースの拡散反射を実装
     // フレネル反射を考慮した拡散反射を計算
     float diffuseFromFresnel = CalcDiffuseFromFresnel(normal, -direction, toEye, psIn);
@@ -191,26 +182,29 @@ float4 main(PSIn psIn) : SV_TARGET
 
     // Cook-Torranceモデルを利用した鏡面反射率を計算する
     // Cook-Torranceモデルの鏡面反射率を計算する
-    float3 spec = CookTorranceSpecular(-direction, toEye, normal, smooth) * color;
+    float3 spec = CookTorranceSpecular(-direction, toEye, normal, metallic) * color;
 
     // 金属度が高ければ、鏡面反射はスペキュラカラー、低ければ白
     // スペキュラカラーの強さを鏡面反射率として扱う
-    spec *= lerp(float3(1.0f, 1.0f, 1.0f), specColor, metallic);
+    spec *= lerp(float3(1.0f, 1.0f, 1.0f), specularColor, metallic);
 
     // 滑らかさを使って、拡散反射光と鏡面反射光を合成する
     // 滑らかさが高ければ、拡散反射は弱くなる
-    lig += diffuse * (1.0f - smooth) + spec;
+    lig += diffuse * (1.0f - smoothness) + spec;
     
     // 環境光を加算する
     lig += ambientLight * albedoColor;
     
     float4 finalColor = float4(lig, 1.0f);
     
-    float2 shadowMapUV = psIn.lightPos.xy / psIn.lightPos.w;
+    // ライトのビュー空間での座標を計算する
+    float4 posInLVP = mul(lightView, float4(worldPos, 1.0f));
+
+    float2 shadowMapUV = posInLVP.xy / posInLVP.w;
     shadowMapUV *= float2(0.5f, -0.5f);
     shadowMapUV += 0.5f;
     
-    float zInLVP = psIn.lightPos.z / psIn.lightPos.w;
+    float zInLVP = posInLVP.z / posInLVP.w;
     //float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
     
     if (shadowMapUV.x > 0.0f && shadowMapUV.x < 1.0f
@@ -226,25 +220,4 @@ float4 main(PSIn psIn) : SV_TARGET
     }
     
     return finalColor;
-}
-
-PSOut PSGBuffer(PSIn psIn)
-{
-    PSOut psOut;
-    
-    // アルベドカラーを出力
-    psOut.albedo = tex.Sample(smp, psIn.uv);
-    
-    // 法線を出力
-    psOut.normal = float4(GetNormal(psIn.normal, psIn.tangent, psIn.biNormal, psIn.uv), 1.0f);
-    // 法線の範囲を-1～1から0～1に変換
-    psOut.normal.xyz = psOut.normal.xyz * 0.5f + 0.5f;
-    
-    // ARMマップを出力
-    psOut.arm = armMap.Sample(smp, psIn.uv);
-    
-    // ワールド座標を出力
-    psOut.worldPos = psIn.worldPos;
-    
-    return psOut;
 }
