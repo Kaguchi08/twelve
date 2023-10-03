@@ -99,12 +99,7 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (!CreateEffectResourceAndView())
-	{
-		return false;
-	}
-
-	if (!CreatePeraConstBufferAndView())
+	if (!CreatePostEffectAndView())
 	{
 		return false;
 	}
@@ -589,7 +584,7 @@ HRESULT Dx12Wrapper::CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXG
 	return S_OK;
 }
 
-bool Dx12Wrapper::CreatePeraConstBufferAndView()
+bool Dx12Wrapper::CreatePostEffectAndView()
 {
 	auto weights = GetGaussianWeights(8, 5.0f);
 	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -601,7 +596,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 		&res_desc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(pera_const_buffer_.ReleaseAndGetAddressOf())
+		IID_PPV_ARGS(post_effect_const_buffer_.ReleaseAndGetAddressOf())
 	);
 
 	if (FAILED(result))
@@ -610,7 +605,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 		return false;
 	}
 
-	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, pera_cbv_heap_);
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, post_effect_cbv_heap_);
 
 	if (FAILED(result))
 	{
@@ -619,15 +614,15 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 	}
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
-	cbv_desc.BufferLocation = pera_const_buffer_->GetGPUVirtualAddress();
-	cbv_desc.SizeInBytes = pera_const_buffer_->GetDesc().Width;
+	cbv_desc.BufferLocation = post_effect_const_buffer_->GetGPUVirtualAddress();
+	cbv_desc.SizeInBytes = post_effect_const_buffer_->GetDesc().Width;
 
-	auto handle = pera_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto handle = post_effect_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
 
 	dev_->CreateConstantBufferView(&cbv_desc, handle);
 
 	float* mapped = nullptr;
-	result = pera_const_buffer_->Map(0, nullptr, (void**)&mapped);
+	result = post_effect_const_buffer_->Map(0, nullptr, (void**)&mapped);
 
 	if (FAILED(result))
 	{
@@ -636,35 +631,7 @@ bool Dx12Wrapper::CreatePeraConstBufferAndView()
 	}
 
 	std::copy(weights.begin(), weights.end(), mapped);
-	pera_const_buffer_->Unmap(0, nullptr);
-}
-
-bool Dx12Wrapper::CreateEffectResourceAndView()
-{
-	//effect_resource_ = CreateTextureFromFile("../normal/crack_n.png");
-	effect_resource_ = resource_manager_->GetTextureFromPath("../normal/normalmap.jpg");
-
-	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, effect_srv_heap_);
-
-	if (FAILED(result))
-	{
-		assert(0);
-		return false;
-	}
-
-	auto desc = effect_resource_->GetDesc();
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Format = desc.Format;
-	srv_desc.Texture2D.MipLevels = 1;
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-	auto handle = effect_srv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	dev_->CreateShaderResourceView(effect_resource_.Get(), &srv_desc, handle);
-
-	return true;
+	post_effect_const_buffer_->Unmap(0, nullptr);
 }
 
 bool Dx12Wrapper::CreateOffScreenVertex()

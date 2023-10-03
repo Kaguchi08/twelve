@@ -177,8 +177,8 @@ void Renderer::PostEffect()
 	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
 	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
 
-	cmd_list->SetDescriptorHeaps(1, dx12_->GetPeraCBVHeap().GetAddressOf());
-	handle = dx12_->GetPeraCBVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetPostEffectCBVHeap().GetAddressOf());
+	handle = dx12_->GetPostEffectCBVHeap()->GetGPUDescriptorHandleForHeapStart();
 	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
 
 	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);

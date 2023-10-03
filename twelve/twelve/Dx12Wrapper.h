@@ -46,9 +46,8 @@ public:
 
 	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
-	ComPtr<ID3D12DescriptorHeap> GetPeraCBVHeap() { return pera_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetPostEffectCBVHeap() { return post_effect_cbv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetLightCBVHeap() { return light_cbv_heap_; }
-	ComPtr<ID3D12DescriptorHeap> GetEffectSRVHeap() { return effect_srv_heap_; }
 	ComPtr<ID3D12DescriptorHeap> GetDepthSRVHeap() { return depth_srv_heap_; }
 
 	D3D12_VERTEX_BUFFER_VIEW GetScreenVertexBufferView() { return screen_vertex_buffer_view_; }
@@ -154,15 +153,10 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
 
 	// ‚Ú‚©‚µ
-	ComPtr<ID3D12Resource> pera_const_buffer_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> pera_cbv_heap_;
+	ComPtr<ID3D12Resource> post_effect_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> post_effect_cbv_heap_;
 
-	// ˜c‚Ý
-	ComPtr<ID3D12Resource> effect_resource_ = nullptr;
-	ComPtr<ID3D12DescriptorHeap> effect_srv_heap_;
-
-	bool CreatePeraConstBufferAndView();
-	bool CreateEffectResourceAndView();
+	bool CreatePostEffectAndView();
 	bool CreateOffScreenVertex();
 	bool CreateDepthSRV();
 
