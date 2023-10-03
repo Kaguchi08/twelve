@@ -154,26 +154,14 @@ void Game::GenerateOutput()
 	// ディファードレンダリング
 	renderer_->DrawDeferredLighting();
 
-	renderer_->PreDrawToPera();
-	renderer_->DrawToPera1();
-
 	// フォワードレンダリング
-	renderer_->BeforePMDDraw();
-	dx12_->SetCommonBuffer(0, 3, 4);
-	renderer_->DrawPMDModel(false);
+	renderer_->ForwardRendering();
 
-	/*renderer_->BeforeFBXDraw();
-	dx12_->SetCommonBuffer(0, 7, 2);
-	renderer_->DrawFBXModel(false);
+	// ポストエフェクト
+	renderer_->PostEffect();
 
-	renderer_->BeforePrimitiveDraw();
-	dx12_->SetCommonBuffer(0, 3, 6);
-	renderer_->DrawPrimitive(false);*/
-
-	renderer_->DrawToPera2();
-
-	renderer_->Clear();
-	renderer_->DrawToBackBuffer();
+	// フレームバッファへの描画
+	renderer_->DrawToFrameBuffer();
 
 	if (game_state_ == GameState::kPause)
 	{
@@ -184,7 +172,6 @@ void Game::GenerateOutput()
 
 	renderer_->EndDraw();
 	dx12_->ExecuteCommand();
-
 
 	// フリップ
 	dx12_->GetSwapChain()->Present(0, 0);

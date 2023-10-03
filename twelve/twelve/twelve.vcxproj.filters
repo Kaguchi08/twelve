@@ -155,12 +155,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="PeraVertexShader.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="PeraPixelShader.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
     <FxCompile Include="FBXVertexShader.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
@@ -182,11 +176,14 @@
     <FxCompile Include="DefferedLighting.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="PostEffect.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="Main.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Type.hlsli">
-      <Filter>Shader</Filter>
-    </None>
     <None Include="cpp.hint" />
     <None Include="FBXHeader.hlsli">
       <Filter>Shader</Filter>
