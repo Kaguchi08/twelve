@@ -11,6 +11,8 @@
 
 using Microsoft::WRL::ComPtr;
 
+const int kLightDepthMapSize = 4096;
+
 class Renderer
 {
 public:
@@ -85,6 +87,7 @@ private:
 		kNormal,
 		kWorldPos,
 		kArm,
+		kShadow,
 		kNumGBuffer,
 	};
 

@@ -5,7 +5,8 @@ Texture2D<float4> albedoTex : register(t0);
 Texture2D<float4> normalTex : register(t1);
 Texture2D<float4> worldPosTex : register(t2);
 Texture2D<float4> armTex : register(t3);
-Texture2D<float4> shadowMap : register(t4);
+Texture2D<float4> shadowParamTex : register(t4);
+Texture2D<float4> shadowMap : register(t5);
 
 cbuffer Scene : register(b0)
 {
@@ -155,6 +156,9 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     // ワールド座標
     float3 worldPos = worldPosTex.Sample(smp, psIn.uv).xyz;
     
+    // 影パラメータ
+    float shadowParam = shadowParamTex.Sample(smp, psIn.uv).r;
+    
     // スペキュラカラー
     float3 specularColor = albedoColor;
     
@@ -198,19 +202,18 @@ float4 PSMain(PSIn psIn) : SV_TARGET
     float4 finalColor = float4(lig, 1.0f);
     
     // ライトのビュー空間での座標を計算する
-    float4 posInLVP = mul(lightView, float4(worldPos, 1.0f));
+    float4 posInLVP = mul(lightView, float4(worldPos, 1));
 
     float2 shadowMapUV = posInLVP.xy / posInLVP.w;
     shadowMapUV *= float2(0.5f, -0.5f);
     shadowMapUV += 0.5f;
     
     float zInLVP = posInLVP.z / posInLVP.w;
-    //float zInShadowMap = shadowMap.Sample(smp, shadowMapUV);
     
     if (shadowMapUV.x > 0.0f && shadowMapUV.x < 1.0f
         && shadowMapUV.y > 0.0f && shadowMapUV.y < 1.0f)
     {
-        float shadow = shadowMap.SampleCmpLevelZero(smpShadow, shadowMapUV, zInLVP - 0.001f);
+        float shadow = shadowMap.SampleCmpLevelZero(smpShadow, shadowMapUV, zInLVP - 0.001f) * shadowParam;
     
         // 影が落ちているときの色を計算する
         float3 shadowColor = finalColor.xyz * 0.5f;

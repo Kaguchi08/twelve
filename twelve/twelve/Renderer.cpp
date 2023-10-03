@@ -115,7 +115,7 @@ void Renderer::DrawDeferredLighting()
 	cmd_list->SetPipelineState(deferred_lighting_pipeline_state_.Get());
 
 	// 共通バッファを設定
-	dx12_->SetCommonBuffer(0, 1, 6);
+	dx12_->SetCommonBuffer(0, 1, 7);
 
 	// G-Bufferに出力されたテスクチャの設定
 	// ディスクリプタヒープの設定
@@ -627,8 +627,9 @@ HRESULT Renderer::CreateFBXModelGraphicsPipeline()
 	gps_desc.NumRenderTargets = kNumGBuffer;
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // アルベド
 	gps_desc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // 法線
-	gps_desc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM; // ワールド座標
+	gps_desc.RTVFormats[2] = DXGI_FORMAT_R32G32B32A32_FLOAT; // ワールド座標
 	gps_desc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM; // 金属度 + 滑らかさ
+	gps_desc.RTVFormats[4] = DXGI_FORMAT_R8G8B8A8_UNORM; // 影パラメータ
 
 	// ZPrepassで書き込んだ深度バッファを使う
 	gps_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 読み取り専用
@@ -854,8 +855,9 @@ HRESULT Renderer::CreatePrimitiveGraphicsPipeline()
 	gps_desc.NumRenderTargets = kNumGBuffer;
 	gps_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // アルベド
 	gps_desc.RTVFormats[1] = DXGI_FORMAT_R8G8B8A8_UNORM; // 法線
-	gps_desc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM; // ワールド座標
+	gps_desc.RTVFormats[2] = DXGI_FORMAT_R32G32B32A32_FLOAT; // ワールド座標
 	gps_desc.RTVFormats[3] = DXGI_FORMAT_R8G8B8A8_UNORM; // 金属度 + 滑らかさ
+	gps_desc.RTVFormats[4] = DXGI_FORMAT_R8G8B8A8_UNORM; // 影パラメータ
 
 	// ZPrepassで書き込んだ深度バッファを使う
 	gps_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // 読み取り専用
@@ -1286,8 +1288,8 @@ HRESULT Renderer::CreatePrimitiveRootSignature()
 
 HRESULT Renderer::CreateDeferredLightingRootSignature()
 {
-	const int num_ranges = 7;
-	const int num_root_params = 7;
+	const int num_ranges = 8;
+	const int num_root_params = 8;
 	const int num_samplers = 2;
 
 	CD3DX12_DESCRIPTOR_RANGE range[num_ranges] = {};
@@ -1299,7 +1301,8 @@ HRESULT Renderer::CreateDeferredLightingRootSignature()
 	range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); // 法線
 	range[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); // ワールド座標
 	range[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); // ARMマップ
-	range[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // シャドウマップ
+	range[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4); // 影
+	range[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5); // シャドウマップ
 
 	CD3DX12_ROOT_PARAMETER root_param[num_root_params] = {};
 
@@ -1310,6 +1313,7 @@ HRESULT Renderer::CreateDeferredLightingRootSignature()
 	root_param[4].InitAsDescriptorTable(1, &range[4]);
 	root_param[5].InitAsDescriptorTable(1, &range[5]);
 	root_param[6].InitAsDescriptorTable(1, &range[6]);
+	root_param[7].InitAsDescriptorTable(1, &range[7]);
 
 	CD3DX12_STATIC_SAMPLER_DESC sampler_desc[num_samplers] = {};
 
@@ -1533,8 +1537,22 @@ bool Renderer::CreateOffScreenResourceAndView()
 	}
 
 	// G-Buffer用
+	float g_buffer_clear_color[]= { 0.0f, 0.0f, 0.0f, 1.0f };
+	int i = 0;
 	for (auto& g_buffer : g_buffers_)
 	{
+		// ワールド座標のレンダーターゲットのみフォーマットを変更
+		if (i == kWorldPos)
+		{
+			res_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			clear_value = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R32G32B32A32_FLOAT, g_buffer_clear_color);
+		}
+		else
+		{
+			res_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			clear_value = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_R8G8B8A8_UNORM, g_buffer_clear_color);
+		}
+
 		result = dx12_->GetDevice()->CreateCommittedResource(
 			&heap_prop,
 			D3D12_HEAP_FLAG_NONE,
@@ -1549,6 +1567,8 @@ bool Renderer::CreateOffScreenResourceAndView()
 			assert(0);
 			return false;
 		}
+
+		i++;
 	}
 
 	// ディスクリプタヒープの作成（RTV）
@@ -1582,10 +1602,23 @@ bool Renderer::CreateOffScreenResourceAndView()
 	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 	// G-Buffer用
+	i = 0;
 	for (auto& g_buffer : g_buffers_)
 	{
+		// ワールド座標のレンダーターゲットのみフォーマットを変更
+		if (i == kWorldPos)
+		{
+			rtv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		}
+		else
+		{
+			rtv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+
 		dx12_->GetDevice()->CreateRenderTargetView(g_buffer.Get(), &rtv_desc, handle);
 		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+		i++;
 	}
 
 	// ディスクリプタヒープの作成（SRV）
@@ -1621,10 +1654,22 @@ bool Renderer::CreateOffScreenResourceAndView()
 	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	// G-Buffer用
+	i = 0;
 	for (auto& g_buffer : g_buffers_)
 	{
+		// ワールド座標のレンダーターゲットのみフォーマットを変更
+		if (i == kWorldPos)
+		{
+			srv_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		}
+		else
+		{
+			srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
 		dx12_->GetDevice()->CreateShaderResourceView(g_buffer.Get(), &srv_desc, handle);
 		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		i++;
 	}
 
 	return true;
@@ -1796,10 +1841,10 @@ void Renderer::PrepareShadowMap()
 
 	cmd_list->ClearDepthStencilView(handle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, 1024, 1024);
+	D3D12_VIEWPORT viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, kLightDepthMapSize, kLightDepthMapSize);
 	cmd_list->RSSetViewports(1, &viewport);
 
-	D3D12_RECT scissor = CD3DX12_RECT(0, 0, 1024, 1024);
+	D3D12_RECT scissor = CD3DX12_RECT(0, 0, kLightDepthMapSize, kLightDepthMapSize);
 	cmd_list->RSSetScissorRects(1, &scissor);
 }
 
@@ -1907,7 +1952,7 @@ void Renderer::PrepareGBuffer()
 	cmd_list->OMSetRenderTargets(kNumGBuffer, g_buffer_handles, false, &dsv_handle);
 
 	// レンダーターゲットのクリア
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	float clear_color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	for (int i = 0; i < kNumGBuffer; ++i)
 	{
 		cmd_list->ClearRenderTargetView(g_buffer_handles[i], clear_color, 0, nullptr);

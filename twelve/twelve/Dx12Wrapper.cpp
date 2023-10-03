@@ -257,8 +257,8 @@ bool Dx12Wrapper::CreateDepthBuffer()
 	}
 
 	// ライトデプス
-	res_desc.Width = 1024;
-	res_desc.Height = 1024;
+	res_desc.Width = kLightDepthMapSize;
+	res_desc.Height = kLightDepthMapSize;
 
 	result = dev_->CreateCommittedResource
 	(

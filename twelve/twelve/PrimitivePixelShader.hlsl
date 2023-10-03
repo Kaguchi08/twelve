@@ -269,6 +269,9 @@ PSOut PSGBuffer(PSIn psIn)
     // ワールド座標を出力
     psOut.worldPos = psIn.worldPos;
     
+    // 影を出力
+    psOut.shadow = 1.0f;
+    
     return psOut;
 }
 
