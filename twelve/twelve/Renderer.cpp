@@ -48,197 +48,37 @@ void Renderer::Initialize()
 	grad_texture_ = CreateGradTexture();
 }
 
-void Renderer::DrawToShadowMap()
+void Renderer::Draw(GameState state)
 {
-	PrepareShadowMap();
+	// 影の描画
+	DrawToShadowMap();
 
-	// PMD
-	BeforeDrawPMDShadowMap();
-	DrawPMDModel(true);
+	// ZPrepass
+	DrawToZPrepass();
 
-	// FBX
-	BeforeDrawFBXShadowMap();
-	DrawFBXModel(true);
+	// G-Buffer
+	DrawToGBuffer();
 
-	// Primitive
-	BeforeDrawPrimitiveShadowMap();
-	DrawPrimitive(true);
-}
+	// ディファードレンダリング
+	DrawDeferredLighting();
 
-void Renderer::DrawToZPrepass()
-{
-	PrepareZPrepass();
+	// フォワードレンダリング
+	ForwardRendering();
 
-	// FBX
-	BeforeDrawFBXZPrepass();
-	DrawFBXModel(true);
+	// ポストエフェクト
+	PostEffect();
 
-	// Primitive
-	BeforeDrawPrimitiveZPrepass();
-	DrawPrimitive(true);
-}
+	// フレームバッファへの描画
+	DrawToFrameBuffer();
 
-void Renderer::DrawToGBuffer()
-{
-	PrepareGBuffer();
-
-	// FBX
-	BeforeDrawFBXGBuffer();
-	dx12_->SetCommonBuffer(0, 7, 2);
-	DrawFBXModel(false);
-
-	// Primitive
-	BeforeDrawPrimitiveGBuffer();
-	dx12_->SetCommonBuffer(0, 3, 6);
-	DrawPrimitive(false);
-
-	EndDrawGBuffer();
-}
-
-void Renderer::DrawDeferredLighting()
-{
-	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto cmd_list = dx12_->GetCommandList();
-	auto rtv_handle = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	// レンダーターゲットの設定
-	cmd_list->OMSetRenderTargets(1, &rtv_handle, false, nullptr);
-
-	// レンダーターゲットのクリア
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-
-	cmd_list->ClearRenderTargetView(rtv_handle, clear_color, 0, nullptr);
-
-	cmd_list->RSSetViewports(1, view_port_.get());
-	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
-
-	// ルートシグネチャの設定
-	cmd_list->SetGraphicsRootSignature(deferred_lighting_root_signature_.Get());
-	// パイプラインステートの設定
-	cmd_list->SetPipelineState(deferred_lighting_pipeline_state_.Get());
-
-	// 共通バッファを設定
-	dx12_->SetCommonBuffer(0, 1, 7);
-
-	// G-Bufferに出力されたテスクチャの設定
-	// ディスクリプタヒープの設定
-	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
-
-	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += 2 * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-
-	for (int i = 0; i < kNumGBuffer; ++i)
+	if (state == GameState::kPause)
 	{
-		cmd_list->SetGraphicsRootDescriptorTable(i + 2, handle); // 0, 1は定数バッファ
-		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		// imgui
+		dx12_->CreateImguiWindow();
+		dx12_->RenderImgui();
 	}
 
-	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
-	cmd_list->IASetVertexBuffers(0, 1, &view);
-	cmd_list->DrawInstanced(4, 1, 0, 0);
-}
-
-void Renderer::ForwardRendering()
-{
-	PrepareForwardRendering();
-
-	// PMD
-	BeforeDrawPMD();
-	dx12_->SetCommonBuffer(0, 3, 4);
-	DrawPMDModel(false);
-
-	EndForwardRendering();
-}
-
-void Renderer::PostEffect()
-{
-	auto cmd_list = dx12_->GetCommandList();
-
-	// レンダーターゲットの設定
-	BarrierTransResource(post_effect_render_target_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto rtvH = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-	rtvH.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	cmd_list->OMSetRenderTargets(1, &rtvH, false, nullptr);
-
-	cmd_list->RSSetViewports(1, view_port_.get());
-	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
-
-	// ルートシグネチャの設定
-	cmd_list->SetGraphicsRootSignature(post_effect_root_signature_.Get());
-	// パイプラインステートの設定
-	cmd_list->SetPipelineState(post_effect_pipeline_state_.Get());
-
-	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
-	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
-
-	cmd_list->SetDescriptorHeaps(1, dx12_->GetPostEffectCBVHeap().GetAddressOf());
-	handle = dx12_->GetPostEffectCBVHeap()->GetGPUDescriptorHandleForHeapStart();
-	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
-
-	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
-	cmd_list->IASetVertexBuffers(0, 1, &view);
-	cmd_list->DrawInstanced(4, 1, 0, 0);
-
-	BarrierTransResource(post_effect_render_target_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-}
-
-void Renderer::DrawToFrameBuffer()
-{
-	auto cmd_list = dx12_->GetCommandList();
-	auto frame_buffer_index = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
-
-	// レンダーターゲットの設定
-	BarrierTransResource(render_targets_[frame_buffer_index], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	auto rtvH = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
-	rtvH.ptr += frame_buffer_index * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-	cmd_list->OMSetRenderTargets(1, &rtvH, false, nullptr);
-
-	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	cmd_list->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
-
-	cmd_list->RSSetViewports(1, view_port_.get());
-	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
-
-	// ルートシグネチャの設定
-	cmd_list->SetGraphicsRootSignature(main_root_signature_.Get());
-	// パイプラインステートの設定
-	cmd_list->SetPipelineState(main_pipeline_state_.Get());
-
-	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
-
-	// ポストエフェクトまで行ったテクスチャを設定
-	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
-
-	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
-	cmd_list->IASetVertexBuffers(0, 1, &view);
-	cmd_list->DrawInstanced(4, 1, 0, 0);
-}
-
-void Renderer::EndDraw()
-{
-	auto frame_buffer_index = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
-
-	BarrierTransResource(render_targets_[frame_buffer_index], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-}
-
-void Renderer::Draw(bool is_shadow)
-{
-	DrawPMDModel(is_shadow);
-	DrawFBXModel(is_shadow);
+	EndDraw();
 }
 
 void Renderer::AddModelComponent(ModelComponent* model)
@@ -1823,6 +1663,193 @@ void Renderer::BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STA
 {
 	auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(resource, before, after);
 	dx12_->GetCommandList()->ResourceBarrier(1, &barrier);
+}
+
+void Renderer::DrawToShadowMap()
+{
+	PrepareShadowMap();
+
+	// PMD
+	BeforeDrawPMDShadowMap();
+	DrawPMDModel(true);
+
+	// FBX
+	BeforeDrawFBXShadowMap();
+	DrawFBXModel(true);
+
+	// Primitive
+	BeforeDrawPrimitiveShadowMap();
+	DrawPrimitive(true);
+}
+
+void Renderer::DrawToZPrepass()
+{
+	PrepareZPrepass();
+
+	// FBX
+	BeforeDrawFBXZPrepass();
+	DrawFBXModel(true);
+
+	// Primitive
+	BeforeDrawPrimitiveZPrepass();
+	DrawPrimitive(true);
+}
+
+void Renderer::DrawToGBuffer()
+{
+	PrepareGBuffer();
+
+	// FBX
+	BeforeDrawFBXGBuffer();
+	dx12_->SetCommonBuffer(0, 7, 2);
+	DrawFBXModel(false);
+
+	// Primitive
+	BeforeDrawPrimitiveGBuffer();
+	dx12_->SetCommonBuffer(0, 3, 6);
+	DrawPrimitive(false);
+
+	EndDrawGBuffer();
+}
+
+void Renderer::DrawDeferredLighting()
+{
+	BarrierTransResource(deferred_lighting_render_target.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto cmd_list = dx12_->GetCommandList();
+	auto rtv_handle = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	// レンダーターゲットの設定
+	cmd_list->OMSetRenderTargets(1, &rtv_handle, false, nullptr);
+
+	// レンダーターゲットのクリア
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+
+	cmd_list->ClearRenderTargetView(rtv_handle, clear_color, 0, nullptr);
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	// ルートシグネチャの設定
+	cmd_list->SetGraphicsRootSignature(deferred_lighting_root_signature_.Get());
+	// パイプラインステートの設定
+	cmd_list->SetPipelineState(deferred_lighting_pipeline_state_.Get());
+
+	// 共通バッファを設定
+	dx12_->SetCommonBuffer(0, 1, 7);
+
+	// G-Bufferに出力されたテスクチャの設定
+	// ディスクリプタヒープの設定
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
+
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += 2 * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	for (int i = 0; i < kNumGBuffer; ++i)
+	{
+		cmd_list->SetGraphicsRootDescriptorTable(i + 2, handle); // 0, 1は定数バッファ
+		handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+}
+
+void Renderer::ForwardRendering()
+{
+	PrepareForwardRendering();
+
+	// PMD
+	BeforeDrawPMD();
+	dx12_->SetCommonBuffer(0, 3, 4);
+	DrawPMDModel(false);
+
+	EndForwardRendering();
+}
+
+void Renderer::PostEffect()
+{
+	auto cmd_list = dx12_->GetCommandList();
+
+	// レンダーターゲットの設定
+	BarrierTransResource(post_effect_render_target_.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto rtvH = off_screen_rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	rtvH.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	cmd_list->OMSetRenderTargets(1, &rtvH, false, nullptr);
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	// ルートシグネチャの設定
+	cmd_list->SetGraphicsRootSignature(post_effect_root_signature_.Get());
+	// パイプラインステートの設定
+	cmd_list->SetPipelineState(post_effect_pipeline_state_.Get());
+
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(1, handle);
+
+	cmd_list->SetDescriptorHeaps(1, dx12_->GetPostEffectCBVHeap().GetAddressOf());
+	handle = dx12_->GetPostEffectCBVHeap()->GetGPUDescriptorHandleForHeapStart();
+	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
+
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+
+	BarrierTransResource(post_effect_render_target_.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+}
+
+void Renderer::DrawToFrameBuffer()
+{
+	auto cmd_list = dx12_->GetCommandList();
+	auto frame_buffer_index = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
+
+	// レンダーターゲットの設定
+	BarrierTransResource(render_targets_[frame_buffer_index], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	auto rtvH = rtv_heap_->GetCPUDescriptorHandleForHeapStart();
+	rtvH.ptr += frame_buffer_index * dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+	cmd_list->OMSetRenderTargets(1, &rtvH, false, nullptr);
+
+	float clear_color[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	cmd_list->ClearRenderTargetView(rtvH, clear_color, 0, nullptr);
+
+	cmd_list->RSSetViewports(1, view_port_.get());
+	cmd_list->RSSetScissorRects(1, scissor_rect_.get());
+
+	// ルートシグネチャの設定
+	cmd_list->SetGraphicsRootSignature(main_root_signature_.Get());
+	// パイプラインステートの設定
+	cmd_list->SetPipelineState(main_pipeline_state_.Get());
+
+	cmd_list->SetDescriptorHeaps(1, off_sceen_srv_heap_.GetAddressOf());
+
+	// ポストエフェクトまで行ったテクスチャを設定
+	auto handle = off_sceen_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += dx12_->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	cmd_list->SetGraphicsRootDescriptorTable(0, handle);
+
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	D3D12_VERTEX_BUFFER_VIEW view = dx12_->GetScreenVertexBufferView();
+	cmd_list->IASetVertexBuffers(0, 1, &view);
+	cmd_list->DrawInstanced(4, 1, 0, 0);
+}
+
+void Renderer::EndDraw()
+{
+	auto frame_buffer_index = dx12_->GetSwapChain()->GetCurrentBackBufferIndex();
+
+	BarrierTransResource(render_targets_[frame_buffer_index], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 }
 
 void Renderer::DrawPMDModel(bool is_shadow)

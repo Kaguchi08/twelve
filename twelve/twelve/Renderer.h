@@ -7,6 +7,7 @@
 #include "Helper.h"
 #include "Model.h"
 #include "Primitive.h"
+#include "Game.h"
 
 
 using Microsoft::WRL::ComPtr;
@@ -20,30 +21,7 @@ public:
 	~Renderer();
 	void Initialize();
 
-	// シャドウマップへの描画
-	void DrawToShadowMap();
-
-	// ZPrepass
-	void DrawToZPrepass();
-
-	// G-Buffer
-	void DrawToGBuffer();
-
-	// ディファードライティング
-	void DrawDeferredLighting();
-
-	// フォワードレンダリング
-	void ForwardRendering();
-
-	// ポストエフェクト
-	void PostEffect();
-
-	// フレームバッファへの描画
-	void DrawToFrameBuffer();
-
-	void EndDraw();
-
-	void Draw(bool is_shadow);
+	void Draw(GameState state);
 
 	void AddModelComponent(class ModelComponent* model);
 	void RemoveModelComponent(class ModelComponent* model);
@@ -74,6 +52,7 @@ private:
 	};
 
 	class Dx12Wrapper* dx12_;
+
 	// パイプライン
 	ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
@@ -152,6 +131,30 @@ private:
 	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
 	// 描画
+	// シャドウマップへの描画
+	void DrawToShadowMap();
+
+	// ZPrepass
+	void DrawToZPrepass();
+
+	// G-Buffer
+	void DrawToGBuffer();
+
+	// ディファードライティング
+	void DrawDeferredLighting();
+
+	// フォワードレンダリング
+	void ForwardRendering();
+
+	// ポストエフェクト
+	void PostEffect();
+
+	// フレームバッファへの描画
+	void DrawToFrameBuffer();
+
+	void EndDraw();
+
+	// オブジェクト
 	void DrawPMDModel(bool is_shadow);
 	void DrawFBXModel(bool is_shadow);
 	void DrawPrimitive(bool is_shadow);

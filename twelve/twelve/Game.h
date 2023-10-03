@@ -12,8 +12,6 @@
 #include <d3dx12.h>
 
 class Dx12Wrapper;
-class PMDRenderer;
-class PMDActor;
 
 enum GameState
 {
@@ -51,9 +49,6 @@ private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;
 	class InputSystem* input_system_ = nullptr;
-
-	std::shared_ptr<PMDRenderer> mPMDRenderer;
-	std::shared_ptr<PMDActor> mPMDActor;
 
 	class Scene* current_scene_ = nullptr;
 	class Scene* next_scene_ = nullptr;

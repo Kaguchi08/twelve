@@ -142,35 +142,8 @@ void Game::GenerateOutput()
 {
 	dx12_->SetCameraSetting();
 
-	// 影の描画
-	renderer_->DrawToShadowMap();
+	renderer_->Draw(game_state_);
 
-	// ZPrepass
-	renderer_->DrawToZPrepass();
-
-	// G-Buffer
-	renderer_->DrawToGBuffer();
-
-	// ディファードレンダリング
-	renderer_->DrawDeferredLighting();
-
-	// フォワードレンダリング
-	renderer_->ForwardRendering();
-
-	// ポストエフェクト
-	renderer_->PostEffect();
-
-	// フレームバッファへの描画
-	renderer_->DrawToFrameBuffer();
-
-	if (game_state_ == GameState::kPause)
-	{
-		// imgui
-		dx12_->CreateImguiWindow();
-		dx12_->RenderImgui();
-	}
-
-	renderer_->EndDraw();
 	dx12_->ExecuteCommand();
 
 	// フリップ
