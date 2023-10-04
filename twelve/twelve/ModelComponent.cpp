@@ -52,10 +52,15 @@ void ModelComponent::Update(float delta_time)
 
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 
+	// 行列のクリア
+	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
+
 	if (animations_.size() > 0)
 	{
 		MotionUpdate(delta_time);
 	}
+
+	std::copy(bone_matrices_.begin(), bone_matrices_.end(), mapped_matrices_ + 1);
 }
 
 void ModelComponent::DrawPMD(bool is_shadow)
@@ -187,9 +192,6 @@ void ModelComponent::MotionUpdate(float delta_time)
 		animation_time_ = 0;
 	}
 
-	// 行列のクリア
-	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());
-
 	auto& animation = current_anim.vmd_anim;
 
 	// モーションの更新
@@ -248,8 +250,6 @@ void ModelComponent::MotionUpdate(float delta_time)
 	RecursiveMatrixMultipy(&pmd_model_->bone_node_table["センター"], DirectX::XMMatrixIdentity());
 
 	IKSolve(frame_no);
-
-	std::copy(bone_matrices_.begin(), bone_matrices_.end(), mapped_matrices_ + 1);
 }
 
 void ModelComponent::RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat)
@@ -264,7 +264,7 @@ void ModelComponent::RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMAT
 void ModelComponent::SolveCCDIK(const PMDIK& ik)
 {
 	//誤差の範囲内かどうかに使用する定数
-	constexpr float epsilon = 0.0005f;
+	constexpr float epsilon = 0.001f;
 
 	//ターゲット
 	auto target_node = pmd_model_->bone_node_address_array[ik.bone_idx];
@@ -333,27 +333,22 @@ void ModelComponent::SolveCCDIK(const PMDIK& ik)
 			}
 			end_pos = DirectX::XMVector3Transform(end_pos, mat);
 			//もし正解に近くなってたらループを抜ける
-			/*if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
+			if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
 			{
 				break;
-			}*/
-		}
-
-		// ターゲットと末端がほぼ一致したら抜ける
-		if (DirectX::XMVector3Length(DirectX::XMVectorSubtract(end_pos, target_next_pos)).m128_f32[0] <= epsilon)
-		{
-			break;
+			}
 		}
 	}
 
 	int idx = 0;
 	for (auto& cidx : ik.node_idxes)
 	{
-		bone_matrices_[cidx] = mats[idx];
-		++idx;
+		bone_matrices_[cidx] *= mats[idx];
+		idx++;
 	}
 	auto node = pmd_model_->bone_node_address_array[ik.node_idxes.back()];
-	RecursiveMatrixMultipy(node, parent_mat);
+	auto& mat = bone_matrices_[node->ik_parent_bone];
+	RecursiveMatrixMultipy(node, mat);
 }
 
 void ModelComponent::SolveCosineIK(const PMDIK& ik)
@@ -428,7 +423,6 @@ void ModelComponent::SolveCosineIK(const PMDIK& ik)
 		axis = DirectX::XMLoadFloat3(&right);
 	}
 
-	//注意点…IKチェーンは根っこに向かってから数えられるため1が根っこに近い
 	auto mat1 = DirectX::XMMatrixTranslationFromVector(-positions[0]);
 	mat1 *= DirectX::XMMatrixRotationAxis(axis, theta1);
 	mat1 *= DirectX::XMMatrixTranslationFromVector(positions[0]);
@@ -464,7 +458,7 @@ void ModelComponent::SolveLookAt(const PMDIK& ik)
 		* LookAtMatrix(origin_vec, target_vec, DirectX::XMFLOAT3(0, 1, 0), DirectX::XMFLOAT3(1, 0, 0))
 		* DirectX::XMMatrixTranslationFromVector(root_pos2);
 
-	bone_matrices_[ik.node_idxes[0]] = mat;
+	bone_matrices_[ik.node_idxes[0]] *= mat;
 }
 
 void ModelComponent::IKSolve(int frame_no)
@@ -505,6 +499,7 @@ void ModelComponent::IKSolve(int frame_no)
 				break;
 			default:
 				SolveCCDIK(ik);
+				break;
 		}
 	}
 }

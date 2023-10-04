@@ -25,5 +25,5 @@ void PlayerActor::SetPMDModel(const char* file_name)
 	model_ = new ModelComponent(this, file_name);
 
 	// アニメーション追加
-	model_->AddAnimation("../motion/run.vmd");
+	model_->AddAnimation("../motion/run5.vmd");
 }

@@ -348,24 +348,22 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 	model->knee_idxes.clear();
 
 	// ボーンノードマップの作成
-	for (int idx = 0; idx < bone_num; ++idx)
+	for (int idx = 0; idx < bone_num; idx++)
 	{
 		auto& bone = bones[idx];
 		auto& node = model->bone_node_table[bone.bone_name];
 		node.bone_idx = idx;
 		node.start_pos = bone.pos;
-		node.bone_type = bone.type;
-		node.parent_bone = bone.parent_no;
-		node.ik_parent_bone = bone.ik_bone_no;
 
 		model->bone_name_array[idx] = bone.bone_name;
-		model->bone_node_address_array[idx] = &node;
 
 		std::string boneName = bone.bone_name;
 		if (boneName.find("ひざ") != std::string::npos)
 		{
 			model->knee_idxes.emplace_back(idx);
 		}
+
+		model->bone_node_address_array[idx] = &node;
 	}
 
 	// ボーンの親子関係を構築
@@ -378,6 +376,7 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model)
 
 		auto parent_name = model->bone_name_array[bone.parent_no];
 		model->bone_node_table[parent_name].children.emplace_back(&model->bone_node_table[bone.bone_name]);
+		model->bone_node_table[parent_name].ik_parent_bone = bone.ik_bone_no;
 	}
 
 	return true;
