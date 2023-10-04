@@ -59,7 +59,6 @@ private:
 	ComPtr<ID3D12PipelineState> primitive_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> deferred_lighting_pipeline_state_ = nullptr;
 	ComPtr<ID3D12PipelineState> post_effect_pipeline_state_ = nullptr;
-	ComPtr<ID3D12PipelineState> main_pipeline_state_ = nullptr;
 
 	// 影用
 	ComPtr<ID3D12PipelineState> pmd_shadow_pipeline_state_ = nullptr;
@@ -80,7 +79,6 @@ private:
 	ComPtr<ID3D12RootSignature> primitive_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> deferred_lighting_root_signature_ = nullptr;
 	ComPtr<ID3D12RootSignature> post_effect_root_signature_ = nullptr;
-	ComPtr<ID3D12RootSignature> main_root_signature_ = nullptr;
 
 	// モデル
 	std::vector<class ModelComponent*> pmd_models_;
@@ -93,7 +91,6 @@ private:
 
 	// オフスクリーンレンダリング
 	ComPtr<ID3D12Resource> deferred_lighting_render_target = nullptr;
-	ComPtr<ID3D12Resource> post_effect_render_target_ = nullptr;
 	std::array<ComPtr<ID3D12Resource>, kNumGBuffer> g_buffers_;
 	ComPtr<ID3D12DescriptorHeap> off_screen_rtv_heap_;
 	ComPtr<ID3D12DescriptorHeap> off_sceen_srv_heap_;
@@ -113,7 +110,6 @@ private:
 	HRESULT CreatePrimitiveGraphicsPipeline();
 	HRESULT CreateDefferedLightingGraphicsPipeline();
 	HRESULT CreatePostEffectGraphicsPipeline();
-	HRESULT CreateMainGraphicsPipeline();
 
 	// ルートシグネチャ初期化
 	HRESULT CreatePMDModelRootSignature();
@@ -121,11 +117,9 @@ private:
 	HRESULT CreatePrimitiveRootSignature();
 	HRESULT CreateDeferredLightingRootSignature();
 	HRESULT CreatePostEffectRootSignature();
-	HRESULT CreateMainRootSignature();
 
 	// レンダーターゲット
 	HRESULT CreateRenderTarget();
-
 	bool CreateOffScreenResourceAndView();
 
 	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
@@ -148,9 +142,6 @@ private:
 
 	// ポストエフェクト
 	void PostEffect();
-
-	// フレームバッファへの描画
-	void DrawToFrameBuffer();
 
 	void EndDraw();
 
