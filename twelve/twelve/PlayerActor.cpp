@@ -8,8 +8,8 @@ PlayerActor::PlayerActor(Scene* scene) :
 	Actor(scene),
 	model_(nullptr)
 {
-	new OrbitCameraComponent(this);
 	move_ = new ModelMoveComponent(this);
+	new OrbitCameraComponent(this);
 
 }
 PlayerActor::~PlayerActor()

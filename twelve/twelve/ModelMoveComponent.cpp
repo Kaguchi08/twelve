@@ -16,22 +16,40 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 	DirectX::XMFLOAT3 forward = owner_->GetForward();
 	DirectX::XMFLOAT3 right = owner_->GetRight();
 
+	DirectX::XMFLOAT3 forwardVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 rightVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+
 	if (state.keyboard.GetKeyDown('W'))
 	{
-		velocity.z += velocity_;
+		forwardVelocity.x += forward.x;
+		forwardVelocity.z += forward.z;
 	}
 	if (state.keyboard.GetKeyDown('S'))
 	{
-		velocity.z -= velocity_;
+		forwardVelocity.x -= forward.x;
+		forwardVelocity.z -= forward.z;
 	}
 	if (state.keyboard.GetKeyDown('A'))
 	{
-		velocity.x -= velocity_;
+		rightVelocity.x -= right.x;
+		rightVelocity.z -= right.z;
 	}
 	if (state.keyboard.GetKeyDown('D'))
 	{
-		velocity.x += velocity_;
+		rightVelocity.x += right.x;
+		rightVelocity.z += right.z;
 	}
+
+	// 正規化
+	DirectX::XMStoreFloat3(&forwardVelocity, ToNormalizeXMVECTOR(forwardVelocity));
+	DirectX::XMStoreFloat3(&rightVelocity, ToNormalizeXMVECTOR(rightVelocity));
+
+	velocity = forwardVelocity + rightVelocity;
+
+	// 最終的な速度ベクトルを正規化
+	DirectX::XMStoreFloat3(&velocity, ToNormalizeXMVECTOR(velocity));
+
+	velocity *= velocity_;
 
 	SetInputVelocity(velocity);
 }
