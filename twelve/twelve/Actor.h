@@ -33,8 +33,10 @@ public:
 	const DirectX::XMFLOAT3& GetRotation() const { return rotation_; }
 	void SetRotation(const DirectX::XMFLOAT3& rotation) { rotation_ = rotation; }
 
-	DirectX::XMFLOAT3 GetForward() const;
-	DirectX::XMFLOAT3 GetRight() const;
+	DirectX::XMFLOAT3 GetForward() const { return forward_; }
+	void SetForward(const DirectX::XMFLOAT3& forward) { forward_ = forward; }
+	DirectX::XMFLOAT3 GetRight() const { return right_; }
+	void SetRight(const DirectX::XMFLOAT3& right) { right_ = right; }
 
 	State GetState() const { return state_; }
 	void SetState(State state) { state_ = state; }
@@ -47,6 +49,8 @@ protected:
 	float scale_;
 	DirectX::XMFLOAT3 position_;
 	DirectX::XMFLOAT3 rotation_;
+	DirectX::XMFLOAT3 forward_;
+	DirectX::XMFLOAT3 right_;
 
 	std::vector<class Component*> components_;
 };

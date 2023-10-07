@@ -7,6 +7,8 @@ Actor::Actor(class Scene* scene) :
 	scale_(1.0f),
 	position_(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)),
 	rotation_(DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)),
+	forward_(DirectX::XMFLOAT3(0.0f, 0.0f, 1.0f)),
+	right_(DirectX::XMFLOAT3(1.0f, 0.0f, 0.0f)),
 	scene_(scene)
 {
 	scene_->AddActor(this);
@@ -71,14 +73,4 @@ void Actor::RemoveComponent(Component* component)
 	{
 		components_.erase(iter);
 	}
-}
-
-DirectX::XMFLOAT3 Actor::GetForward() const
-{
-	return DirectX::XMFLOAT3();
-}
-
-DirectX::XMFLOAT3 Actor::GetRight() const
-{
-	return DirectX::XMFLOAT3();
 }
