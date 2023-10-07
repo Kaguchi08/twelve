@@ -21,23 +21,19 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 
 	if (state.keyboard.GetKeyDown('W'))
 	{
-		forwardVelocity.x += forward.x;
-		forwardVelocity.z += forward.z;
+		forwardVelocity += forward;
 	}
 	if (state.keyboard.GetKeyDown('S'))
 	{
-		forwardVelocity.x -= forward.x;
-		forwardVelocity.z -= forward.z;
+		forwardVelocity -= forward;
 	}
 	if (state.keyboard.GetKeyDown('A'))
 	{
-		rightVelocity.x -= right.x;
-		rightVelocity.z -= right.z;
+		rightVelocity -= right;
 	}
 	if (state.keyboard.GetKeyDown('D'))
 	{
-		rightVelocity.x += right.x;
-		rightVelocity.z += right.z;
+		rightVelocity += right;
 	}
 
 	// ê≥ãKâª
