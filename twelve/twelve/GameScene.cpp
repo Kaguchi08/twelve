@@ -5,13 +5,11 @@
 
 GameScene::GameScene(Game* game) :
 	Scene(game),
-	player_model_(nullptr),
-	plane_info_table_()
+	player_model_(nullptr)
 {
 	std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒNVer2.pmd";
 	//std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
 	//std::string pmd_model_path = "../Assets/Model/„‰¹ƒ‹ƒJ.pmd";
-	//std::string pmd_model_path = "../Assets/Model/Kafka/kafka.pmd";
 
 	// ‰Šú‰»
 	Initialize(pmd_model_path.c_str());
@@ -65,30 +63,17 @@ bool GameScene::Initialize(const char* file_name)
 		)
 	);
 
-	PlaneInfo* plane_info = new PlaneInfo();
+	std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
+	std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
+	std::string arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";
 
-	plane_info->tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
-	plane_info->normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
-	plane_info->arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";
-
-	auto plane_actor = new PlaneActor(this);
-
-	plane_info->plane_actor = plane_actor;
-
-	plane_info_table_.push_back(plane_info);
-
-
-	for (auto& plane_info : plane_info_table_)
-	{
-		std::string tex_file_path = plane_info->tex_file_path;
-		plane_info->plane_actor->SetTexture(tex_file_path.c_str());
-
-		std::string normal_map_file_path = plane_info->normal_map_file_path;
-		plane_info->plane_actor->SetNormalMap(normal_map_file_path.c_str());
-
-		std::string arm_map_file_path = plane_info->arm_map_file_path;
-		plane_info->plane_actor->SetArmMap(arm_map_file_path.c_str());
-	}
+	plane_actor_table_.push_back(
+		CreatePlaneActor(
+			tex_file_path.c_str(),
+			normal_map_file_path.c_str(),
+			arm_map_file_path.c_str()
+		)
+	);
 
 	return true;
 }
@@ -109,4 +94,18 @@ FBXActor* GameScene::CreateFBXActor(const char* model, const char* normal, const
 	fbx_actor->SetRotation(rot);
 
 	return fbx_actor;
+}
+
+PlaneActor* GameScene::CreatePlaneActor(const char* tex, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot)
+{
+	PlaneActor* plane_actor = new PlaneActor(this);
+
+	plane_actor->SetTexture(tex);
+	plane_actor->SetNormalMap(normal);
+	plane_actor->SetArmMap(arm);
+	plane_actor->SetScale(scale);
+	plane_actor->SetPosition(pos);
+	plane_actor->SetRotation(rot);
+
+	return plane_actor;
 }

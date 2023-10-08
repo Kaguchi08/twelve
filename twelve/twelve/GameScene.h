@@ -5,15 +5,6 @@
 #include "PlaneActor.h"
 #include <unordered_map>
 
-struct PlaneInfo
-{
-	std::string tex_file_path;
-	std::string normal_map_file_path;
-	std::string arm_map_file_path;
-
-	class PlaneActor* plane_actor;
-};
-
 class GameScene : public Scene
 {
 public:
@@ -25,7 +16,7 @@ public:
 private:
 	PlayerActor* player_model_;
 
-	std::vector<PlaneInfo*> plane_info_table_;
+	std::vector<PlaneActor*> plane_actor_table_;
 	std::vector<FBXActor*> fbx_actor_table;
 
 	bool Initialize(const char* file_name);
@@ -35,4 +26,8 @@ private:
 							 const float scale = 1.0f,
 							 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
 							 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+	PlaneActor* CreatePlaneActor(const char* tex, const char* normal, const char* arm,
+								 const float scale = 1.0f,
+								 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+								 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 };
