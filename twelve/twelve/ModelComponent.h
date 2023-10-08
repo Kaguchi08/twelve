@@ -9,6 +9,13 @@
 
 using Microsoft::WRL::ComPtr;
 
+enum AnimationType
+{
+	Idle,
+	Run,
+	Max
+};
+
 class ModelComponent : public Component
 {
 public:
@@ -19,8 +26,12 @@ public:
 
 	void DrawPMD(bool is_shadow);
 
-	unsigned int AddAnimation(const char* file_name, bool is_loop = true);
-	void DeleteAnimation(unsigned int idx);
+	void AddAnimation(const char* file_name, const AnimationType& name, bool is_loop = true);
+	void DeleteAnimation(AnimationType);
+
+	AnimationType GetCurrentAnimation() const { return current_animation_; }
+
+	void SetCurrentAnimation(const AnimationType& name) { current_animation_ = name; }
 
 private:
 	std::shared_ptr<Dx12Wrapper> dx12_;
@@ -44,10 +55,8 @@ private:
 	void MotionUpdate(float delta_time);
 	void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);
 
-	std::unordered_map<unsigned int, Animation> animations_;
-
-	unsigned int current_animation_idx_ = 0;
-	unsigned int animation_idx_ = 0;
+	std::unordered_map<AnimationType, Animation> animations_;
+	AnimationType current_animation_;
 	float animation_time_ = 0.0f;
 
 	// IKŠÖ˜A

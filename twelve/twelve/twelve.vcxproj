@@ -158,7 +158,6 @@
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="ModelActor.cpp" />
     <ClCompile Include="ModelComponent.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="ModelMoveComponent.cpp" />
@@ -271,7 +270,6 @@
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Model.h" />
-    <ClInclude Include="ModelActor.h" />
     <ClInclude Include="ModelComponent.h" />
     <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="ModelMoveComponent.h" />

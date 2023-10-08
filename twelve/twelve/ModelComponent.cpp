@@ -14,8 +14,7 @@ ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_ord
 	Component(owner, draw_order),
 	pmd_model_(nullptr),
 	mapped_matrices_(nullptr),
-	current_animation_idx_(0),
-	animation_idx_(0),
+	current_animation_(AnimationType::Idle),
 	animation_time_(0.0f)
 {
 	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
@@ -97,23 +96,18 @@ void ModelComponent::DrawPMD(bool is_shadow)
 	}
 }
 
-unsigned int ModelComponent::AddAnimation(const char* file_name, bool is_loop)
+void ModelComponent::AddAnimation(const char* file_name, const AnimationType& name, bool is_loop)
 {
-	unsigned int idx = animation_idx_;
-	animation_idx_++;
-
 	Animation animation;
 	animation.vmd_anim = dx12_->GetResourceManager()->LoadVMDAnimation(file_name);
 	animation.is_loop = is_loop;
 
-	animations_[idx] = animation;
-
-	return idx;
+	animations_[name] = animation;
 }
 
-void ModelComponent::DeleteAnimation(unsigned int idx)
+void ModelComponent::DeleteAnimation(AnimationType name)
 {
-	animations_.erase(idx);
+	animations_.erase(name);
 }
 
 HRESULT ModelComponent::CreateTransformResourceAndView()
@@ -183,7 +177,7 @@ void ModelComponent::MotionUpdate(float delta_time)
 	animation_time_ += delta_time;
 	unsigned int frame_no = 30 * animation_time_;
 
-	auto& current_anim = animations_[current_animation_idx_];
+	auto& current_anim = animations_[current_animation_];
 
 	if (frame_no > current_anim.vmd_anim->duration)
 	{
@@ -461,7 +455,7 @@ void ModelComponent::SolveLookAt(const PMDIK& ik)
 
 void ModelComponent::IKSolve(int frame_no)
 {
-	auto& anim = animations_[current_animation_idx_].vmd_anim;
+	auto& anim = animations_[current_animation_].vmd_anim;
 	auto it = std::find_if(anim->ik_enable_table.rbegin(), anim->ik_enable_table.rend(),
 						   [frame_no](const VMDIKEnable& ikenable)
 						   {

@@ -69,9 +69,6 @@
     <ClCompile Include="FBXActor.cpp">
       <Filter>ソース ファイル\Actor</Filter>
     </ClCompile>
-    <ClCompile Include="ModelActor.cpp">
-      <Filter>ソース ファイル\Actor</Filter>
-    </ClCompile>
     <ClCompile Include="PlayerActor.cpp">
       <Filter>ソース ファイル\Actor</Filter>
     </ClCompile>
@@ -224,9 +221,6 @@
       <Filter>ヘッダー ファイル\Actor</Filter>
     </ClInclude>
     <ClInclude Include="FBXActor.h">
-      <Filter>ヘッダー ファイル\Actor</Filter>
-    </ClInclude>
-    <ClInclude Include="ModelActor.h">
       <Filter>ヘッダー ファイル\Actor</Filter>
     </ClInclude>
     <ClInclude Include="PlayerActor.h">

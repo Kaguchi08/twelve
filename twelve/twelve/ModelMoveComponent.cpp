@@ -1,6 +1,8 @@
 #include "ModelMoveComponent.h"
 #include "InputSystem.h"
 #include "Actor.h"
+#include "ModelComponent.h"
+#include "PlayerActor.h"
 #include "XMFLOAT_Helper.h"
 #include <DirectXMath.h>
 
@@ -65,5 +67,21 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 		velocity *= velocity_;
 
 		SetInputVelocity(velocity);
+
+		// アニメーションを更新
+		PlayerActor* playerActor = dynamic_cast<PlayerActor*>(owner_);
+		if (playerActor != nullptr)
+		{
+			playerActor->SetCurrentAnimation(AnimationType::Run);
+		}
+	}
+	else
+	{
+		// アニメーションを更新
+		PlayerActor* player = dynamic_cast<PlayerActor*>(owner_);
+		if (player != nullptr)
+		{
+			player->SetCurrentAnimation(AnimationType::Idle);
+		}
 	}
 }
