@@ -48,9 +48,7 @@ void ModelComponent::Update(float delta_time)
 	DirectX::XMFLOAT3 pos = owner_->GetPosition();
 	DirectX::XMFLOAT3 rot = owner_->GetRotation();
 
-	//angle_ += 0.1f;
-
-	mapped_matrices_[0] = DirectX::XMMatrixRotationY(angle_) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+	mapped_matrices_[0] = DirectX::XMMatrixRotationY(rot.y) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 
 	// çsóÒÇÃÉNÉäÉA
 	std::fill(bone_matrices_.begin(), bone_matrices_.end(), DirectX::XMMatrixIdentity());

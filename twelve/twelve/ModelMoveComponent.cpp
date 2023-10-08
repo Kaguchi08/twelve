@@ -19,19 +19,25 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 	DirectX::XMFLOAT3 forwardVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	DirectX::XMFLOAT3 rightVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-	if (state.keyboard.GetKeyDown('W'))
+	// WASDキーの入力状態をチェック
+	bool w_key = state.keyboard.GetKeyDown('W');
+	bool a_key = state.keyboard.GetKeyDown('A');
+	bool s_key = state.keyboard.GetKeyDown('S');
+	bool d_key = state.keyboard.GetKeyDown('D');
+
+	if (w_key)
 	{
 		forwardVelocity += forward;
 	}
-	if (state.keyboard.GetKeyDown('S'))
-	{
-		forwardVelocity -= forward;
-	}
-	if (state.keyboard.GetKeyDown('A'))
+	if (a_key)
 	{
 		rightVelocity -= right;
 	}
-	if (state.keyboard.GetKeyDown('D'))
+	if (s_key)
+	{
+		forwardVelocity -= forward;
+	}
+	if (d_key)
 	{
 		rightVelocity += right;
 	}
@@ -42,10 +48,22 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 
 	velocity = forwardVelocity + rightVelocity;
 
-	// 最終的な速度ベクトルを正規化
-	DirectX::XMStoreFloat3(&velocity, ToNormalizeXMVECTOR(velocity));
+	if (w_key || a_key || s_key || d_key)
+	{
+		// 最終的な速度ベクトルを正規化
+		DirectX::XMStoreFloat3(&velocity, ToNormalizeXMVECTOR(velocity));
 
-	velocity *= velocity_;
+		// 速度ベクトルから角度を計算（y軸周りの回転）
+		float angle = atan2f(velocity.x, velocity.z);
 
-	SetInputVelocity(velocity);
+		// 180度回転
+		angle += DirectX::XM_PI;
+
+		// ownerの向きを進む向きに設定
+		owner_->SetRotation(DirectX::XMFLOAT3(0, angle, 0));
+
+		velocity *= velocity_;
+
+		SetInputVelocity(velocity);
+	}
 }
