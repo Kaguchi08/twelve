@@ -1,16 +1,12 @@
 #include "ResourceManager.h"
 #include <cassert>
 #include <d3d12.h>
-#include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <wrl.h>
 #include "Dx12Wrapper.h"
 #include "Game.h"
 #include "Helper.h"
 #include "ModelLoader.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_dx12.h"
-#include "imgui/imgui_impl_win32.h"
 
 ResourceManager::ResourceManager(ComPtr<ID3D12Device> dev, std::unique_ptr<class ModelLoader> model_loader) :
 	dev_(dev),

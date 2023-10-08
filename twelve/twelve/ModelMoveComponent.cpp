@@ -1,10 +1,8 @@
 #include "ModelMoveComponent.h"
 #include "InputSystem.h"
 #include "Actor.h"
-#include "ModelComponent.h"
 #include "PlayerActor.h"
 #include "XMFLOAT_Helper.h"
-#include <DirectXMath.h>
 
 ModelMoveComponent::ModelMoveComponent(Actor* owner, int update_order) :
 	MoveComponent(owner, update_order),
@@ -14,43 +12,9 @@ ModelMoveComponent::ModelMoveComponent(Actor* owner, int update_order) :
 
 void ModelMoveComponent::ProcessInput(const InputState& state)
 {
-	DirectX::XMFLOAT3 velocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-	DirectX::XMFLOAT3 forward = owner_->GetForward();
-	DirectX::XMFLOAT3 right = owner_->GetRight();
+	DirectX::XMFLOAT3 velocity = HandleKeyboardInput(state);
 
-	DirectX::XMFLOAT3 forwardVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-	DirectX::XMFLOAT3 rightVelocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-	// WASDキーの入力状態をチェック
-	bool w_key = state.keyboard.GetKeyDown('W');
-	bool a_key = state.keyboard.GetKeyDown('A');
-	bool s_key = state.keyboard.GetKeyDown('S');
-	bool d_key = state.keyboard.GetKeyDown('D');
-
-	if (w_key)
-	{
-		forwardVelocity += forward;
-	}
-	if (a_key)
-	{
-		rightVelocity -= right;
-	}
-	if (s_key)
-	{
-		forwardVelocity -= forward;
-	}
-	if (d_key)
-	{
-		rightVelocity += right;
-	}
-
-	// 正規化
-	DirectX::XMStoreFloat3(&forwardVelocity, ToNormalizeXMVECTOR(forwardVelocity));
-	DirectX::XMStoreFloat3(&rightVelocity, ToNormalizeXMVECTOR(rightVelocity));
-
-	velocity = forwardVelocity + rightVelocity;
-
-	if (w_key || a_key || s_key || d_key)
+	if (DirectX::XMVector3Length(ToXMVECTOR(velocity)).m128_f32[0] > 0)
 	{
 		// 最終的な速度ベクトルを正規化
 		DirectX::XMStoreFloat3(&velocity, ToNormalizeXMVECTOR(velocity));
@@ -67,21 +31,55 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 		velocity *= velocity_;
 
 		SetInputVelocity(velocity);
-
-		// アニメーションを更新
-		PlayerActor* playerActor = dynamic_cast<PlayerActor*>(owner_);
-		if (playerActor != nullptr)
-		{
-			playerActor->SetCurrentAnimation(AnimationType::Run);
-		}
 	}
-	else
+
+	UpdateAnimation(DirectX::XMVector3Length(ToXMVECTOR(velocity)).m128_f32[0] > 0);
+}
+
+DirectX::XMFLOAT3 ModelMoveComponent::HandleKeyboardInput(const InputState& state)
+{
+	DirectX::XMFLOAT3 forward = owner_->GetForward();
+	DirectX::XMFLOAT3 right = owner_->GetRight();
+
+	DirectX::XMFLOAT3 forward_velocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	DirectX::XMFLOAT3 right_velocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	// WASDキーの入力状態をチェック
+	bool w_key = state.keyboard.GetKeyDown('W');
+	bool a_key = state.keyboard.GetKeyDown('A');
+	bool s_key = state.keyboard.GetKeyDown('S');
+	bool d_key = state.keyboard.GetKeyDown('D');
+
+	if (w_key)
 	{
-		// アニメーションを更新
-		PlayerActor* player = dynamic_cast<PlayerActor*>(owner_);
-		if (player != nullptr)
-		{
-			player->SetCurrentAnimation(AnimationType::Idle);
-		}
+		forward_velocity += forward;
+	}
+	if (a_key)
+	{
+		right_velocity -= right;
+	}
+	if (s_key)
+	{
+		forward_velocity -= forward;
+	}
+	if (d_key)
+	{
+		right_velocity += right;
+	}
+
+	// 正規化
+	DirectX::XMStoreFloat3(&forward_velocity, ToNormalizeXMVECTOR(forward_velocity));
+	DirectX::XMStoreFloat3(&right_velocity, ToNormalizeXMVECTOR(right_velocity));
+
+	return forward_velocity + right_velocity;
+}
+
+void ModelMoveComponent::UpdateAnimation(bool isMoving)
+{
+	// アニメーションを更新
+	PlayerActor* player = dynamic_cast<PlayerActor*>(owner_);
+	if (player != nullptr)
+	{
+		player->SetCurrentAnimation(isMoving ? AnimationType::Run : AnimationType::Idle);
 	}
 }

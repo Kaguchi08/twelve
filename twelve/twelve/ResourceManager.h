@@ -1,11 +1,10 @@
 #pragma once
 #include <d3d12.h>
-#include <dxgi1_6.h>
+#include <DirectXTex.h>
+#include <wrl.h>
 #include <map>
 #include <memory>
 #include <unordered_map>
-#include <DirectXTex.h>
-#include <wrl.h>
 #include <string>
 #include <functional>
 #include "Model.h"

@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "Helper.h"
 #include "XMFLOAT_Helper.h"
+#include "Dx12Wrapper.h"
+#include "Model.h"
 #include <d3dx12.h>
 #include <d3d12.h>
 

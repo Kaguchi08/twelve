@@ -1,5 +1,6 @@
 #pragma once
 #include "MoveComponent.h"
+#include <DirectXMath.h>
 
 class ModelMoveComponent : public MoveComponent
 {
@@ -13,4 +14,7 @@ public:
 
 private:
 	float velocity_;
+
+	DirectX::XMFLOAT3 HandleKeyboardInput(const InputState& state);
+	void UpdateAnimation(bool isMoving);
 };
