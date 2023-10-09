@@ -5,9 +5,17 @@
 - DirectX12を用いたレンダリングエンジンの開発
 
 ### 使用ライブラリ
+- Windows SDK
+- d3dx12.h
+- DirectXTex
+- ImGui
+- FBX SDK
 
-### 開発環境
+### 開発環境・ツール
+- Windows 10
+- NVIDIA GeForce RTX 3080
 - Visual Studio 2022
+- PIX for Windows
 
 ## 目的
 - 既存のゲームエンジンを用いないゲーム開発環境の構築
@@ -102,7 +110,7 @@ DirectX12における描画以外の処理をまとめたクラス
 #### Renderer
 DirectX12における描画処理をまとめたクラス
 
-### InputSystem
+#### InputSystem
 入力処理をまとめたクラス
 
 - Gameクラスに依存
