@@ -81,10 +81,7 @@ void Game::RunLoop()
 
 		ProcessInput();
 
-		if (game_state_ == GameState::kPlay)
-		{
-			UpdateGame();
-		}
+		UpdateGame();
 
 		GenerateOutput();
 	}
@@ -133,9 +130,15 @@ void Game::UpdateGame()
 
 	float delta_time = (GetTickCount64() - tick_count_) / 1000.0f;
 
+	// FPSŒvŽZ
+	dx12_->SetFPS(1 / delta_time);
+
 	tick_count_ = GetTickCount64();
 
-	current_scene_->Update(delta_time);
+	if (game_state_ == GameState::kPlay)
+	{
+		current_scene_->Update(delta_time);
+	}
 }
 
 void Game::GenerateOutput()

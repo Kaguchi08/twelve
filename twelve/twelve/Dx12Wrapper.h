@@ -63,6 +63,8 @@ public:
 	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
 	void SetTarget(const DirectX::XMFLOAT3& target) { target_ = target; }
 
+	void SetFPS(float fps) { fps_ = fps; }
+
 private:
 	SIZE window_size_;
 
@@ -123,8 +125,6 @@ private:
 	ComPtr<ID3D12Fence> fence_ = nullptr;
 	UINT64 fence_val_ = 0;
 
-	// レンダーターゲットの生成
-	HRESULT CreateRenderTarget();
 	// 深度バッファの作成
 	bool CreateDepthBuffer();
 	// DSVの作成
@@ -140,6 +140,7 @@ private:
 
 	// ライト
 	HRESULT CreateLight();
+	void SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light);
 
 	HRESULT InitializeDebug();
 	HRESULT InitializeRenderer();
@@ -162,6 +163,8 @@ private:
 
 	// imgui
 	ComPtr<ID3D12DescriptorHeap> imgui_heap_ = nullptr;
+
+	float fps_ = 0.0f;
 
 	bool InitializeImGui();
 };

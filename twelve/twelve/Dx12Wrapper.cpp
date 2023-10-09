@@ -11,6 +11,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/imgui_impl_win32.h"
+#include "XMFLOAT_Helper.h"
 
 using namespace Microsoft::WRL;
 // "-" オペランドが使えないため
@@ -207,9 +208,42 @@ void Dx12Wrapper::CreateImguiWindow()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	// imgui ウィンドウ描画
-	ImGui::Begin("DirectX12 Test Menu");
-	ImGui::SetWindowSize(ImVec2(400, 500), ImGuiCond_::ImGuiCond_FirstUseEver);
+	// パラメータウィンドウ
+	ImGui::Begin("Menu");
+	ImGui::SetWindowSize(ImVec2(500, 400), ImGuiCond_::ImGuiCond_FirstUseEver);
+
+	// FPS
+	ImGui::Text("FPS: %f", fps_);
+
+	// ディレクションライト
+	static float dir_light[3] = { 1.0f, -1.0f, 1.0f };
+	ImGui::SliderFloat3("Direction Light", dir_light, -1.0f, 1.0f);
+	static float dir_color[3] = { 1.0f, 1.0f, 1.0f };
+	ImGui::ColorEdit3("Direction Light Color", dir_color);
+
+	// アンビエントライト
+	static float ambient_light[3] = { 1.0f, 1.0f, 1.0f };
+	ImGui::ColorEdit3("Ambient Light", ambient_light);
+
+	// ゲーム終了ボタンは右下に固定
+	// ウィンドウのサイズを取得
+	ImVec2 windowSize = ImGui::GetWindowSize();
+	// 現在のカーソル位置を保存
+	ImVec2 oldCursorPos = ImGui::GetCursorPos();
+	// ボタンのサイズ
+	ImVec2 buttonSize(100, 50);
+	// カーソル位置をボタンの位置に設定
+	ImGui::SetCursorPos(ImVec2(windowSize.x - buttonSize.x, windowSize.y - buttonSize.y));
+	// ゲーム終了
+	if (ImGui::Button("Quit Game"))
+	{
+		PostQuitMessage(0);
+	}
+	// カーソル位置を復元
+	ImGui::SetCursorPos(oldCursorPos);
+
+	// 情報を更新
+	SetLightState(DirectX::XMFLOAT3(dir_light), DirectX::XMFLOAT3(dir_color), DirectX::XMFLOAT3(ambient_light));
 
 	ImGui::End();
 }
@@ -530,6 +564,25 @@ HRESULT Dx12Wrapper::CreateLight()
 	light_const_buffer_->Unmap(0, nullptr);
 
 	return result;
+}
+
+void Dx12Wrapper::SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light)
+{
+	light_->SetDirection(dir_light);
+	light_->SetColor(dir_color);
+	light_->SetAmbient(ambient_light);
+
+	LightState* mapped_light = nullptr;
+	auto result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
+
+	if (FAILED(result))
+	{
+		assert(0);
+	}
+
+	*mapped_light = *(light_->GetState());
+
+	light_const_buffer_->Unmap(0, nullptr);
 }
 
 HRESULT Dx12Wrapper::InitializeDebug()
