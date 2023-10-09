@@ -42,14 +42,16 @@ void GameScene::ProcessInput(const InputState& state)
 }
 
 bool GameScene::Initialize(const char* file_name)
-{
+{	
+	// ÉLÉÉÉâÉÇÉfÉãÇÃèâä˙âª
 	player_model_ = new PlayerActor(this);
 	player_model_->SetPMDModel(file_name);
 
-	std::string fbx_model_path = "../Assets/fbx/horse_statue_01_4k.fbx";
-
-	std::string normal_map_path = "../Assets/fbx/Texture/horse_statue_01_nor_dx_4k.png";
-	std::string arm_map_path = "../Assets/fbx/Texture/horse_statue_01_arm_4k.png";
+	// FBXÉÇÉfÉãÇÃèâä˙âª
+	std::string fbx_name = "horse_statue_01";
+	std::string fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	std::string normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	std::string arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
 
 	fbx_actor_table.push_back
 	(
@@ -58,14 +60,55 @@ bool GameScene::Initialize(const char* file_name)
 			fbx_model_path.c_str(),
 			normal_map_path.c_str(),
 			arm_map_path.c_str(),
-			200,
+			50,
+			DirectX::XMFLOAT3(-25, 10.5, -2)
+		)
+	);
+
+	fbx_name = "sofa_03";
+	fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
+
+	fbx_actor_table.push_back
+	(
+		CreateFBXActor
+		(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			15,
+			DirectX::XMFLOAT3(20, 0, 30)
+		)
+	);
+
+	fbx_name = "CoffeeTable_01";
+	fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
+
+	fbx_actor_table.push_back
+	(
+		CreateFBXActor
+		(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			20,
 			DirectX::XMFLOAT3(-20, 0, 0)
 		)
 	);
 
-	std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
+	// PlaneÇÃèâä˙âª
+	std::string name = "patterned_concrete_pavers_02";
+
+	/*std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
 	std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
-	std::string arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";
+	std::string arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";*/
+
+	std::string tex_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name  + "_diff_4k.png";
+	std::string normal_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_nor_dx_4k.png";
+	std::string arm_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_arm_4k.png";
 
 	plane_actor_table_.push_back(
 		CreatePlaneActor(
