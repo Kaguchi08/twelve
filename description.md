@@ -5,9 +5,17 @@
 - DirectX12を用いたレンダリングエンジンの開発
 
 ### 使用ライブラリ
+- Windows SDK
+- d3dx12.h
+- DirectXTex
+- ImGui
+- FBX SDK
 
-### 開発環境
+### 開発環境・ツール
+- Windows 10
+- NVIDIA GeForce RTX 3080
 - Visual Studio 2022
+- PIX for Windows
 
 ## 目的
 - 既存のゲームエンジンを用いないゲーム開発環境の構築
@@ -59,11 +67,8 @@ void Game::RunLoop()
         // 入力処理
         ProcessInput();
 
-        if (game_state_ == GameState::kPlay)
-        {
-            // 各種情報のの更新処理
-            UpdateGame();
-        }
+        // 各種情報のの更新処理
+        UpdateGame();
 
         // 出力処理
         GenerateOutput();
@@ -105,7 +110,7 @@ DirectX12における描画以外の処理をまとめたクラス
 #### Renderer
 DirectX12における描画処理をまとめたクラス
 
-### InputSystem
+#### InputSystem
 入力処理をまとめたクラス
 
 - Gameクラスに依存
@@ -128,3 +133,7 @@ DirectX12における描画処理をまとめたクラス
 ## 使用させていただいた素材
 
 ## 参考文献
+- 『ゲームプログラミング C++』(Sanjay Madhav 著・吉川 邦夫 訳・今給黎 隆 監修・翔泳社 刊)
+- 『DirecX 12 の魔導書』(川野 竜一 著・翔泳社 刊)
+- 『HLSL シェーダーの魔導書』(清原 隆行 著・翔泳社 刊)
+- 『DirectX12 Programming Vol.1/Vol.2/Vlol.3/Vol.4』(すらりんラボ 著・同人誌)
