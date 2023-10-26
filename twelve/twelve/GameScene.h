@@ -1,33 +1,33 @@
 #pragma once
-#include "Scene.h"
-#include "FBXActor.h"
-#include "PlayerActor.h"
-#include "PlaneActor.h"
 #include <unordered_map>
 
-class GameScene : public Scene
-{
-public:
-	GameScene(class Game* game);
-	~GameScene();
+#include "FBXActor.h"
+#include "PlaneActor.h"
+#include "PlayerActor.h"
+#include "Scene.h"
 
-	void ProcessInput(const struct InputState& state) override;
+class GameScene : public Scene {
+   public:
+    GameScene(class Game* game);
+    ~GameScene();
 
-private:
-	PlayerActor* player_model_;
+    void ProcessInput(const struct InputState& state) override;
 
-	std::vector<PlaneActor*> plane_actor_table_;
-	std::vector<FBXActor*> fbx_actor_table;
+   private:
+    PlayerActor* player_model_;
 
-	bool Initialize(const char* file_name);
-	void UpdateActor(float deltaTime) override;
+    std::vector<PlaneActor*> plane_actor_table_;
+    std::vector<FBXActor*> fbx_actor_table;
 
-	FBXActor* CreateFBXActor(const char* model, const char* normal, const char* arm,
-							 const float scale = 1.0f,
-							 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
-							 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
-	PlaneActor* CreatePlaneActor(const char* tex, const char* normal, const char* arm,
-								 const float scale = 1.0f,
-								 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
-								 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+    bool Initialize(const char* file_name);
+    void UpdateActor(float deltaTime) override;
+
+    FBXActor* CreateFBXActor(const char* model, const char* normal, const char* arm,
+                             const float scale = 1.0f,
+                             const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+                             const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
+    PlaneActor* CreatePlaneActor(const char* tex, const char* normal, const char* arm,
+                                 const float scale = 1.0f,
+                                 const DirectX::XMFLOAT3& pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+                                 const DirectX::XMFLOAT3& rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f));
 };

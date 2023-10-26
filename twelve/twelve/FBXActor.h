@@ -1,18 +1,18 @@
 #pragma once
-#include "Actor.h"
 #include <string>
 
-class FBXActor : public Actor
-{
-public:
-	FBXActor(class Scene* scene);
-	~FBXActor();
-	void UpdateActor(float delta_time) override;
+#include "Actor.h"
 
-	void SetFBXModel(const char* file_name);
-	void SetNormalMap(const char* file_name);
-	void SetArmMap(const char* file_name);
+class FBXActor : public Actor {
+   public:
+    FBXActor(class Scene* scene);
+    ~FBXActor();
+    void UpdateActor(float delta_time) override;
 
-private:
-	class FBXComponent* model_;
+    void SetFBXModel(const char* file_name);
+    void SetNormalMap(const char* file_name);
+    void SetArmMap(const char* file_name);
+
+   private:
+    class FBXComponent* model_;
 };

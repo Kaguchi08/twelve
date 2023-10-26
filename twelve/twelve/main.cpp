@@ -1,21 +1,18 @@
 ﻿#include "Game.h"
 
 #ifndef _DEBUG
-int main()
-{
+int main() {
 #else
 #include <Windows.h>
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-{
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #endif
-	Game game;
+    Game game;
 
-	if (game.Initialize())
-	{
-		game.RunLoop();
-	}
+    if (game.Initialize()) {
+        game.RunLoop();
+    }
 
-	game.Shutdown();
+    game.Shutdown();
 
-	return 0;
+    return 0;
 }

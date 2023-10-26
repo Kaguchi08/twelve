@@ -1,20 +1,20 @@
 #pragma once
-#include "MoveComponent.h"
 #include <DirectXMath.h>
 
-class ModelMoveComponent : public MoveComponent
-{
-public:
-	ModelMoveComponent(class Actor* owner, int update_order = 10);
+#include "MoveComponent.h"
 
-	void ProcessInput(const struct InputState& state) override;
+class ModelMoveComponent : public MoveComponent {
+   public:
+    ModelMoveComponent(class Actor* owner, int update_order = 10);
 
-	float GetVelocity() const { return velocity_; }
-	void SetVelocity(float velocity) { velocity_ = velocity; }
+    void ProcessInput(const struct InputState& state) override;
 
-private:
-	float velocity_;
+    float GetVelocity() const { return velocity_; }
+    void SetVelocity(float velocity) { velocity_ = velocity; }
 
-	DirectX::XMFLOAT3 HandleKeyboardInput(const InputState& state);
-	void UpdateAnimation(bool isMoving);
+   private:
+    float velocity_;
+
+    DirectX::XMFLOAT3 HandleKeyboardInput(const InputState& state);
+    void UpdateAnimation(bool isMoving);
 };

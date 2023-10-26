@@ -1,30 +1,25 @@
 #include "Light.h"
 
-Light::Light() :
-	state_()
-{
-	InitDirectionalLight(state_);
-	InitAmbientLight(state_);
+Light::Light() : state_() {
+    InitDirectionalLight(state_);
+    InitAmbientLight(state_);
 }
 
-Light::~Light()
-{
+Light::~Light() {
 }
 
-void Light::InitDirectionalLight(LightState& state)
-{
-	state.direction.x = 1.0f;
-	state.direction.y = -1.0f;
-	state.direction.z = 1.0f;
+void Light::InitDirectionalLight(LightState& state) {
+    state.direction.x = 1.0f;
+    state.direction.y = -1.0f;
+    state.direction.z = 1.0f;
 
-	state.color.x = 1.0f;
-	state.color.y = 1.0f;
-	state.color.z = 1.0f;
+    state.color.x = 1.0f;
+    state.color.y = 1.0f;
+    state.color.z = 1.0f;
 }
 
-void Light::InitAmbientLight(LightState& state)
-{
-	state.ambient.x = 1.0f;
-	state.ambient.y = 1.0f;
-	state.ambient.z = 1.0f;
+void Light::InitAmbientLight(LightState& state) {
+    state.ambient.x = 1.0f;
+    state.ambient.y = 1.0f;
+    state.ambient.z = 1.0f;
 }

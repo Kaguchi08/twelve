@@ -1,15 +1,15 @@
 #pragma once
 
-#include <d3d12.h>
-#include <string>
 #include <DirectXMath.h>
+#include <d3d12.h>
+
+#include <string>
 #include <vector>
 
-class Helper
-{
-public:
-	Helper();
-	~Helper();
+class Helper {
+   public:
+    Helper();
+    ~Helper();
 };
 
 /// <summary>
@@ -45,7 +45,6 @@ extern std::wstring GetExtensionW(const std::wstring& path);
 /// <returns></returns>
 extern std::pair<std::string, std::string> SplitFileName(const std::string& path, const char splitter = '*');
 
-
 /// <summary>
 /// デバックレイヤーを有効にする
 /// </summary>
@@ -59,7 +58,6 @@ extern void EnableDebugLayer();
 /// <param name="right">右ベクトル</param>
 /// <returns></returns>
 extern DirectX::XMMATRIX LookAtMatrix(const DirectX::XMVECTOR& lookat, const DirectX::XMFLOAT3& up, const DirectX::XMFLOAT3& right);
-
 
 /// <summary>
 /// 特定のベクトルを特定の方向に向ける行列を返す
