@@ -348,10 +348,14 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice() {
     {
         UINT adapterIndex = 0;
         ComPtr<IDXGIAdapter1> adapter;
+
         while (DXGI_ERROR_NOT_FOUND != dxgi_factory_->EnumAdapters1(adapterIndex, &adapter)) {
             DXGI_ADAPTER_DESC1 desc1{};
             adapter->GetDesc1(&desc1);
+
             ++adapterIndex;
+
+            // ソフトウェアアダプターはスキップ
             if (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
                 continue;
             }
@@ -368,7 +372,9 @@ HRESULT Dx12Wrapper::InitializeDXGIDevice() {
                 break;
             }
         }
-        adapter.As(&useAdapter);  // 使用するアダプター
+
+        // 使用するアダプター
+        adapter.As(&useAdapter);
     }
 
     // Direct3Dデバイスの作成
@@ -526,6 +532,7 @@ HRESULT Dx12Wrapper::InitializeDebug() {
         debug->EnableDebugLayer();
         debug->Release();
     }
+
     return S_OK;
 }
 
