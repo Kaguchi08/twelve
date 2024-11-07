@@ -1,4 +1,4 @@
-#include "Dx12Wrapper.h"
+Ôªø#include "Dx12Wrapper.h"
 
 #include <DirectXMath.h>
 #include <d3d12.h>
@@ -17,708 +17,829 @@
 #include "imgui/imgui_impl_win32.h"
 
 using namespace Microsoft::WRL;
-// "-" ÉIÉyÉâÉìÉhÇ™égÇ¶Ç»Ç¢ÇΩÇﬂ
+// "-" „Ç™„Éö„É©„É≥„Éâ„Åå‰Ωø„Åà„Å™„ÅÑ„Åü„ÇÅ
 using namespace DirectX;
 
-Dx12Wrapper::Dx12Wrapper(HWND hwnd) : hwnd_(hwnd),
-                                      eye_(0, 15, -50),
-                                      target_(0, 12, 0),
-                                      up_(0, 1, 0),
-                                      view_matrix_(DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&eye_), DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_))) {
+Dx12Wrapper::Dx12Wrapper(HWND hwnd) : m_hWnd(hwnd),
+eye_(0, 15, -50),
+target_(0, 12, 0),
+up_(0, 1, 0),
+view_matrix_(DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&eye_), DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_)))
+{
 }
 
-Dx12Wrapper::~Dx12Wrapper() {
+Dx12Wrapper::~Dx12Wrapper()
+{
 }
 
-bool Dx12Wrapper::Initialize() {
-    Game game;
-    window_size_ = game.GetWindowSize();
+bool Dx12Wrapper::Initialize()
+{
+	Game game;
+	m_WindowSize = game.GetWindowSize();
 
-    light_ = std::make_unique<Light>();
+	light_ = std::make_unique<Light>();
 
-    if (FAILED(InitializeDebug())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(InitializeDebug()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (FAILED(InitializeDXGIDevice())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(InitializeDevice()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (FAILED(InitializeCommand())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(InitializeCmdueue()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (FAILED(CreateSwapChain())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(CreateSwapChain()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (FAILED(InitializeRenderer())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(InitializeCmdAllocator()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!CreateDepthBuffer()) {
-        return false;
-    }
+	if (FAILED(InitializeCmdList()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!CreateDSV()) {
-        return false;
-    }
+	if (FAILED(InitializeRenderer()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!CreateDepthSRV()) {
-        return false;
-    }
+	if (!CreateDepthBuffer())
+	{
+		return false;
+	}
 
-    if (FAILED(CreateFence())) {
-        assert(0);
-        return false;
-    }
+	if (!CreateDSV())
+	{
+		return false;
+	}
 
-    if (FAILED(CreateSceneView())) {
-        assert(0);
-        return false;
-    }
+	if (!CreateDepthSRV())
+	{
+		return false;
+	}
 
-    if (FAILED(CreateLight())) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(CreateFence()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!CreatePostEffectAndView()) {
-        return false;
-    }
+	if (FAILED(CreateSceneView()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!CreateOffScreenVertex()) {
-        return false;
-    }
+	if (FAILED(CreateLight()))
+	{
+		assert(0);
+		return false;
+	}
 
-    if (!InitializeImGui()) {
-        return false;
-    }
+	if (!CreatePostEffectAndView())
+	{
+		return false;
+	}
 
-    return true;
+	if (!CreateOffScreenVertex())
+	{
+		return false;
+	}
+
+	if (!InitializeImGui())
+	{
+		return false;
+	}
+
+	return true;
 }
 
-void Dx12Wrapper::SetSceneCB() {
-    ID3D12DescriptorHeap* heaps[] = {scene_cbv_heap_.Get()};
+void Dx12Wrapper::SetSceneCB()
+{
+	ID3D12DescriptorHeap* heaps[] = { scene_cbv_heap_.Get() };
 
-    cmd_list_->SetDescriptorHeaps(1, heaps);
-    cmd_list_->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
+	m_pCmdList->SetDescriptorHeaps(1, heaps);
+	m_pCmdList->SetGraphicsRootDescriptorTable(0, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 }
 
-void Dx12Wrapper::SetCameraSetting() {
-    Game game;
-    auto w_size = game.GetWindowSize();
+void Dx12Wrapper::SetCameraSetting()
+{
+	Game game;
+	auto w_size = game.GetWindowSize();
 
-    scene_matrix_->eye = eye_;
-    scene_matrix_->view = view_matrix_;
-    scene_matrix_->proj = DirectX::XMMatrixPerspectiveFovLH(
-        fov_,
-        static_cast<float>(w_size.cx) / static_cast<float>(w_size.cy),
-        0.1f,
-        1000.0f);
+	scene_matrix_->eye = eye_;
+	scene_matrix_->view = view_matrix_;
+	scene_matrix_->proj = DirectX::XMMatrixPerspectiveFovLH(
+		fov_,
+		static_cast<float>(w_size.cx) / static_cast<float>(w_size.cy),
+		0.1f,
+		1000.0f);
 
-    auto light_vec = DirectX::XMLoadFloat3(&light_->GetState()->direction);
+	auto light_vec = DirectX::XMLoadFloat3(&light_->GetState()->direction);
 
-    auto light_pos = DirectX::XMLoadFloat3(&target_) - DirectX::XMVector3Normalize(light_vec) * DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&eye_))).m128_f32[0];
+	auto light_pos = DirectX::XMLoadFloat3(&target_) - DirectX::XMVector3Normalize(light_vec) * DirectX::XMVector3Length(DirectX::XMVectorSubtract(DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&eye_))).m128_f32[0];
 
-    DirectX::XMFLOAT4 plane_normal_vec = {0.0f, 1.0f, 0.0f, 0.0f};
+	DirectX::XMFLOAT4 plane_normal_vec = { 0.0f, 1.0f, 0.0f, 0.0f };
 
-    scene_matrix_->shadow = DirectX::XMMatrixShadow(
-        DirectX::XMLoadFloat4(&plane_normal_vec),
-        -light_vec);
+	scene_matrix_->shadow = DirectX::XMMatrixShadow(
+		DirectX::XMLoadFloat4(&plane_normal_vec),
+		-light_vec);
 
-    scene_matrix_->light_view =
-        DirectX::XMMatrixLookAtLH(light_pos, DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_)) * DirectX::XMMatrixOrthographicLH(320.0f, 180.0f, 0.1f, 1000.0f);
+	scene_matrix_->light_view =
+		DirectX::XMMatrixLookAtLH(light_pos, DirectX::XMLoadFloat3(&target_), DirectX::XMLoadFloat3(&up_)) * DirectX::XMMatrixOrthographicLH(320.0f, 180.0f, 0.1f, 1000.0f);
 }
 
-void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index) {
-    // ÉVÅ[ÉìíËêîÉoÉbÉtÉ@ÇÉZÉbÉg
-    ID3D12DescriptorHeap* scene_heaps[] = {scene_cbv_heap_.Get()};
+void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index)
+{
+	// „Ç∑„Éº„É≥ÂÆöÊï∞„Éê„ÉÉ„Éï„Ç°„Çí„Çª„ÉÉ„Éà
+	ID3D12DescriptorHeap* scene_heaps[] = { scene_cbv_heap_.Get() };
 
-    cmd_list_->SetDescriptorHeaps(1, scene_heaps);
-    cmd_list_->SetGraphicsRootDescriptorTable(scene_index, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
+	m_pCmdList->SetDescriptorHeaps(1, scene_heaps);
+	m_pCmdList->SetGraphicsRootDescriptorTable(scene_index, scene_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-    // ÉâÉCÉgíËêîÉoÉbÉtÉ@ÇÉZÉbÉg
-    ID3D12DescriptorHeap* light_heaps[] = {light_cbv_heap_.Get()};
+	// „É©„Ç§„ÉàÂÆöÊï∞„Éê„ÉÉ„Éï„Ç°„Çí„Çª„ÉÉ„Éà
+	ID3D12DescriptorHeap* light_heaps[] = { light_cbv_heap_.Get() };
 
-    cmd_list_->SetDescriptorHeaps(1, light_heaps);
-    cmd_list_->SetGraphicsRootDescriptorTable(light_index, light_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
+	m_pCmdList->SetDescriptorHeaps(1, light_heaps);
+	m_pCmdList->SetGraphicsRootDescriptorTable(light_index, light_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-    // ÉVÉÉÉhÉEÉ}ÉbÉvÉeÉNÉXÉ`ÉÉÇÉZÉbÉg
-    cmd_list_->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
-    auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
-    handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	// „Ç∑„É£„Éâ„Ç¶„Éû„ÉÉ„Éó„ÉÜ„ÇØ„Çπ„ÉÅ„É£„Çí„Çª„ÉÉ„Éà
+	m_pCmdList->SetDescriptorHeaps(1, depth_srv_heap_.GetAddressOf());
+	auto handle = depth_srv_heap_->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    cmd_list_->SetGraphicsRootDescriptorTable(depth_index, handle);
+	m_pCmdList->SetGraphicsRootDescriptorTable(depth_index, handle);
 }
 
-void Dx12Wrapper::ExecuteCommand() {
-    cmd_list_->Close();
+void Dx12Wrapper::ExecuteCommand()
+{
+	m_pCmdList->Close();
 
-    ID3D12CommandList* cmdLists[] = {cmd_list_.Get()};
-    cmd_queue_->ExecuteCommandLists(1, cmdLists);
+	ID3D12CommandList* cmdLists[] = { m_pCmdList.Get() };
+	m_pQueue->ExecuteCommandLists(1, cmdLists);
 
-    cmd_queue_->Signal(fence_.Get(), ++fence_val_);
+	m_pQueue->Signal(m_pFence.Get(), ++fence_val_);
 
-    if (fence_->GetCompletedValue() < fence_val_) {
-        auto event = CreateEvent(nullptr, false, false, nullptr);
-        fence_->SetEventOnCompletion(fence_val_, event);
-        WaitForSingleObject(event, INFINITE);
-        CloseHandle(event);
-    }
+	if (m_pFence->GetCompletedValue() < fence_val_)
+	{
+		auto event = CreateEvent(nullptr, false, false, nullptr);
+		m_pFence->SetEventOnCompletion(fence_val_, event);
+		WaitForSingleObject(event, INFINITE);
+		CloseHandle(event);
+	}
 
-    cmd_allocator_->Reset();
-    cmd_list_->Reset(cmd_allocator_.Get(), nullptr);
+	m_pCmdAllocator->Reset();
+	m_pCmdList->Reset(m_pCmdAllocator.Get(), nullptr);
 }
 
-void Dx12Wrapper::CreateImguiWindow() {
-    // imgui ï`âÊëOèàóù
-    ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
+void Dx12Wrapper::CreateImguiWindow()
+{
+	// imgui ÊèèÁîªÂâçÂá¶ÁêÜ
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
 
-    // ÉpÉâÉÅÅ[É^ÉEÉBÉìÉhÉE
-    ImGui::Begin("Menu");
-    ImGui::SetWindowSize(ImVec2(500, 400), ImGuiCond_::ImGuiCond_FirstUseEver);
+	// „Éë„É©„É°„Éº„Çø„Ç¶„Ç£„É≥„Éâ„Ç¶
+	ImGui::Begin("Menu");
+	ImGui::SetWindowSize(ImVec2(500, 400), ImGuiCond_::ImGuiCond_FirstUseEver);
 
-    // FPS
-    ImGui::Text("FPS: %f", fps_);
+	// FPS
+	ImGui::Text("FPS: %f", fps_);
 
-    // ÉfÉBÉåÉNÉVÉáÉìÉâÉCÉg
-    static float dir_light[3] = {1.0f, -1.0f, 1.0f};
-    ImGui::SliderFloat3("Direction Light", dir_light, -1.0f, 1.0f);
-    static float dir_color[3] = {1.0f, 1.0f, 1.0f};
-    ImGui::ColorEdit3("Direction Light Color", dir_color);
+	// „Éá„Ç£„É¨„ÇØ„Ç∑„Éß„É≥„É©„Ç§„Éà
+	static float dir_light[3] = { 1.0f, -1.0f, 1.0f };
+	ImGui::SliderFloat3("Direction Light", dir_light, -1.0f, 1.0f);
+	static float dir_color[3] = { 1.0f, 1.0f, 1.0f };
+	ImGui::ColorEdit3("Direction Light Color", dir_color);
 
-    // ÉAÉìÉrÉGÉìÉgÉâÉCÉg
-    static float ambient_light[3] = {1.0f, 1.0f, 1.0f};
-    ImGui::ColorEdit3("Ambient Light", ambient_light);
+	// „Ç¢„É≥„Éì„Ç®„É≥„Éà„É©„Ç§„Éà
+	static float ambient_light[3] = { 1.0f, 1.0f, 1.0f };
+	ImGui::ColorEdit3("Ambient Light", ambient_light);
 
-    // ÉQÅ[ÉÄèIóπÉ{É^ÉìÇÕâEâ∫Ç…å≈íË
-    // ÉEÉBÉìÉhÉEÇÃÉTÉCÉYÇéÊìæ
-    ImVec2 windowSize = ImGui::GetWindowSize();
-    // åªç›ÇÃÉJÅ[É\Éãà íuÇï€ë∂
-    ImVec2 oldCursorPos = ImGui::GetCursorPos();
-    // É{É^ÉìÇÃÉTÉCÉY
-    ImVec2 buttonSize(100, 50);
-    // ÉJÅ[É\Éãà íuÇÉ{É^ÉìÇÃà íuÇ…ê›íË
-    ImGui::SetCursorPos(ImVec2(windowSize.x - buttonSize.x, windowSize.y - buttonSize.y));
-    // ÉQÅ[ÉÄèIóπ
-    if (ImGui::Button("Quit Game")) {
-        PostQuitMessage(0);
-    }
-    // ÉJÅ[É\Éãà íuÇïúå≥
-    ImGui::SetCursorPos(oldCursorPos);
+	// „Ç≤„Éº„É†ÁµÇ‰∫Ü„Éú„Çø„É≥„ÅØÂè≥‰∏ã„Å´Âõ∫ÂÆö
+	// „Ç¶„Ç£„É≥„Éâ„Ç¶„ÅÆ„Çµ„Ç§„Ç∫„ÇíÂèñÂæó
+	ImVec2 windowSize = ImGui::GetWindowSize();
+	// ÁèæÂú®„ÅÆ„Ç´„Éº„ÇΩ„É´‰ΩçÁΩÆ„Çí‰øùÂ≠ò
+	ImVec2 oldCursorPos = ImGui::GetCursorPos();
+	// „Éú„Çø„É≥„ÅÆ„Çµ„Ç§„Ç∫
+	ImVec2 buttonSize(100, 50);
+	// „Ç´„Éº„ÇΩ„É´‰ΩçÁΩÆ„Çí„Éú„Çø„É≥„ÅÆ‰ΩçÁΩÆ„Å´Ë®≠ÂÆö
+	ImGui::SetCursorPos(ImVec2(windowSize.x - buttonSize.x, windowSize.y - buttonSize.y));
+	// „Ç≤„Éº„É†ÁµÇ‰∫Ü
+	if (ImGui::Button("Quit Game"))
+	{
+		PostQuitMessage(0);
+	}
+	// „Ç´„Éº„ÇΩ„É´‰ΩçÁΩÆ„ÇíÂæ©ÂÖÉ
+	ImGui::SetCursorPos(oldCursorPos);
 
-    // èÓïÒÇçXêV
-    SetLightState(DirectX::XMFLOAT3(dir_light), DirectX::XMFLOAT3(dir_color), DirectX::XMFLOAT3(ambient_light));
+	// ÊÉÖÂ†±„ÇíÊõ¥Êñ∞
+	SetLightState(DirectX::XMFLOAT3(dir_light), DirectX::XMFLOAT3(dir_color), DirectX::XMFLOAT3(ambient_light));
 
-    ImGui::End();
+	ImGui::End();
 }
 
-void Dx12Wrapper::RenderImgui() {
-    ImGui::Render();
+void Dx12Wrapper::RenderImgui()
+{
+	ImGui::Render();
 
-    cmd_list_->SetDescriptorHeaps(1, imgui_heap_.GetAddressOf());
+	m_pCmdList->SetDescriptorHeaps(1, imgui_heap_.GetAddressOf());
 
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd_list_.Get());
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pCmdList.Get());
 }
 
-bool Dx12Wrapper::CreateDepthBuffer() {
-    DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-    auto result = swap_chain_->GetDesc1(&swap_chain_desc);
+bool Dx12Wrapper::CreateDepthBuffer()
+{
+	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
+	auto result = m_pSwapChain->GetDesc1(&swap_chain_desc);
 
-    D3D12_RESOURCE_DESC res_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, swap_chain_desc.Width, swap_chain_desc.Height);
-    res_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	D3D12_RESOURCE_DESC res_desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R32_TYPELESS, swap_chain_desc.Width, swap_chain_desc.Height);
+	res_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-    CD3DX12_CLEAR_VALUE clear_val(DXGI_FORMAT_D32_FLOAT, 1.0f, 0);
+	CD3DX12_CLEAR_VALUE clear_val(DXGI_FORMAT_D32_FLOAT, 1.0f, 0);
 
-    result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        &clear_val,
-        IID_PPV_ARGS(depth_buffer_.ReleaseAndGetAddressOf()));
+	result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&clear_val,
+		IID_PPV_ARGS(depth_buffer_.ReleaseAndGetAddressOf()));
 
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
 
-    // ÉâÉCÉgÉfÉvÉX
-    res_desc.Width = kLightDepthMapSize;
-    res_desc.Height = kLightDepthMapSize;
+	// „É©„Ç§„Éà„Éá„Éó„Çπ
+	res_desc.Width = kLightDepthMapSize;
+	res_desc.Height = kLightDepthMapSize;
 
-    result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        &clear_val,
-        IID_PPV_ARGS(light_depth_buffer_.ReleaseAndGetAddressOf()));
+	result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		&clear_val,
+		IID_PPV_ARGS(light_depth_buffer_.ReleaseAndGetAddressOf()));
 
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
-bool Dx12Wrapper::CreateDSV() {
-    // 0î‘ÇÕí èÌê[ìxÅA1î‘ÇÕÉâÉCÉgê[ìx
-    auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, dsv_heap_);
+bool Dx12Wrapper::CreateDSV()
+{
+	// 0Áï™„ÅØÈÄöÂ∏∏Ê∑±Â∫¶„ÄÅ1Áï™„ÅØ„É©„Ç§„ÉàÊ∑±Â∫¶
+	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, dsv_heap_);
 
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
 
-    // ê[ìxÉXÉeÉìÉVÉãÉrÉÖÅ[ÇÃê›íË
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
-    dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
+	// Ê∑±Â∫¶„Çπ„ÉÜ„É≥„Ç∑„É´„Éì„É•„Éº„ÅÆË®≠ÂÆö
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc = {};
+	dsv_desc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
 
-    auto handle = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
+	auto handle = dsv_heap_->GetCPUDescriptorHandleForHeapStart();
 
-    // í èÌê[ìx
-    dev_->CreateDepthStencilView(depth_buffer_.Get(), &dsv_desc, handle);
+	// ÈÄöÂ∏∏Ê∑±Â∫¶
+	m_pDevice->CreateDepthStencilView(depth_buffer_.Get(), &dsv_desc, handle);
 
-    handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	handle.ptr += m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-    // ÉâÉCÉgê[ìx
-    dev_->CreateDepthStencilView(light_depth_buffer_.Get(), &dsv_desc, handle);
+	// „É©„Ç§„ÉàÊ∑±Â∫¶
+	m_pDevice->CreateDepthStencilView(light_depth_buffer_.Get(), &dsv_desc, handle);
 
-    return true;
+	return true;
 }
 
-HRESULT Dx12Wrapper::CreateSwapChain() {
-    DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
-    swapchainDesc.Width = window_size_.cx;
-    swapchainDesc.Height = window_size_.cy;
-    swapchainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    swapchainDesc.Stereo = false;
-    swapchainDesc.SampleDesc.Count = 1;
-    swapchainDesc.SampleDesc.Quality = 0;
-    swapchainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapchainDesc.BufferCount = 2;
-    swapchainDesc.Scaling = DXGI_SCALING_STRETCH;
-    swapchainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapchainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-    swapchainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+HRESULT Dx12Wrapper::CreateSwapChain()
+{
+	// „Çπ„ÉØ„ÉÉ„Éó„ÉÅ„Çß„Ç§„É≥„ÅÆË®≠ÂÆö.
+	DXGI_SWAP_CHAIN_DESC desc = {};
+	desc.BufferDesc.Width = m_WindowSize.cx;
+	desc.BufferDesc.Height = m_WindowSize.cy;
+	desc.BufferDesc.RefreshRate.Numerator = 60;
+	desc.BufferDesc.RefreshRate.Denominator = 1;
+	desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+	desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+	desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	desc.SampleDesc.Count = 1;
+	desc.SampleDesc.Quality = 0;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferCount = Constants::FrameCount;
+	desc.OutputWindow = m_hWnd;
+	desc.Windowed = TRUE;
+	desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-    auto result = dxgi_factory_->CreateSwapChainForHwnd(
-        cmd_queue_.Get(),
-        hwnd_,
-        &swapchainDesc,
-        nullptr,
-        nullptr,
-        (IDXGISwapChain1**)swap_chain_.ReleaseAndGetAddressOf());
+	// „Çπ„ÉØ„ÉÉ„Éó„ÉÅ„Çß„Ç§„É≥„ÅÆÁîüÊàê
+	ComPtr<IDXGISwapChain> pSwapChain;
 
-    assert(SUCCEEDED(result));
+	auto result = m_pFactory->CreateSwapChain(
+		m_pQueue.Get(),
+		&desc,
+		pSwapChain.GetAddressOf());
 
-    return result;
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// IDXGISwapChain3 „ÇíÂèñÂæó
+	result = pSwapChain.As(&m_pSwapChain);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// „Éê„ÉÉ„ÇØ„Éê„ÉÉ„Éï„Ç°Áï™Âè∑„ÇíÂèñÂæó
+	m_FrameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+
+	// ‰∏çË¶Å„Å´„Å™„Å£„Åü„ÅÆ„ÅßËß£Êîæ
+	pSwapChain.Reset();
+
+	return result;
 }
 
-HRESULT Dx12Wrapper::InitializeDXGIDevice() {
-    HRESULT result = S_OK;
+HRESULT Dx12Wrapper::InitializeDevice()
+{
+	HRESULT result = S_OK;
 
-    result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(dxgi_factory_.ReleaseAndGetAddressOf()));
+	result = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(m_pFactory.ReleaseAndGetAddressOf()));
 
-    // ÉtÉBÅ[É`ÉÉÉåÉxÉãóÒãì
-    D3D_FEATURE_LEVEL levels[] = {
-        D3D_FEATURE_LEVEL_12_1,
-        D3D_FEATURE_LEVEL_12_0,
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0,
-    };
+	// „Éï„Ç£„Éº„ÉÅ„É£„É¨„Éô„É´ÂàóÊåô
+	D3D_FEATURE_LEVEL levels[] = {
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0,
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+	};
 
-    // ÉnÅ[ÉhÉEÉFÉAÉAÉ_ÉvÉ^ÇÃåüçı
-    ComPtr<IDXGIAdapter1> useAdapter;
-    D3D_FEATURE_LEVEL level;
-    {
-        UINT adapterIndex = 0;
-        ComPtr<IDXGIAdapter1> adapter;
+	// „Éè„Éº„Éâ„Ç¶„Çß„Ç¢„Ç¢„ÉÄ„Éó„Çø„ÅÆÊ§úÁ¥¢
+	ComPtr<IDXGIAdapter1> useAdapter;
+	D3D_FEATURE_LEVEL level;
+	{
+		UINT adapterIndex = 0;
+		ComPtr<IDXGIAdapter1> adapter;
 
-        while (DXGI_ERROR_NOT_FOUND != dxgi_factory_->EnumAdapters1(adapterIndex, &adapter)) {
-            DXGI_ADAPTER_DESC1 desc1{};
-            adapter->GetDesc1(&desc1);
+		while (DXGI_ERROR_NOT_FOUND != m_pFactory->EnumAdapters1(adapterIndex, &adapter))
+		{
+			DXGI_ADAPTER_DESC1 desc1{};
+			adapter->GetDesc1(&desc1);
 
-            ++adapterIndex;
+			++adapterIndex;
 
-            // É\ÉtÉgÉEÉFÉAÉAÉ_ÉvÉ^Å[ÇÕÉXÉLÉbÉv
-            if (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-                continue;
-            }
+			// „ÇΩ„Éï„Éà„Ç¶„Çß„Ç¢„Ç¢„ÉÄ„Éó„Çø„Éº„ÅØ„Çπ„Ç≠„ÉÉ„Éó
+			if (desc1.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				continue;
+			}
 
-            for (auto l : levels) {
-                // D3D12ÇÕégópâ¬î\Ç©
-                result = D3D12CreateDevice(adapter.Get(), l, __uuidof(ID3D12Device), nullptr);
-                if (SUCCEEDED(result)) {
-                    level = l;
-                    break;
-                }
-            }
-            if (SUCCEEDED(result)) {
-                break;
-            }
-        }
+			for (auto l : levels)
+			{
+				// D3D12„ÅØ‰ΩøÁî®ÂèØËÉΩ„Åã
+				result = D3D12CreateDevice(adapter.Get(), l, __uuidof(ID3D12Device), nullptr);
+				if (SUCCEEDED(result))
+				{
+					level = l;
+					break;
+				}
+			}
+			if (SUCCEEDED(result))
+			{
+				break;
+			}
+		}
 
-        // égópÇ∑ÇÈÉAÉ_ÉvÉ^Å[
-        adapter.As(&useAdapter);
-    }
+		// ‰ΩøÁî®„Åô„Çã„Ç¢„ÉÄ„Éó„Çø„Éº
+		adapter.As(&useAdapter);
+	}
 
-    // Direct3DÉfÉoÉCÉXÇÃçÏê¨
-    result = D3D12CreateDevice(useAdapter.Get(), level, IID_PPV_ARGS(dev_.ReleaseAndGetAddressOf()));
-    if (FAILED(result)) {
-        return result;
-    }
+	// Direct3D„Éá„Éê„Ç§„Çπ„ÅÆ‰ΩúÊàê
+	result = D3D12CreateDevice(useAdapter.Get(), level, IID_PPV_ARGS(m_pDevice.ReleaseAndGetAddressOf()));
+	if (FAILED(result))
+	{
+		return result;
+	}
 
-    return result;
+	return result;
 }
 
-HRESULT Dx12Wrapper::InitializeCommand() {
-    auto result = dev_->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(cmd_allocator_.ReleaseAndGetAddressOf()));
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
+HRESULT Dx12Wrapper::InitializeCmdueue()
+{
+	D3D12_COMMAND_QUEUE_DESC cmdQueueDesc = {};
+	cmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	cmdQueueDesc.NodeMask = 0;
+	cmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-    result = dev_->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmd_allocator_.Get(), nullptr, IID_PPV_ARGS(cmd_list_.ReleaseAndGetAddressOf()));
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
+	auto result = m_pDevice->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(m_pQueue.ReleaseAndGetAddressOf()));
 
-    D3D12_COMMAND_QUEUE_DESC cmdQueueDesc = {};
-    cmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    cmdQueueDesc.NodeMask = 0;
-    cmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-    cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	if (FAILED(result))
+	{
+		assert(0);
+	}
 
-    result = dev_->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(cmd_queue_.ReleaseAndGetAddressOf()));
-
-    assert(SUCCEEDED(result));
-
-    return result;
+	return result;
 }
 
-HRESULT Dx12Wrapper::CreateSceneView() {
-    DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
-    auto result = swap_chain_->GetDesc1(&swapchainDesc);
+HRESULT Dx12Wrapper::InitializeCmdAllocator()
+{
+	auto result = m_pDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_pCmdAllocator.ReleaseAndGetAddressOf()));
 
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneMatrix) + 0xff) & ~0xff);
+	if (FAILED(result))
+	{
+		assert(0);
+	}
 
-    // íËêîÉoÉbÉtÉ@ÇÃçÏê¨
-    result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &resDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(scene_const_buff_.ReleaseAndGetAddressOf()));
-
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_cbv_heap_);
-
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    auto handle = scene_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-    D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
-    view_desc.BufferLocation = scene_const_buff_->GetGPUVirtualAddress();
-    view_desc.SizeInBytes = scene_const_buff_->GetDesc().Width;
-
-    dev_->CreateConstantBufferView(&view_desc, handle);
-
-    scene_matrix_ = nullptr;
-    result = scene_const_buff_->Map(0, nullptr, (void**)&scene_matrix_);
-
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    // SetCameraSetting();
-
-    return result;
+	return result;
 }
 
-HRESULT Dx12Wrapper::CreateLight() {
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(AligmentedValue(sizeof(LightState), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
+HRESULT Dx12Wrapper::InitializeCmdList()
+{
+	auto result = m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCmdAllocator.Get(), nullptr, IID_PPV_ARGS(m_pCmdList.ReleaseAndGetAddressOf()));
 
-    // íËêîÉoÉbÉtÉ@ÇÃçÏê¨
-    auto result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(light_const_buffer_.ReleaseAndGetAddressOf()));
+	if (FAILED(result))
+	{
+		assert(0);
+	}
 
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, light_cbv_heap_);
-
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    auto handle = light_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-    D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
-    view_desc.BufferLocation = light_const_buffer_->GetGPUVirtualAddress();
-    view_desc.SizeInBytes = light_const_buffer_->GetDesc().Width;
-
-    dev_->CreateConstantBufferView(&view_desc, handle);
-
-    LightState* mapped_light = nullptr;
-    result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
-
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
-
-    *mapped_light = *(light_->GetState());
-
-    light_const_buffer_->Unmap(0, nullptr);
-
-    return result;
+	return result;
 }
 
-void Dx12Wrapper::SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light) {
-    light_->SetDirection(dir_light);
-    light_->SetColor(dir_color);
-    light_->SetAmbient(ambient_light);
+HRESULT Dx12Wrapper::CreateSceneView()
+{
+	DXGI_SWAP_CHAIN_DESC1 swapchainDesc = {};
+	auto result = m_pSwapChain->GetDesc1(&swapchainDesc);
 
-    LightState* mapped_light = nullptr;
-    auto result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneMatrix) + 0xff) & ~0xff);
 
-    if (FAILED(result)) {
-        assert(0);
-    }
+	// ÂÆöÊï∞„Éê„ÉÉ„Éï„Ç°„ÅÆ‰ΩúÊàê
+	result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&resDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(scene_const_buff_.ReleaseAndGetAddressOf()));
 
-    *mapped_light = *(light_->GetState());
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
 
-    light_const_buffer_->Unmap(0, nullptr);
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, scene_cbv_heap_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	auto handle = scene_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
+	view_desc.BufferLocation = scene_const_buff_->GetGPUVirtualAddress();
+	view_desc.SizeInBytes = scene_const_buff_->GetDesc().Width;
+
+	m_pDevice->CreateConstantBufferView(&view_desc, handle);
+
+	scene_matrix_ = nullptr;
+	result = scene_const_buff_->Map(0, nullptr, (void**)&scene_matrix_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// SetCameraSetting();
+
+	return result;
 }
 
-HRESULT Dx12Wrapper::InitializeDebug() {
-    ID3D12Debug* debug;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
-        debug->EnableDebugLayer();
-        debug->Release();
-    }
+HRESULT Dx12Wrapper::CreateLight()
+{
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(AligmentedValue(sizeof(LightState), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
 
-    return S_OK;
+	// ÂÆöÊï∞„Éê„ÉÉ„Éï„Ç°„ÅÆ‰ΩúÊàê
+	auto result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(light_const_buffer_.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, light_cbv_heap_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	auto handle = light_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC view_desc = {};
+	view_desc.BufferLocation = light_const_buffer_->GetGPUVirtualAddress();
+	view_desc.SizeInBytes = light_const_buffer_->GetDesc().Width;
+
+	m_pDevice->CreateConstantBufferView(&view_desc, handle);
+
+	LightState* mapped_light = nullptr;
+	result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	*mapped_light = *(light_->GetState());
+
+	light_const_buffer_->Unmap(0, nullptr);
+
+	return result;
 }
 
-HRESULT Dx12Wrapper::InitializeRenderer() {
-    // èCê≥ó\íË
-    renderer_.reset(new Renderer(this));
-    renderer_->Initialize();
-    model_loader_.reset(new ModelLoader(*renderer_));
-    resource_manager_.reset(new ResourceManager(dev_, std::move(model_loader_)));
-    return S_OK;
+void Dx12Wrapper::SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light)
+{
+	light_->SetDirection(dir_light);
+	light_->SetColor(dir_color);
+	light_->SetAmbient(ambient_light);
+
+	LightState* mapped_light = nullptr;
+	auto result = light_const_buffer_->Map(0, nullptr, (void**)&mapped_light);
+
+	if (FAILED(result))
+	{
+		assert(0);
+	}
+
+	*mapped_light = *(light_->GetState());
+
+	light_const_buffer_->Unmap(0, nullptr);
 }
 
-HRESULT Dx12Wrapper::CreateFence() {
-    if (FAILED(dev_->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence_.ReleaseAndGetAddressOf())))) {
-        assert(0);
-        return E_FAIL;
-    }
-    return S_OK;
+HRESULT Dx12Wrapper::InitializeDebug()
+{
+#if defined(DEBUG) || defined(_DEBUG)
+
+	ComPtr<ID3D12Debug> debug;
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(debug.GetAddressOf()))))
+	{
+		debug->EnableDebugLayer();
+	}
+#endif
+
+	return S_OK;
 }
 
-HRESULT Dx12Wrapper::CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask) {
-    D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-    heap_desc.Type = type;
-    heap_desc.NodeMask = node_mask;
-    heap_desc.NumDescriptors = num_descriptors;
-    heap_desc.Flags = flags;
-
-    return dev_->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf()));
+HRESULT Dx12Wrapper::InitializeRenderer()
+{
+	// ‰øÆÊ≠£‰∫àÂÆö
+	renderer_.reset(new Renderer(this));
+	renderer_->Initialize();
+	model_loader_.reset(new ModelLoader(*renderer_));
+	resource_manager_.reset(new ResourceManager(m_pDevice, std::move(model_loader_)));
+	return S_OK;
 }
 
-HRESULT Dx12Wrapper::CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle) {
-    D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
-    rtv_desc.Format = format;
-    rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-
-    dev_->CreateRenderTargetView(resource, &rtv_desc, handle);
-    return S_OK;
+HRESULT Dx12Wrapper::CreateFence()
+{
+	if (FAILED(m_pDevice->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_pFence.ReleaseAndGetAddressOf()))))
+	{
+		assert(0);
+		return E_FAIL;
+	}
+	return S_OK;
 }
 
-bool Dx12Wrapper::CreatePostEffectAndView() {
-    auto weights = GetGaussianWeights(8, 5.0f);
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(AligmentedValue(sizeof(weights[0]) * weights.size(), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
+HRESULT Dx12Wrapper::CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask)
+{
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.Type = type;
+	heap_desc.NodeMask = node_mask;
+	heap_desc.NumDescriptors = num_descriptors;
+	heap_desc.Flags = flags;
 
-    auto result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(post_effect_const_buffer_.ReleaseAndGetAddressOf()));
-
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
-
-    result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, post_effect_cbv_heap_);
-
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
-
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
-    cbv_desc.BufferLocation = post_effect_const_buffer_->GetGPUVirtualAddress();
-    cbv_desc.SizeInBytes = post_effect_const_buffer_->GetDesc().Width;
-
-    auto handle = post_effect_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
-
-    dev_->CreateConstantBufferView(&cbv_desc, handle);
-
-    float* mapped = nullptr;
-    result = post_effect_const_buffer_->Map(0, nullptr, (void**)&mapped);
-
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
-
-    std::copy(weights.begin(), weights.end(), mapped);
-    post_effect_const_buffer_->Unmap(0, nullptr);
+	return m_pDevice->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(heap.ReleaseAndGetAddressOf()));
 }
 
-bool Dx12Wrapper::CreateOffScreenVertex() {
-    struct OffScreenVertex {
-        DirectX::XMFLOAT3 pos;
-        DirectX::XMFLOAT2 uv;
-    };
+HRESULT Dx12Wrapper::CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle)
+{
+	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
+	rtv_desc.Format = format;
+	rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
-    OffScreenVertex vertex[4] = {
-        {{-1, -1, 0.1}, {0, 1}},
-        {{-1, 1, 0.1}, {0, 0}},
-        {{1, -1, 0.1}, {1, 1}},
-        {{1, 1, 0.1}, {1, 0}}};
-
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertex));
-
-    auto result = dev_->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(screen_vertex_buffer_.ReleaseAndGetAddressOf()));
-
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
-
-    OffScreenVertex* map = nullptr;
-    screen_vertex_buffer_->Map(0, nullptr, (void**)&map);
-    std::copy(std::begin(vertex), std::end(vertex), map);
-    screen_vertex_buffer_->Unmap(0, nullptr);
-
-    screen_vertex_buffer_view_.BufferLocation = screen_vertex_buffer_->GetGPUVirtualAddress();
-    screen_vertex_buffer_view_.SizeInBytes = sizeof(vertex);
-    screen_vertex_buffer_view_.StrideInBytes = sizeof(OffScreenVertex);
-
-    return true;
+	m_pDevice->CreateRenderTargetView(resource, &rtv_desc, handle);
+	return S_OK;
 }
 
-bool Dx12Wrapper::CreateDepthSRV() {
-    // 0î‘ÇÕí èÌÇÃê[ìxÅA1î‘ÇÕÉâÉCÉgê[ìx
-    auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, depth_srv_heap_);
+bool Dx12Wrapper::CreatePostEffectAndView()
+{
+	auto weights = GetGaussianWeights(8, 5.0f);
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(AligmentedValue(sizeof(weights[0]) * weights.size(), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT));
 
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
+	auto result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(post_effect_const_buffer_.ReleaseAndGetAddressOf()));
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-    srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
-    srv_desc.Texture2D.MipLevels = 1;
-    srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
 
-    auto handle = depth_srv_heap_->GetCPUDescriptorHandleForHeapStart();
+	result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, post_effect_cbv_heap_);
 
-    // í èÌê[ìxÉeÉNÉXÉ`ÉÉóp
-    dev_->CreateShaderResourceView(
-        depth_buffer_.Get(),
-        &srv_desc,
-        handle);
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
 
-    handle.ptr += dev_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
+	cbv_desc.BufferLocation = post_effect_const_buffer_->GetGPUVirtualAddress();
+	cbv_desc.SizeInBytes = post_effect_const_buffer_->GetDesc().Width;
 
-    // ÉâÉCÉgê[ìxÉeÉNÉXÉ`ÉÉóp
-    dev_->CreateShaderResourceView(
-        light_depth_buffer_.Get(),
-        &srv_desc,
-        handle);
+	auto handle = post_effect_cbv_heap_->GetCPUDescriptorHandleForHeapStart();
 
-    return true;
+	m_pDevice->CreateConstantBufferView(&cbv_desc, handle);
+
+	float* mapped = nullptr;
+	result = post_effect_const_buffer_->Map(0, nullptr, (void**)&mapped);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	std::copy(weights.begin(), weights.end(), mapped);
+	post_effect_const_buffer_->Unmap(0, nullptr);
 }
 
-bool Dx12Wrapper::InitializeImGui() {
-    // ÉfÉBÉXÉNÉäÉvÉ^ÉqÅ[ÉvÇÃçÏê¨
-    auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, imgui_heap_);
+bool Dx12Wrapper::CreateOffScreenVertex()
+{
+	struct OffScreenVertex
+	{
+		DirectX::XMFLOAT3 pos;
+		DirectX::XMFLOAT2 uv;
+	};
 
-    if (FAILED(result)) {
-        assert(0);
-        return false;
-    }
+	OffScreenVertex vertex[4] = {
+		{{-1, -1, 0.1}, {0, 1}},
+		{{-1, 1, 0.1}, {0, 0}},
+		{{1, -1, 0.1}, {1, 1}},
+		{{1, 1, 0.1}, {1, 0}} };
 
-    // èâä˙âª
-    if (ImGui::CreateContext() == nullptr) {
-        assert(0);
-        return false;
-    }
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(vertex));
 
-    // WindowsópÇÃèâä˙âª
-    bool bln_result = ImGui_ImplWin32_Init(hwnd_);
-    if (!bln_result) {
-        assert(0);
-        return false;
-    }
+	auto result = m_pDevice->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(screen_vertex_buffer_.ReleaseAndGetAddressOf()));
 
-    // DirectX12ópÇÃèâä˙âª
-    bln_result = ImGui_ImplDX12_Init(
-        dev_.Get(),
-        3,
-        DXGI_FORMAT_R8G8B8A8_UNORM,
-        imgui_heap_.Get(),
-        imgui_heap_->GetCPUDescriptorHandleForHeapStart(),
-        imgui_heap_->GetGPUDescriptorHandleForHeapStart());
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	OffScreenVertex* map = nullptr;
+	screen_vertex_buffer_->Map(0, nullptr, (void**)&map);
+	std::copy(std::begin(vertex), std::end(vertex), map);
+	screen_vertex_buffer_->Unmap(0, nullptr);
+
+	screen_vertex_buffer_view_.BufferLocation = screen_vertex_buffer_->GetGPUVirtualAddress();
+	screen_vertex_buffer_view_.SizeInBytes = sizeof(vertex);
+	screen_vertex_buffer_view_.StrideInBytes = sizeof(OffScreenVertex);
+
+	return true;
+}
+
+bool Dx12Wrapper::CreateDepthSRV()
+{
+	// 0Áï™„ÅØÈÄöÂ∏∏„ÅÆÊ∑±Â∫¶„ÄÅ1Áï™„ÅØ„É©„Ç§„ÉàÊ∑±Â∫¶
+	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, depth_srv_heap_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Format = DXGI_FORMAT_R32_FLOAT;
+	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+	auto handle = depth_srv_heap_->GetCPUDescriptorHandleForHeapStart();
+
+	// ÈÄöÂ∏∏Ê∑±Â∫¶„ÉÜ„ÇØ„Çπ„ÉÅ„É£Áî®
+	m_pDevice->CreateShaderResourceView(
+		depth_buffer_.Get(),
+		&srv_desc,
+		handle);
+
+	handle.ptr += m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// „É©„Ç§„ÉàÊ∑±Â∫¶„ÉÜ„ÇØ„Çπ„ÉÅ„É£Áî®
+	m_pDevice->CreateShaderResourceView(
+		light_depth_buffer_.Get(),
+		&srv_desc,
+		handle);
+
+	return true;
+}
+
+bool Dx12Wrapper::InitializeImGui()
+{
+	// „Éá„Ç£„Çπ„ÇØ„É™„Éó„Çø„Éí„Éº„Éó„ÅÆ‰ΩúÊàê
+	auto result = CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, imgui_heap_);
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return false;
+	}
+
+	// ÂàùÊúüÂåñ
+	if (ImGui::CreateContext() == nullptr)
+	{
+		assert(0);
+		return false;
+	}
+
+	// WindowsÁî®„ÅÆÂàùÊúüÂåñ
+	bool bln_result = ImGui_ImplWin32_Init(m_hWnd);
+	if (!bln_result)
+	{
+		assert(0);
+		return false;
+	}
+
+	// DirectX12Áî®„ÅÆÂàùÊúüÂåñ
+	bln_result = ImGui_ImplDX12_Init(
+		m_pDevice.Get(),
+		3,
+		DXGI_FORMAT_R8G8B8A8_UNORM,
+		imgui_heap_.Get(),
+		imgui_heap_->GetCPUDescriptorHandleForHeapStart(),
+		imgui_heap_->GetGPUDescriptorHandleForHeapStart());
 }

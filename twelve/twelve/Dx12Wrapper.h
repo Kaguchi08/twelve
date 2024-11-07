@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <DirectXTex.h>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -13,6 +13,7 @@
 #include "Light.h"
 #include "Model.h"
 #include "ResourceManager.h"
+#include "Constants.h"
 
 class PMDRenderer;
 class PMDActor;
@@ -20,150 +21,161 @@ struct PMDModel;
 
 using Microsoft::WRL::ComPtr;
 
-class Dx12Wrapper {
-   public:
-    Dx12Wrapper(HWND hwnd);
-    ~Dx12Wrapper();
+class Dx12Wrapper
+{
+public:
+	Dx12Wrapper(HWND hwnd);
+	~Dx12Wrapper();
 
-    bool Initialize();
+	bool Initialize();
 
-    void SetSceneCB();
+	void SetSceneCB();
 
-    void SetCameraSetting();
-    // ƒoƒbƒtƒ@‚ğƒZƒbƒg‚·‚é
-    void SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index);
+	void SetCameraSetting();
+	// ãƒãƒƒãƒ•ã‚¡ã‚’ã‚»ãƒƒãƒˆã™ã‚‹
+	void SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index);
 
-    void ExecuteCommand();
+	void ExecuteCommand();
 
-    void CreateImguiWindow();
-    void RenderImgui();
+	void CreateImguiWindow();
+	void RenderImgui();
 
-    SIZE GetWindowSize() const { return window_size_; }
+	SIZE GetWindowSize() const { return m_WindowSize; }
 
-    ComPtr<ID3D12Device> GetDevice() { return dev_.Get(); }
-    ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return cmd_list_.Get(); }
-    ComPtr<IDXGISwapChain4> GetSwapChain() { return swap_chain_.Get(); }
+	ComPtr<ID3D12Device> GetDevice() { return m_pDevice.Get(); }
+	ComPtr<ID3D12GraphicsCommandList> GetCommandList() { return m_pCmdList.Get(); }
+	ComPtr<IDXGISwapChain4> GetSwapChain() { return m_pSwapChain.Get(); }
 
-    ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
-    ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
-    ComPtr<ID3D12DescriptorHeap> GetPostEffectCBVHeap() { return post_effect_cbv_heap_; }
-    ComPtr<ID3D12DescriptorHeap> GetLightCBVHeap() { return light_cbv_heap_; }
-    ComPtr<ID3D12DescriptorHeap> GetDepthSRVHeap() { return depth_srv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetDSVHeap() { return dsv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetSceneCBVHeap() { return scene_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetPostEffectCBVHeap() { return post_effect_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetLightCBVHeap() { return light_cbv_heap_; }
+	ComPtr<ID3D12DescriptorHeap> GetDepthSRVHeap() { return depth_srv_heap_; }
 
-    D3D12_VERTEX_BUFFER_VIEW GetScreenVertexBufferView() { return screen_vertex_buffer_view_; }
+	D3D12_VERTEX_BUFFER_VIEW GetScreenVertexBufferView() { return screen_vertex_buffer_view_; }
 
-    // ƒŠƒ\[ƒXƒ}ƒl[ƒWƒƒ[‚ğ•Ô‚·
-    ResourceManager* GetResourceManager() { return resource_manager_.get(); }
+	// ãƒªã‚½ãƒ¼ã‚¹ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼ã‚’è¿”ã™
+	ResourceManager* GetResourceManager() { return resource_manager_.get(); }
 
-    const DirectX::XMFLOAT3& GetEye() const { return eye_; }
-    const DirectX::XMFLOAT3& GetTarget() const { return target_; }
-    const DirectX::XMFLOAT3& GetUp() const { return up_; }
+	const DirectX::XMFLOAT3& GetEye() const { return eye_; }
+	const DirectX::XMFLOAT3& GetTarget() const { return target_; }
+	const DirectX::XMFLOAT3& GetUp() const { return up_; }
 
-    void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
-    void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
-    void SetTarget(const DirectX::XMFLOAT3& target) { target_ = target; }
+	void SetViewMatrix(const DirectX::XMMATRIX& view) { view_matrix_ = view; }
+	void SetEye(const DirectX::XMFLOAT3& eye) { eye_ = eye; }
+	void SetTarget(const DirectX::XMFLOAT3& target) { target_ = target; }
 
-    void SetFPS(float fps) { fps_ = fps; }
+	void SetFPS(float fps) { fps_ = fps; }
 
-   private:
-    SIZE window_size_;
+private:
+	uint32_t m_FrameIndex = 0;
 
-    HWND hwnd_;
+	SIZE m_WindowSize;
+	HWND m_hWnd;
 
-    // ƒŠƒ\[ƒXƒ}ƒl[ƒWƒƒ[
-    std::unique_ptr<class ResourceManager> resource_manager_ = nullptr;
+	// ãƒªã‚½ãƒ¼ã‚¹ãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
+	std::unique_ptr<class ResourceManager> resource_manager_ = nullptr;
 
-    // ƒ‰ƒCƒg
-    std::unique_ptr<class Light> light_ = nullptr;
-    ComPtr<ID3D12Resource> light_const_buffer_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> light_cbv_heap_ = nullptr;
+	// ãƒ©ã‚¤ãƒˆ
+	std::unique_ptr<class Light> light_ = nullptr;
+	ComPtr<ID3D12Resource> light_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> light_cbv_heap_ = nullptr;
 
-    std::shared_ptr<class Renderer> renderer_ = nullptr;
-    std::unique_ptr<class ModelLoader> model_loader_;
+	std::shared_ptr<class Renderer> renderer_ = nullptr;
+	std::unique_ptr<class ModelLoader> model_loader_;
 
-    // DXGI
-    ComPtr<IDXGIFactory4> dxgi_factory_ = nullptr;
-    ComPtr<IDXGISwapChain4> swap_chain_ = nullptr;
+	// DXGI
+	ComPtr<IDXGIFactory4> m_pFactory = nullptr;
+	ComPtr<IDXGISwapChain4> m_pSwapChain = nullptr;
 
-    // DirextX
-    ComPtr<ID3D12Device> dev_ = nullptr;
-    ComPtr<ID3D12CommandAllocator> cmd_allocator_ = nullptr;
-    ComPtr<ID3D12GraphicsCommandList> cmd_list_ = nullptr;
-    ComPtr<ID3D12CommandQueue> cmd_queue_ = nullptr;
+	// D3D12
+	ComPtr<ID3D12Device> m_pDevice = nullptr;
+	ComPtr<ID3D12CommandQueue> m_pQueue = nullptr;
+	ComPtr<ID3D12CommandAllocator> m_pCmdAllocator = nullptr;
+	ComPtr<ID3D12GraphicsCommandList> m_pCmdList = nullptr;
 
-    // [“x’l
-    ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
-    ComPtr<ID3D12Resource> depth_buffer_ = nullptr;  // Zprepass‚Å‚àg—p
-    ComPtr<ID3D12Resource> light_depth_buffer_ = nullptr;
+	// ãƒ•ã‚§ãƒ³ã‚¹
+	ComPtr<ID3D12Fence> m_pFence = nullptr;
+	UINT64 fence_val_ = 0;
 
-    // [“x’lƒeƒNƒXƒ`ƒƒ
-    ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
+	// æ·±åº¦å€¤
+	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
+	ComPtr<ID3D12Resource> depth_buffer_ = nullptr;  // Zprepassã§ã‚‚ä½¿ç”¨
+	ComPtr<ID3D12Resource> light_depth_buffer_ = nullptr;
 
-    // ƒV[ƒ“‚ğ\¬‚·‚éƒoƒbƒtƒ@ü‚è
-    ComPtr<ID3D12Resource> scene_const_buff_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> scene_cbv_heap_ = nullptr;
+	// æ·±åº¦å€¤ãƒ†ã‚¯ã‚¹ãƒãƒ£
+	ComPtr<ID3D12DescriptorHeap> depth_srv_heap_ = nullptr;
 
-    struct SceneMatrix {
-        DirectX::XMMATRIX view;
-        DirectX::XMMATRIX proj;
-        DirectX::XMMATRIX light_view;
-        DirectX::XMMATRIX shadow;
-        DirectX::XMFLOAT3 eye;
-    };
+	// ã‚·ãƒ¼ãƒ³ã‚’æ§‹æˆã™ã‚‹ãƒãƒƒãƒ•ã‚¡å‘¨ã‚Š
+	ComPtr<ID3D12Resource> scene_const_buff_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> scene_cbv_heap_ = nullptr;
 
-    SceneMatrix* scene_matrix_ = nullptr;
+	struct SceneMatrix
+	{
+		DirectX::XMMATRIX view;
+		DirectX::XMMATRIX proj;
+		DirectX::XMMATRIX light_view;
+		DirectX::XMMATRIX shadow;
+		DirectX::XMFLOAT3 eye;
+	};
 
-    DirectX::XMFLOAT3 eye_;
-    DirectX::XMFLOAT3 target_;
-    DirectX::XMFLOAT3 up_;
-    DirectX::XMMATRIX view_matrix_;
+	SceneMatrix* scene_matrix_ = nullptr;
 
-    float fov_ = DirectX::XM_PI / 4;
+	DirectX::XMFLOAT3 eye_;
+	DirectX::XMFLOAT3 target_;
+	DirectX::XMFLOAT3 up_;
+	DirectX::XMMATRIX view_matrix_;
 
-    // ƒtƒFƒ“ƒX
-    ComPtr<ID3D12Fence> fence_ = nullptr;
-    UINT64 fence_val_ = 0;
+	float fov_ = DirectX::XM_PI / 4;
 
-    // [“xƒoƒbƒtƒ@‚Ìì¬
-    bool CreateDepthBuffer();
-    // DSV‚Ìì¬
-    bool CreateDSV();
-    // ƒXƒƒbƒvƒ`ƒF[ƒ“‚Ì¶¬
-    HRESULT CreateSwapChain();
-    // DXGIü‚è‚Ì‰Šú‰»
-    HRESULT InitializeDXGIDevice();
-    // ƒRƒ}ƒ“ƒhü‚è‚Ì‰Šú‰»
-    HRESULT InitializeCommand();
-    // ƒrƒ…[ƒvƒƒWƒFƒNƒVƒ‡ƒ“—pƒrƒ…[‚Ì¶¬
-    HRESULT CreateSceneView();
+	/// åˆæœŸåŒ–
+	// ãƒ‡ãƒãƒƒã‚°ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®æœ‰åŠ¹åŒ–
+	HRESULT InitializeDebug();
+	// ãƒ‡ãƒã‚¤ã‚¹ã®åˆæœŸåŒ–
+	HRESULT InitializeDevice();
+	// ã‚³ãƒãƒ³ãƒ‰ã‚­ãƒ¥ãƒ¼ã®åˆæœŸåŒ–
+	HRESULT InitializeCmdueue();
+	// ã‚³ãƒãƒ³ãƒ‰ã‚¢ãƒ­ã‚±ãƒ¼ã‚¿ã®åˆæœŸåŒ–
+	HRESULT InitializeCmdAllocator();
+	// ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆã®åˆæœŸåŒ–
+	HRESULT InitializeCmdList();
+	// ã‚¹ãƒ¯ãƒƒãƒ—ãƒã‚§ãƒ¼ãƒ³ã®ç”Ÿæˆ
+	HRESULT CreateSwapChain();
 
-    // ƒ‰ƒCƒg
-    HRESULT CreateLight();
-    void SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light);
+	// æ·±åº¦ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
+	bool CreateDepthBuffer();
+	// DSVã®ä½œæˆ
+	bool CreateDSV();
 
-    HRESULT InitializeDebug();
-    HRESULT InitializeRenderer();
-    HRESULT CreateFence();
+	// ãƒ“ãƒ¥ãƒ¼ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³ç”¨ãƒ“ãƒ¥ãƒ¼ã®ç”Ÿæˆ
+	HRESULT CreateSceneView();
 
-    // ˆêŠ‡ˆ—‚ğ‚Ü‚Æ‚ß‚½ŠÖ”
-    HRESULT CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask = 0);
-    HRESULT CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle);
+	// ãƒ©ã‚¤ãƒˆ
+	HRESULT CreateLight();
+	void SetLightState(DirectX::XMFLOAT3 dir_light, DirectX::XMFLOAT3 dir_color, DirectX::XMFLOAT3 ambient_light);
 
-    ComPtr<ID3D12Resource> screen_vertex_buffer_ = nullptr;
-    D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
+	HRESULT InitializeRenderer();
+	HRESULT CreateFence();
 
-    // ‚Ú‚©‚µ
-    ComPtr<ID3D12Resource> post_effect_const_buffer_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> post_effect_cbv_heap_;
+	// ä¸€æ‹¬å‡¦ç†ã‚’ã¾ã¨ã‚ãŸé–¢æ•°
+	HRESULT CreateDescriptorHeapWrapper(D3D12_DESCRIPTOR_HEAP_TYPE type, UINT num_descriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags, ComPtr<ID3D12DescriptorHeap>& heap, UINT node_mask = 0);
+	HRESULT CreateRenderTargetViewWrapper(ID3D12Resource* resource, DXGI_FORMAT format, D3D12_CPU_DESCRIPTOR_HANDLE handle);
 
-    bool CreatePostEffectAndView();
-    bool CreateOffScreenVertex();
-    bool CreateDepthSRV();
+	ComPtr<ID3D12Resource> screen_vertex_buffer_ = nullptr;
+	D3D12_VERTEX_BUFFER_VIEW screen_vertex_buffer_view_;
 
-    // imgui
-    ComPtr<ID3D12DescriptorHeap> imgui_heap_ = nullptr;
+	// ã¼ã‹ã—
+	ComPtr<ID3D12Resource> post_effect_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> post_effect_cbv_heap_;
 
-    float fps_ = 0.0f;
+	bool CreatePostEffectAndView();
+	bool CreateOffScreenVertex();
+	bool CreateDepthSRV();
 
-    bool InitializeImGui();
+	// imgui
+	ComPtr<ID3D12DescriptorHeap> imgui_heap_ = nullptr;
+
+	float fps_ = 0.0f;
+
+	bool InitializeImGui();
 };
