@@ -1,5 +1,7 @@
 #include "Scene.h"
 
+#include <algorithm>
+
 #include "Actor.h"
 
 Scene::Scene(Game* game) : game_(game),

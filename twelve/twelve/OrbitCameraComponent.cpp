@@ -1,4 +1,4 @@
-#include "OrbitCameraComponent.h"
+ï»¿#include "OrbitCameraComponent.h"
 
 #include <algorithm>
 
@@ -7,100 +7,104 @@
 #include "XMFLOAT_Helper.h"
 
 OrbitCameraComponent::OrbitCameraComponent(Actor* owner)
-    : CameraComponent(owner),
-      offset_(DirectX::XMFLOAT3(0.0f, 10.0f, -40.0f)),
-      up_(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)),
-      angular_velocity_(DirectX::XMFLOAT2(0.0f, 0.0f)),
-      max_angluar_velocity_(1.0f),
-      sensitivity_(0.005f),
-      max_angle_(DirectX::XM_PI / 6) {}
-
-void OrbitCameraComponent::Update(float delta_time) {
-    // ƒ[ƒ‹ƒhã•ûƒxƒNƒgƒ‹
-    DirectX::XMFLOAT3 unit_y = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
-
-    // ƒ[ƒ‹ƒhã•û‚ğ²‚Æ‚·‚éƒˆ[‚ÌƒNƒH[ƒ^ƒjƒIƒ“‚ğì¬
-    DirectX::XMVECTOR yaw_quat = DirectX::XMQuaternionRotationAxis(
-        DirectX::XMLoadFloat3(&unit_y), angular_velocity_.x);
-
-    // ƒJƒƒ‰‚ÌƒIƒtƒZƒbƒg‚Æã•ûƒxƒNƒgƒ‹‚ğ•ÏŠ·
-    DirectX::XMStoreFloat3(
-        &offset_,
-        DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&offset_), yaw_quat));
-    DirectX::XMStoreFloat3(
-        &up_, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up_), yaw_quat));
-
-    DirectX::XMFLOAT3 inv_offset = -offset_;
-
-    // ƒJƒƒ‰‚Ì‘O•û‚ğŒvZ
-    DirectX::XMVECTOR forward =
-        DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&inv_offset));
-    // ƒJƒƒ‰‚Ì‰E•û‚ğŒvZ
-    DirectX::XMVECTOR right = DirectX::XMVector3Normalize(
-        DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&up_), forward));
-
-    // ƒJƒƒ‰‰E•û‚ğ²‚Æ‚·‚éƒsƒbƒ`‚ÌƒNƒH[ƒ^ƒjƒIƒ“‚ğì¬
-    DirectX::XMVECTOR pitch_quat =
-        DirectX::XMQuaternionRotationAxis(right, angular_velocity_.y);
-
-    // ƒJƒƒ‰‚ÌƒIƒtƒZƒbƒg‚Æã•ûƒxƒNƒgƒ‹‚ğ•ÏŠ·
-    DirectX::XMStoreFloat3(
-        &offset_,
-        DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&offset_), pitch_quat));
-    DirectX::XMStoreFloat3(
-        &up_, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up_), pitch_quat));
-
-    // •ÏŠ·s—ñ‚ğŒvZ
-    DirectX::XMFLOAT3 target = owner_->GetPosition();
-    // ’‹“_‚ª’á‚·‚¬‚é‚Ì‚Å­‚µã‚É‚¸‚ç‚·
-    target.y += 10.0f;
-    DirectX::XMFLOAT3 camera_pos = target + offset_;
-    DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
-        DirectX::XMLoadFloat3(&camera_pos), DirectX::XMLoadFloat3(&target),
-        DirectX::XMLoadFloat3(&up_));
-
-    // ƒJƒƒ‰‚Ìxz•½–Ê‚É‚¨‚¯‚é‘O•ûƒxƒNƒgƒ‹‚ğŒvZ
-    DirectX::XMFLOAT3 camera_forward_vector;
-    camera_forward_vector.x = -offset_.x;
-    camera_forward_vector.y = 0.0f;  // y¬•ª‚Í–³‹
-    camera_forward_vector.z = -offset_.z;
-
-    // ƒJƒƒ‰‚Ìxz•½–Ê‚É‚¨‚¯‚é‰EƒxƒNƒgƒ‹‚ğŒvZ
-    DirectX::XMVECTOR camera_right_vector_xm =
-        DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&unit_y),
-                                DirectX::XMLoadFloat3(&camera_forward_vector));
-
-    // XMVECTOR‚ğXMFLOAT3‚É•ÏŠ·
-    DirectX::XMFLOAT3 camera_right_vector;
-    DirectX::XMStoreFloat3(&camera_right_vector, camera_right_vector_xm);
-
-    // ³‹K‰»
-    DirectX::XMStoreFloat3(&camera_right_vector,
-                           ToNormalizeXMVECTOR(camera_right_vector));
-
-    // Actor‚Ì‘O•ûƒxƒNƒgƒ‹‚ğXV
-    owner_->SetForward(DirectX::XMFLOAT3(camera_forward_vector));
-
-    // Actor‚Ì‰E•ûƒxƒNƒgƒ‹‚ğXV
-    owner_->SetRight(DirectX::XMFLOAT3(camera_right_vector));
-
-    // ‹“_À•W‚ÌƒZƒbƒg
-    SetEyePosition(camera_pos);
-
-    // ƒJƒƒ‰‚Ìs—ñ‚ğƒZƒbƒg
-    SetViewMatrix(view);
-
-    // ƒ^[ƒQƒbƒg‚ÌÀ•W‚ğƒZƒbƒg
-    SetTargetPosition(target);
+	: CameraComponent(owner),
+	offset_(DirectX::XMFLOAT3(0.0f, 10.0f, -40.0f)),
+	up_(DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f)),
+	angular_velocity_(DirectX::XMFLOAT2(0.0f, 0.0f)),
+	max_angluar_velocity_(1.0f),
+	sensitivity_(0.005f),
+	max_angle_(DirectX::XM_PI / 6)
+{
 }
 
-void OrbitCameraComponent::ProcessInput(const InputState& state) {
-    // Šp‘¬“x‚ÌXV
-    angular_velocity_ = state.mouse.GetDelta() * sensitivity_;
+void OrbitCameraComponent::Update(float delta_time)
+{
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰ä¸Šæ–¹ãƒ™ã‚¯ãƒˆãƒ«
+	DirectX::XMFLOAT3 unit_y = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
 
-    // Šp‘¬“x‚Ì§ŒÀ
-    angular_velocity_.x = std::clamp(angular_velocity_.x, -max_angluar_velocity_,
-                                     max_angluar_velocity_);
-    angular_velocity_.y = std::clamp(angular_velocity_.y, -max_angluar_velocity_,
-                                     max_angluar_velocity_);
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰ä¸Šæ–¹ã‚’è»¸ã¨ã™ã‚‹ãƒ¨ãƒ¼ã®ã‚¯ã‚©ãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³ã‚’ä½œæˆ
+	DirectX::XMVECTOR yaw_quat = DirectX::XMQuaternionRotationAxis(
+		DirectX::XMLoadFloat3(&unit_y), angular_velocity_.x);
+
+	// ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã¨ä¸Šæ–¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’å¤‰æ›
+	DirectX::XMStoreFloat3(
+		&offset_,
+		DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&offset_), yaw_quat));
+	DirectX::XMStoreFloat3(
+		&up_, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up_), yaw_quat));
+
+	DirectX::XMFLOAT3 inv_offset = -offset_;
+
+	// ã‚«ãƒ¡ãƒ©ã®å‰æ–¹ã‚’è¨ˆç®—
+	DirectX::XMVECTOR forward =
+		DirectX::XMVector3Normalize(DirectX::XMLoadFloat3(&inv_offset));
+	// ã‚«ãƒ¡ãƒ©ã®å³æ–¹ã‚’è¨ˆç®—
+	DirectX::XMVECTOR right = DirectX::XMVector3Normalize(
+		DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&up_), forward));
+
+	// ã‚«ãƒ¡ãƒ©å³æ–¹ã‚’è»¸ã¨ã™ã‚‹ãƒ”ãƒƒãƒã®ã‚¯ã‚©ãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³ã‚’ä½œæˆ
+	DirectX::XMVECTOR pitch_quat =
+		DirectX::XMQuaternionRotationAxis(right, angular_velocity_.y);
+
+	// ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã¨ä¸Šæ–¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’å¤‰æ›
+	DirectX::XMStoreFloat3(
+		&offset_,
+		DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&offset_), pitch_quat));
+	DirectX::XMStoreFloat3(
+		&up_, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up_), pitch_quat));
+
+	// å¤‰æ›è¡Œåˆ—ã‚’è¨ˆç®—
+	DirectX::XMFLOAT3 target = owner_->GetPosition();
+	// æ³¨è¦–ç‚¹ãŒä½ã™ãã‚‹ã®ã§å°‘ã—ä¸Šã«ãšã‚‰ã™
+	target.y += 10.0f;
+	DirectX::XMFLOAT3 camera_pos = target + offset_;
+	DirectX::XMMATRIX view = DirectX::XMMatrixLookAtLH(
+		DirectX::XMLoadFloat3(&camera_pos), DirectX::XMLoadFloat3(&target),
+		DirectX::XMLoadFloat3(&up_));
+
+	// ã‚«ãƒ¡ãƒ©ã®xzå¹³é¢ã«ãŠã‘ã‚‹å‰æ–¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—
+	DirectX::XMFLOAT3 camera_forward_vector;
+	camera_forward_vector.x = -offset_.x;
+	camera_forward_vector.y = 0.0f;  // yæˆåˆ†ã¯ç„¡è¦–
+	camera_forward_vector.z = -offset_.z;
+
+	// ã‚«ãƒ¡ãƒ©ã®xzå¹³é¢ã«ãŠã‘ã‚‹å³ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—
+	DirectX::XMVECTOR camera_right_vector_xm =
+		DirectX::XMVector3Cross(DirectX::XMLoadFloat3(&unit_y),
+								DirectX::XMLoadFloat3(&camera_forward_vector));
+
+	// XMVECTORã‚’XMFLOAT3ã«å¤‰æ›
+	DirectX::XMFLOAT3 camera_right_vector;
+	DirectX::XMStoreFloat3(&camera_right_vector, camera_right_vector_xm);
+
+	// æ­£è¦åŒ–
+	DirectX::XMStoreFloat3(&camera_right_vector,
+						   ToNormalizeXMVECTOR(camera_right_vector));
+
+	// Actorã®å‰æ–¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’æ›´æ–°
+	owner_->SetForward(DirectX::XMFLOAT3(camera_forward_vector));
+
+	// Actorã®å³æ–¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’æ›´æ–°
+	owner_->SetRight(DirectX::XMFLOAT3(camera_right_vector));
+
+	// è¦–ç‚¹åº§æ¨™ã®ã‚»ãƒƒãƒˆ
+	SetEyePosition(camera_pos);
+
+	// ã‚«ãƒ¡ãƒ©ã®è¡Œåˆ—ã‚’ã‚»ãƒƒãƒˆ
+	SetViewMatrix(view);
+
+	// ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®åº§æ¨™ã‚’ã‚»ãƒƒãƒˆ
+	SetTargetPosition(target);
+}
+
+void OrbitCameraComponent::ProcessInput(const InputState& state)
+{
+	// è§’é€Ÿåº¦ã®æ›´æ–°
+	angular_velocity_ = state.mouse.GetDelta() * sensitivity_;
+
+	// è§’é€Ÿåº¦ã®åˆ¶é™
+	angular_velocity_.x = std::clamp(angular_velocity_.x, -max_angluar_velocity_,
+									 max_angluar_velocity_);
+	angular_velocity_.y = std::clamp(angular_velocity_.y, -max_angluar_velocity_,
+									 max_angluar_velocity_);
 }
