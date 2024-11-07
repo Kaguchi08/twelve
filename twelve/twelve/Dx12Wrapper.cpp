@@ -96,12 +96,6 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
-	if (FAILED(CreateFence()))
-	{
-		assert(0);
-		return false;
-	}
-
 	if (FAILED(CreateSceneView()))
 	{
 		assert(0);
@@ -129,7 +123,76 @@ bool Dx12Wrapper::Initialize()
 		return false;
 	}
 
+	if (FAILED(CreateFence()))
+	{
+		assert(0);
+		return false;
+	}
+
+	m_pCmdList->Close();
+
 	return true;
+}
+
+void Dx12Wrapper::Terminate()
+{
+	// GPU処理の完了を待機
+	WaitGPU();
+
+	// イベント破棄
+	if (m_FenceEvent != nullptr)
+	{
+		CloseHandle(m_FenceEvent);
+		m_FenceEvent = nullptr;
+	}
+
+	// フェンス破棄
+	m_pFence.Reset();
+
+	// レンダーターゲットビューの破棄
+
+	// コマンドリストの破棄
+	m_pCmdList.Reset();
+
+	// コマンドアロケータの破棄
+	m_pCmdAllocator.Reset();
+
+	// スワップチェインの破棄
+	m_pSwapChain.Reset();
+
+	// コマンドキューの破棄
+	m_pQueue.Reset();
+
+	// デバイスの破棄
+	m_pDevice.Reset();
+}
+
+void Dx12Wrapper::PrepareRendering()
+{
+	m_pCmdAllocator->Reset();
+	m_pCmdList->Reset(m_pCmdAllocator.Get(), nullptr);
+}
+
+void Dx12Wrapper::ExecuteCommand()
+{
+	m_pCmdList->Close();
+
+	ID3D12CommandList* cmdLists[] = { m_pCmdList.Get() };
+	m_pQueue->ExecuteCommandLists(1, cmdLists);
+}
+
+void Dx12Wrapper::Present(uint32_t interval)
+{
+	// 画面に表示
+	m_pSwapChain->Present(interval, 0);
+
+	m_pQueue->Signal(m_pFence.Get(), ++m_FenceValue);
+
+	if (m_pFence->GetCompletedValue() < m_FenceValue)
+	{
+		m_pFence->SetEventOnCompletion(m_FenceValue, m_FenceEvent);
+		WaitForSingleObject(m_FenceEvent, INFINITE);
+	}
 }
 
 void Dx12Wrapper::SetSceneCB()
@@ -187,27 +250,6 @@ void Dx12Wrapper::SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth
 	handle.ptr += m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	m_pCmdList->SetGraphicsRootDescriptorTable(depth_index, handle);
-}
-
-void Dx12Wrapper::ExecuteCommand()
-{
-	m_pCmdList->Close();
-
-	ID3D12CommandList* cmdLists[] = { m_pCmdList.Get() };
-	m_pQueue->ExecuteCommandLists(1, cmdLists);
-
-	m_pQueue->Signal(m_pFence.Get(), ++fence_val_);
-
-	if (m_pFence->GetCompletedValue() < fence_val_)
-	{
-		auto event = CreateEvent(nullptr, false, false, nullptr);
-		m_pFence->SetEventOnCompletion(fence_val_, event);
-		WaitForSingleObject(event, INFINITE);
-		CloseHandle(event);
-	}
-
-	m_pCmdAllocator->Reset();
-	m_pCmdList->Reset(m_pCmdAllocator.Get(), nullptr);
 }
 
 void Dx12Wrapper::CreateImguiWindow()
@@ -386,9 +428,6 @@ HRESULT Dx12Wrapper::CreateSwapChain()
 		return result;
 	}
 
-	// バックバッファ番号を取得
-	m_FrameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
-
 	// 不要になったので解放
 	pSwapChain.Reset();
 
@@ -491,11 +530,17 @@ HRESULT Dx12Wrapper::InitializeCmdAllocator()
 
 HRESULT Dx12Wrapper::InitializeCmdList()
 {
-	auto result = m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCmdAllocator.Get(), nullptr, IID_PPV_ARGS(m_pCmdList.ReleaseAndGetAddressOf()));
+	HRESULT result;
 
-	if (FAILED(result))
+	for (auto i = 0u; i < Constants::FrameCount; ++i)
 	{
-		assert(0);
+		result = m_pDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_pCmdAllocator.Get(), nullptr, IID_PPV_ARGS(m_pCmdList.ReleaseAndGetAddressOf()));
+
+		if (FAILED(result))
+		{
+			assert(0);
+			return result;
+		}
 	}
 
 	return result;
@@ -651,11 +696,24 @@ HRESULT Dx12Wrapper::InitializeRenderer()
 
 HRESULT Dx12Wrapper::CreateFence()
 {
-	if (FAILED(m_pDevice->CreateFence(fence_val_, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_pFence.ReleaseAndGetAddressOf()))))
+	// フェンスの生成
+	auto result = m_pDevice->CreateFence(m_FenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(m_pFence.ReleaseAndGetAddressOf()));
+
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
+
+	// イベントの生成
+	m_FenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+
+	if (m_FenceEvent == nullptr)
 	{
 		assert(0);
 		return E_FAIL;
 	}
+
 	return S_OK;
 }
 
@@ -842,4 +900,20 @@ bool Dx12Wrapper::InitializeImGui()
 		imgui_heap_.Get(),
 		imgui_heap_->GetCPUDescriptorHandleForHeapStart(),
 		imgui_heap_->GetGPUDescriptorHandleForHeapStart());
+}
+
+void Dx12Wrapper::WaitGPU()
+{
+	assert(m_pQueue != nullptr);
+	assert(m_pFence != nullptr);
+	assert(m_FenceEvent != nullptr);
+
+	// シグナル処理
+	m_pQueue->Signal(m_pFence.Get(), ++m_FenceValue);
+
+	// 完了時にイベントを設定する..
+	m_pFence->SetEventOnCompletion(m_FenceValue, m_FenceEvent);
+
+	// 待機処理
+	WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 }

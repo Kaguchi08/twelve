@@ -28,6 +28,11 @@ public:
 	~Dx12Wrapper();
 
 	bool Initialize();
+	void Terminate();
+
+	void PrepareRendering();
+	void ExecuteCommand();
+	void Present(uint32_t interval);
 
 	void SetSceneCB();
 
@@ -35,7 +40,6 @@ public:
 	// バッファをセットする
 	void SetCommonBuffer(UINT scene_index, UINT light_index, UINT depth_index);
 
-	void ExecuteCommand();
 
 	void CreateImguiWindow();
 	void RenderImgui();
@@ -68,8 +72,6 @@ public:
 	void SetFPS(float fps) { fps_ = fps; }
 
 private:
-	uint32_t m_FrameIndex = 0;
-
 	SIZE m_WindowSize;
 	HWND m_hWnd;
 
@@ -96,7 +98,8 @@ private:
 
 	// フェンス
 	ComPtr<ID3D12Fence> m_pFence = nullptr;
-	UINT64 fence_val_ = 0;
+	HANDLE m_FenceEvent = nullptr;
+	uint64_t m_FenceValue = 0;
 
 	// 深度値
 	ComPtr<ID3D12DescriptorHeap> dsv_heap_ = nullptr;
@@ -178,4 +181,6 @@ private:
 	float fps_ = 0.0f;
 
 	bool InitializeImGui();
+
+	void WaitGPU();
 };
