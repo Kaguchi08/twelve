@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <DirectXMath.h>
 #include <DirectXTex.h>
 #include <Windows.h>
@@ -8,6 +8,7 @@
 #include <dxgi1_6.h>
 #include <wrl.h>
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <vector>
@@ -23,10 +24,11 @@ enum GameState {
 class Game {
    public:
     Game();
+    ~Game();
 
     bool Initialize();
     void RunLoop();
-    void Shutdown();
+    void Terminate();
 
     // getter
     std::shared_ptr<Dx12Wrapper> GetDx12() const { return dx12_; }
@@ -40,11 +42,14 @@ class Game {
 
     // Window
     SIZE GetWindowSize() const;
-    HWND GetWindowHandle() const { return hwnd_; }
+    HWND GetWindowHandle() const { return m_hWnd; }
 
    private:
-    WNDCLASSEX wind_class_;
-    HWND hwnd_;
+    // Window
+    HINSTANCE m_hInst;
+    HWND m_hWnd;
+    uint32_t m_Width;
+    uint32_t m_Height;
 
     std::shared_ptr<Dx12Wrapper> dx12_;
     std::shared_ptr<class Renderer> renderer_;
@@ -63,5 +68,8 @@ class Game {
     void LoadData();
     void UnloadData();
 
-    void CreateGameWindow(HWND& hwnd, WNDCLASSEX& wndClass);
+    bool InitWnd();
+    void TermWnd();
+
+    static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 };

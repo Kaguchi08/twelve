@@ -12,7 +12,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         game.RunLoop();
     }
 
-    game.Shutdown();
+    game.Terminate();
 
     return 0;
 }

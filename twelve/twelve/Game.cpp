@@ -1,4 +1,4 @@
-#include "Game.h"
+ï»¿#include "Game.h"
 
 #include <tchar.h>
 
@@ -6,35 +6,38 @@
 #include "GameScene.h"
 #include "InputSystem.h"
 #include "Renderer.h"
+#include "TestScene.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/imgui_impl_win32.h"
+
+namespace {
+const auto ClassName = TEXT("DirectX");  //!< ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹åã§ã™.
+}
 
 const unsigned int WINDOW_WIDTH = 1280;
 const unsigned int WINDOW_HEIGHT = 720;
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    // ƒEƒBƒ“ƒhƒE‚ª”jŠü‚³‚ê‚½‚çŒÄ‚Î‚ê‚é
-    if (msg == WM_DESTROY) {
-        PostQuitMessage(0);  // OS‚É‘Î‚µ‚ÄI‚í‚è‚Æ“`‚¦‚é
-        return 0;
-    }
-
-    ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-    return DefWindowProc(hwnd, msg, wparam, lparam);  // ‹K’è‚Ìˆ—‚ğs‚¤
+Game::Game() : m_hInst(nullptr),
+               m_hWnd(nullptr),
+               m_Width(WINDOW_WIDTH),
+               m_Height(WINDOW_HEIGHT) {
 }
 
-Game::Game() : hwnd_(nullptr),
-               wind_class_({}) {
+Game::~Game() {
 }
 
 bool Game::Initialize() {
-    auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
-    CreateGameWindow(hwnd_, wind_class_);
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®åˆæœŸåŒ–
+    if (!InitWnd()) {
+        return false;
+    }
 
-    dx12_.reset(new Dx12Wrapper(hwnd_));
+    auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
+
+    dx12_.reset(new Dx12Wrapper(m_hWnd));
 
     if (!dx12_->Initialize()) {
         return false;
@@ -50,6 +53,7 @@ bool Game::Initialize() {
     }
 
     current_scene_ = new GameScene(this);
+    // current_scene_ = new TestScene(this);
 
     tick_count_ = GetTickCount64();
 
@@ -57,7 +61,6 @@ bool Game::Initialize() {
 }
 
 void Game::RunLoop() {
-    ShowWindow(hwnd_, SW_SHOW);
     MSG msg = {};
 
     while (true) {
@@ -78,12 +81,13 @@ void Game::RunLoop() {
     }
 }
 
-void Game::Shutdown() {
-    UnregisterClass(wind_class_.lpszClassName, wind_class_.hInstance);
+void Game::Terminate() {
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®çµ‚äº†å‡¦ç†
+    TermWnd();
 }
 
 SIZE Game::GetWindowSize() const {
-    SIZE ret;
+    SIZE ret{};
     ret.cx = WINDOW_WIDTH;
     ret.cy = WINDOW_HEIGHT;
     return ret;
@@ -113,7 +117,7 @@ void Game::UpdateGame() {
 
     float delta_time = (GetTickCount64() - tick_count_) / 1000.0f;
 
-    // FPSŒvZ
+    // FPSè¨ˆç®—
     dx12_->SetFPS(1 / delta_time);
 
     tick_count_ = GetTickCount64();
@@ -130,7 +134,7 @@ void Game::GenerateOutput() {
 
     dx12_->ExecuteCommand();
 
-    // ƒtƒŠƒbƒv
+    // ãƒ•ãƒªãƒƒãƒ—
     dx12_->GetSwapChain()->Present(0, 0);
 }
 
@@ -140,30 +144,94 @@ void Game::LoadData() {
 void Game::UnloadData() {
 }
 
-void Game::CreateGameWindow(HWND& hwnd, WNDCLASSEX& wndClass) {
-    HINSTANCE hInst = GetModuleHandle(nullptr);
+bool Game::InitWnd() {
+    // ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«ã‚’å–å¾—
+    auto hInst = GetModuleHandle(nullptr);
+    if (hInst == nullptr) {
+        return false;
+    }
 
-    // ƒEƒBƒ“ƒhƒEƒNƒ‰ƒX¶¬•“o˜^
-    wind_class_.cbSize = sizeof(WNDCLASSEX);
-    wind_class_.lpfnWndProc = (WNDPROC)WindowProcedure;  // ƒR[ƒ‹ƒoƒbƒNŠÖ”‚Ìw’è
-    wind_class_.lpszClassName = _T("DirectXTest");       // ƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒNƒ‰ƒX–¼(“K“–‚Å‚¢‚¢‚Å‚·)
-    wind_class_.hInstance = GetModuleHandle(0);          // ƒnƒ“ƒhƒ‹‚Ìæ“¾
-    RegisterClassEx(&wind_class_);                       // ƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒNƒ‰ƒX(‚±‚¤‚¢‚¤‚Ìì‚é‚©‚ç‚æ‚ë‚µ‚­‚Á‚ÄOS‚É—\‚·‚é)
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¨­å®š
+    WNDCLASSEX wc = {};
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = WndProc;
+    wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
+    wc.hCursor = LoadCursor(hInst, IDC_ARROW);
+    wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
+    wc.lpszMenuName = nullptr;
+    wc.lpszClassName = ClassName;
+    wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
-    RECT wrc = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};      // ƒEƒBƒ“ƒhƒEƒTƒCƒY‚ğŒˆ‚ß‚é
-    AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);  // ƒEƒBƒ“ƒhƒE‚ÌƒTƒCƒY‚Í‚¿‚å‚Á‚Æ–Ê“|‚È‚Ì‚ÅŠÖ”‚ğg‚Á‚Ä•â³‚·‚é
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ç™»éŒ²
+    if (!RegisterClassEx(&wc)) {
+        return false;
+    }
 
-    // ƒEƒBƒ“ƒhƒEƒIƒuƒWƒFƒNƒg‚Ì¶¬
-    hwnd = CreateWindow(
-        wind_class_.lpszClassName,  // ƒNƒ‰ƒX–¼w’è
-        _T("twelve"),               // ƒ^ƒCƒgƒ‹ƒo[‚Ì•¶š
-        WS_OVERLAPPEDWINDOW,        // ƒ^ƒCƒgƒ‹ƒo[‚Æ‹«ŠEü‚ª‚ ‚éƒEƒBƒ“ƒhƒE‚Å‚·
-        CW_USEDEFAULT,              // •\¦XÀ•W‚ÍOS‚É‚¨”C‚¹‚µ‚Ü‚·
-        CW_USEDEFAULT,              // •\¦YÀ•W‚ÍOS‚É‚¨”C‚¹‚µ‚Ü‚·
-        wrc.right - wrc.left,       // ƒEƒBƒ“ƒhƒE•
-        wrc.bottom - wrc.top,       // ƒEƒBƒ“ƒhƒE‚
-        nullptr,                    // eƒEƒBƒ“ƒhƒEƒnƒ“ƒhƒ‹
-        nullptr,                    // ƒƒjƒ…[ƒnƒ“ƒhƒ‹
-        wind_class_.hInstance,      // ŒÄ‚Ño‚µƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒnƒ“ƒhƒ‹
+    // ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«ã®è¨­å®š
+    m_hInst = hInst;
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚ºã‚’è¨­å®š
+    RECT rc = {};
+    rc.right = static_cast<LONG>(m_Width);
+    rc.bottom = static_cast<LONG>(m_Height);
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚ºã‚’èª¿æ•´
+    auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+    AdjustWindowRect(&rc, style, FALSE);
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ç”Ÿæˆ
+    m_hWnd = CreateWindowEx(
+        0,
+        ClassName,
+        TEXT("twelve"),
+        style,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        rc.right - rc.left,
+        rc.bottom - rc.top,
+        nullptr,
+        nullptr,
+        m_hInst,
         nullptr);
+
+    if (m_hWnd == nullptr) {
+        return false;
+    }
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’è¡¨ç¤º
+    ShowWindow(m_hWnd, SW_SHOWNORMAL);
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’æ›´æ–°
+    UpdateWindow(m_hWnd);
+
+    // ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«ãƒ•ã‚©ãƒ¼ã‚«ã‚¹ã‚’è¨­å®š
+    SetFocus(m_hWnd);
+
+    // æ­£å¸¸çµ‚äº†
+    return true;
+}
+
+void Game::TermWnd() {
+    if (m_hInst != nullptr) {
+        UnregisterClass(ClassName, m_hInst);
+    }
+
+    m_hInst = nullptr;
+    m_hWnd = nullptr;
+}
+
+LRESULT CALLBACK Game::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+    switch (msg) {
+        case WM_DESTROY: {
+            PostQuitMessage(0);
+        } break;
+
+        default: {
+        } break;
+    }
+
+    ImGui_ImplWin32_WndProcHandler(hWnd, msg, wp, lp);
+
+    return DefWindowProc(hWnd, msg, wp, lp);
 }
