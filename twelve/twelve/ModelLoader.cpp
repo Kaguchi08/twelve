@@ -183,10 +183,8 @@ bool ModelLoader::LoadPMDModel(const char* file_name, PMDModel* model) {
         material.additional.toon_idx = material_table[i].toon_idx;
 
         // toon
-        // std::string toonFilePath = "../Assets/Model/Kafka/";
         std::string toonFilePath = "../toon/";
         char toonFileName[32];
-        // sprintf_s(toonFileName, 32, "toon%d.png", pmdMaterials[i].toonIdx + 1);
         sprintf_s(toonFileName, 32, "toon%02d.bmp", material_table[i].toon_idx + 1);
         toonFilePath += toonFileName;
 

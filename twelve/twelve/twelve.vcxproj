@@ -171,6 +171,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="TestScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefferedLighting.hlsl">
@@ -253,6 +254,7 @@
     <ClInclude Include="Checkerboard.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="FBXActor.h" />
     <ClInclude Include="FBXComponent.h" />
@@ -283,6 +285,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="TestScene.h" />
     <ClInclude Include="XMFLOAT_Helper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

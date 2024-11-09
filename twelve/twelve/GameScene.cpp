@@ -1,4 +1,4 @@
-#include "GameScene.h"
+ï»¿#include "GameScene.h"
 
 #include <string>
 
@@ -6,125 +6,136 @@
 #include "InputSystem.h"
 
 GameScene::GameScene(Game* game) : Scene(game),
-                                   player_model_(nullptr) {
-    std::string pmd_model_path = "../Assets/Model/‰‰¹ƒ~ƒNVer2.pmd";
-    // std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
-    // std::string pmd_model_path = "../Assets/Model/„‰¹ƒ‹ƒJ.pmd";
+player_model_(nullptr)
+{
+	std::string pmd_model_path = "../Assets/Model/åˆéŸ³ãƒŸã‚¯Ver2.pmd";
+	// std::string pmd_model_path = "../Assets/test/miku_gun.pmd";
+	// std::string pmd_model_path = "../Assets/Model/å·¡éŸ³ãƒ«ã‚«.pmd";
 
-    // ‰Šú‰»
-    Initialize(pmd_model_path.c_str());
+	// åˆæœŸåŒ–
+	Initialize(pmd_model_path.c_str());
 }
 
-GameScene::~GameScene() {
+GameScene::~GameScene()
+{
 }
 
-void GameScene::ProcessInput(const InputState& state) {
-    if (state.keyboard.GetKeyState(VK_RETURN) == ButtonState::kPressed) {
-        if (game_->GetGameState() == GameState::kPause) {
-            // ƒJ[ƒ\ƒ‹‚ð”ñ•\Ž¦
-            ShowCursor(false);
-            // ’†‰›‚É–ß‚·
-            SetCursorPos(state.mouse.GetCenter().x, state.mouse.GetCenter().y);
+void GameScene::ProcessInput(const InputState& state)
+{
+	if (state.keyboard.GetKeyState(VK_RETURN) == ButtonState::kPressed)
+	{
+		if (game_->GetGameState() == GameState::kPause)
+		{
+			// ã‚«ãƒ¼ã‚½ãƒ«ã‚’éžè¡¨ç¤º
+			ShowCursor(false);
+			// ä¸­å¤®ã«æˆ»ã™
+			SetCursorPos(state.mouse.GetCenter().x, state.mouse.GetCenter().y);
 
-            game_->SetGameState(GameState::kPlay);
-        } else if (game_->GetGameState() == GameState::kPlay) {
-            // ƒJ[ƒ\ƒ‹‚ð•\Ž¦
-            ShowCursor(true);
-            game_->SetGameState(GameState::kPause);
-        }
-    }
+			game_->SetGameState(GameState::kPlay);
+		}
+		else if (game_->GetGameState() == GameState::kPlay)
+		{
+			// ã‚«ãƒ¼ã‚½ãƒ«ã‚’è¡¨ç¤º
+			ShowCursor(true);
+			game_->SetGameState(GameState::kPause);
+		}
+	}
 }
 
-bool GameScene::Initialize(const char* file_name) {
-    // ƒLƒƒƒ‰ƒ‚ƒfƒ‹‚Ì‰Šú‰»
-    player_model_ = new PlayerActor(this);
-    player_model_->SetPMDModel(file_name);
+bool GameScene::Initialize(const char* file_name)
+{
+	// ã‚­ãƒ£ãƒ©ãƒ¢ãƒ‡ãƒ«ã®åˆæœŸåŒ–
+	player_model_ = new PlayerActor(this);
+	player_model_->SetPMDModel(file_name);
 
-    // FBXƒ‚ƒfƒ‹‚Ì‰Šú‰»
-    std::string fbx_name = "horse_statue_01";
-    std::string fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
-    std::string normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
-    std::string arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
+	// FBXãƒ¢ãƒ‡ãƒ«ã®åˆæœŸåŒ–
+	std::string fbx_name = "horse_statue_01";
+	std::string fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	std::string normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	std::string arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
 
-    fbx_actor_table.push_back(
-        CreateFBXActor(
-            fbx_model_path.c_str(),
-            normal_map_path.c_str(),
-            arm_map_path.c_str(),
-            50,
-            DirectX::XMFLOAT3(-25, 10.5, -2)));
+	fbx_actor_table.push_back(
+		CreateFBXActor(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			50,
+			DirectX::XMFLOAT3(-25, 10.5, -2)));
 
-    fbx_name = "sofa_03";
-    fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
-    normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
-    arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
+	/*fbx_name = "sofa_03";
+	fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
 
-    fbx_actor_table.push_back(
-        CreateFBXActor(
-            fbx_model_path.c_str(),
-            normal_map_path.c_str(),
-            arm_map_path.c_str(),
-            15,
-            DirectX::XMFLOAT3(20, 0, 30)));
+	fbx_actor_table.push_back(
+		CreateFBXActor(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			15,
+			DirectX::XMFLOAT3(20, 0, 30)));
 
-    fbx_name = "CoffeeTable_01";
-    fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
-    normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
-    arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
+	fbx_name = "CoffeeTable_01";
+	fbx_model_path = "../Assets/fbx/" + fbx_name + "_4k.fbx";
+	normal_map_path = "../Assets/fbx/Texture/" + fbx_name + "_nor_dx_4k.png";
+	arm_map_path = "../Assets/fbx/Texture/" + fbx_name + "_arm_4k.png";
 
-    fbx_actor_table.push_back(
-        CreateFBXActor(
-            fbx_model_path.c_str(),
-            normal_map_path.c_str(),
-            arm_map_path.c_str(),
-            20,
-            DirectX::XMFLOAT3(-20, 0, 0)));
+	fbx_actor_table.push_back(
+		CreateFBXActor(
+			fbx_model_path.c_str(),
+			normal_map_path.c_str(),
+			arm_map_path.c_str(),
+			20,
+			DirectX::XMFLOAT3(-20, 0, 0)));*/
 
-    // Plane‚Ì‰Šú‰»
-    std::string name = "patterned_concrete_pavers_02";
+			// Planeã®åˆæœŸåŒ–
+	std::string name = "patterned_concrete_pavers_02";
 
-    /*std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
-    std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
-    std::string arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";*/
+	/*std::string tex_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_diff_4k.png";
+	std::string normal_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_nor_dx_4k.png";
+	std::string arm_map_file_path = "../Assets/Textures/mossy_cobblestone_4k/textures/mossy_cobblestone_arm_4k.png";*/
 
-    std::string tex_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_diff_4k.png";
-    std::string normal_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_nor_dx_4k.png";
-    std::string arm_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_arm_4k.png";
+	std::string tex_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_diff_4k.png";
+	std::string normal_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_nor_dx_4k.png";
+	std::string arm_map_file_path = "../Assets/Textures/" + name + "_4k/textures/" + name + "_arm_4k.png";
 
-    plane_actor_table_.push_back(
-        CreatePlaneActor(
-            tex_file_path.c_str(),
-            normal_map_file_path.c_str(),
-            arm_map_file_path.c_str()));
+	plane_actor_table_.push_back(
+		CreatePlaneActor(
+			tex_file_path.c_str(),
+			normal_map_file_path.c_str(),
+			arm_map_file_path.c_str()));
 
-    return true;
+	return true;
 }
 
-void GameScene::UpdateActor(float deltaTime) {
+void GameScene::UpdateActor(float deltaTime)
+{
 }
 
-FBXActor* GameScene::CreateFBXActor(const char* model, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot) {
-    FBXActor* fbx_actor = new FBXActor(this);
+FBXActor* GameScene::CreateFBXActor(const char* model, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot)
+{
+	FBXActor* fbx_actor = new FBXActor(this);
 
-    fbx_actor->SetFBXModel(model);
-    fbx_actor->SetNormalMap(normal);
-    fbx_actor->SetArmMap(arm);
-    fbx_actor->SetScale(scale);
-    fbx_actor->SetPosition(pos);
-    fbx_actor->SetRotation(rot);
+	fbx_actor->SetFBXModel(model);
+	fbx_actor->SetNormalMap(normal);
+	fbx_actor->SetArmMap(arm);
+	fbx_actor->SetScale(scale);
+	fbx_actor->SetPosition(pos);
+	fbx_actor->SetRotation(rot);
 
-    return fbx_actor;
+	return fbx_actor;
 }
 
-PlaneActor* GameScene::CreatePlaneActor(const char* tex, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot) {
-    PlaneActor* plane_actor = new PlaneActor(this);
+PlaneActor* GameScene::CreatePlaneActor(const char* tex, const char* normal, const char* arm, const float scale, const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& rot)
+{
+	PlaneActor* plane_actor = new PlaneActor(this);
 
-    plane_actor->SetTexture(tex);
-    plane_actor->SetNormalMap(normal);
-    plane_actor->SetArmMap(arm);
-    plane_actor->SetScale(scale);
-    plane_actor->SetPosition(pos);
-    plane_actor->SetRotation(rot);
+	plane_actor->SetTexture(tex);
+	plane_actor->SetNormalMap(normal);
+	plane_actor->SetArmMap(arm);
+	plane_actor->SetScale(scale);
+	plane_actor->SetPosition(pos);
+	plane_actor->SetRotation(rot);
 
-    return plane_actor;
+	return plane_actor;
 }
