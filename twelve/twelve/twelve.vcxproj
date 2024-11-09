@@ -142,6 +142,7 @@
     <ClCompile Include="Checkerboard.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="Component.cpp" />
+    <ClCompile Include="D3D12Wrapper.cpp" />
     <ClCompile Include="Dx12Wrapper.cpp" />
     <ClCompile Include="FBXActor.cpp" />
     <ClCompile Include="FBXComponent.cpp" />
@@ -255,6 +256,7 @@
     <ClInclude Include="Collision.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="D3D12Wrapper.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="FBXActor.h" />
     <ClInclude Include="FBXComponent.h" />

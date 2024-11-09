@@ -1,4 +1,6 @@
 ﻿#pragma once
+
+#include "D3D12Wrapper.h"
 #include <DirectXMath.h>
 #include <DirectXTex.h>
 #include <Windows.h>
@@ -53,6 +55,7 @@ private:
 	uint32_t m_Width;
 	uint32_t m_Height;
 
+	D3D12Wrapper m_d3d12;
 	std::shared_ptr<Dx12Wrapper> dx12_;
 	std::shared_ptr<class Renderer> renderer_;
 	class InputSystem* input_system_ = nullptr;

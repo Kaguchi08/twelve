@@ -40,17 +40,23 @@ bool Game::Initialize()
 		return false;
 	}
 
-	auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
-
-	dx12_.reset(new Dx12Wrapper(m_hWnd));
-
-	if (!dx12_->Initialize())
+	// D3D12の初期化
+	if (!m_d3d12.Initialize(m_hWnd))
 	{
 		return false;
 	}
 
-	renderer_.reset(new Renderer(dx12_.get()));
-	renderer_->Initialize();
+	//auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
+
+	/*dx12_.reset(new Dx12Wrapper(m_hWnd));
+
+	if (!dx12_->Initialize())
+	{
+		return false;
+	}*/
+
+	/*renderer_.reset(new Renderer(dx12_.get()));
+	renderer_->Initialize();*/
 
 	input_system_ = new InputSystem(this);
 
@@ -59,7 +65,7 @@ bool Game::Initialize()
 		return false;
 	}
 
-	current_scene_ = new GameScene(this);
+	//current_scene_ = new GameScene(this);
 	// current_scene_ = new TestScene(this);
 
 	tick_count_ = GetTickCount64();
@@ -71,17 +77,12 @@ void Game::RunLoop()
 {
 	MSG msg = {};
 
-	while (true)
+	while (WM_QUIT != msg.message)
 	{
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-		}
-
-		if (msg.message == WM_QUIT)
-		{
-			break;
 		}
 
 		ProcessInput();
@@ -95,7 +96,9 @@ void Game::RunLoop()
 void Game::Terminate()
 {
 	// Direct3D 12の終了処理
-	dx12_->Terminate();
+	//dx12_->Terminate();
+
+	m_d3d12.Terminate();
 
 	// ウィンドウの終了処理
 	TermWnd();
@@ -122,10 +125,10 @@ void Game::ProcessInput()
 
 	if (game_state_ == GameState::kPlay)
 	{
-		current_scene_->ActorInput(state);
+		//current_scene_->ActorInput(state);
 	}
 
-	current_scene_->ProcessInput(state);
+	//current_scene_->ProcessInput(state);
 }
 
 void Game::UpdateGame()
@@ -139,28 +142,30 @@ void Game::UpdateGame()
 	float delta_time = (GetTickCount64() - tick_count_) / 1000.0f;
 
 	// FPS計算
-	dx12_->SetFPS(1 / delta_time);
+	//dx12_->SetFPS(1 / delta_time);
 
 	tick_count_ = GetTickCount64();
 
 	if (game_state_ == GameState::kPlay)
 	{
-		current_scene_->Update(delta_time);
+		//current_scene_->Update(delta_time);
 	}
 }
 
 void Game::GenerateOutput()
 {
-	dx12_->SetCameraSetting();
+	//dx12_->SetCameraSetting();
 
-	dx12_->PrepareRendering();
+	//dx12_->PrepareRendering();
 
-	renderer_->Draw(game_state_);
+	//renderer_->Draw(game_state_);
 
-	dx12_->ExecuteCommand();
+	//dx12_->ExecuteCommand();
 
 	// フリップ
-	dx12_->Present(1);
+	//dx12_->Present(1);
+
+	m_d3d12.Render();
 }
 
 void Game::LoadData()
