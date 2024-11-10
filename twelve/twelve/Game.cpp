@@ -11,20 +11,21 @@
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/imgui_impl_win32.h"
 
+#include "Constants.h"
+
 namespace
 {
 	const auto ClassName = TEXT("DirectX");  //!< ウィンドウクラス名です.
 }
 
-const unsigned int WINDOW_WIDTH = 1280;
-const unsigned int WINDOW_HEIGHT = 720;
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-Game::Game() : m_hInst(nullptr),
-m_hWnd(nullptr),
-m_Width(WINDOW_WIDTH),
-m_Height(WINDOW_HEIGHT)
+Game::Game()
+	: m_hInst(nullptr),
+	m_hWnd(nullptr),
+	m_Width(Constants::WindowWidth),
+	m_Height(Constants::WindowHeight)
 {
 }
 
@@ -112,8 +113,8 @@ void Game::Terminate()
 SIZE Game::GetWindowSize() const
 {
 	SIZE ret{};
-	ret.cx = WINDOW_WIDTH;
-	ret.cy = WINDOW_HEIGHT;
+	ret.cx = Constants::WindowWidth;
+	ret.cy = Constants::WindowHeight;
 	return ret;
 }
 
@@ -139,15 +140,19 @@ void Game::ProcessInput()
 void Game::UpdateGame()
 {
 	auto end_time = tick_count_ + 16;
-	while (GetTickCount64() < end_time)
+
+	/*while (GetTickCount64() < end_time)
 	{
 		Sleep(1);
-	}
+	}*/
 
 	float delta_time = (GetTickCount64() - tick_count_) / 1000.0f;
 
 	// FPS計算
 	//dx12_->SetFPS(1 / delta_time);
+
+	// デバッグ
+	auto fps = 1 / delta_time;
 
 	tick_count_ = GetTickCount64();
 

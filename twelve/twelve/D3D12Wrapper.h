@@ -49,13 +49,16 @@ private:
 	ComPtr<ID3D12CommandQueue>          m_pQueue;
 	ComPtr<IDXGISwapChain3>             m_pSwapChain;
 	ComPtr<ID3D12Resource>              m_pColorBuffer[Constants::FrameCount];
+	ComPtr<ID3D12Resource>              m_pDepthBuffer;
 	ComPtr<ID3D12CommandAllocator>      m_pCmdAllocator[Constants::FrameCount];
 	ComPtr<ID3D12GraphicsCommandList>   m_pCmdList;
 	ComPtr<ID3D12DescriptorHeap>        m_pHeapRTV;
 	ComPtr<ID3D12Fence>                 m_pFence;
+	ComPtr<ID3D12DescriptorHeap>        m_pHeapDSV;
 	ComPtr<ID3D12DescriptorHeap>		m_pHeapCBV;
 	ComPtr<ID3D12Resource>              m_pVB;
-	ComPtr<ID3D12Resource>              m_pCB[Constants::FrameCount];
+	ComPtr<ID3D12Resource>              m_pIB;
+	ComPtr<ID3D12Resource>              m_pCB[Constants::FrameCount * 2];
 	ComPtr<ID3D12RootSignature>         m_pRootSignature;
 	ComPtr<ID3D12PipelineState>         m_pPSO;
 
@@ -63,11 +66,13 @@ private:
 	uint64_t                            m_FenceCounter[Constants::FrameCount];
 	uint32_t                            m_FrameIndex;
 	D3D12_CPU_DESCRIPTOR_HANDLE         m_HandleRTV[Constants::FrameCount];
-	D3D12_VERTEX_BUFFER_VIEW        m_VBV;
-	D3D12_VIEWPORT                  m_Viewport;
-	D3D12_RECT                      m_Scissor;
-	ConstantBufferView<Transform>   m_CBV[Constants::FrameCount];
-	float                           m_RotateAngle;
+	D3D12_CPU_DESCRIPTOR_HANDLE			m_HandleDSV;
+	D3D12_VERTEX_BUFFER_VIEW			m_VBV;
+	D3D12_INDEX_BUFFER_VIEW				m_IBV;
+	D3D12_VIEWPORT						m_Viewport;
+	D3D12_RECT							m_Scissor;
+	ConstantBufferView<Transform>		m_CBV[Constants::FrameCount * 2];
+	float								m_RotateAngle;
 
 	void InitializeDebug();
 	void WaitGpu();
