@@ -46,6 +46,11 @@ bool Game::Initialize()
 		return false;
 	}
 
+	if (!m_d3d12.InitializeRendering())
+	{
+		return false;
+	}
+
 	//auto result = CoInitializeEx(0, COINIT_MULTITHREADED);
 
 	/*dx12_.reset(new Dx12Wrapper(m_hWnd));

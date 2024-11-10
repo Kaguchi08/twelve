@@ -1,8 +1,31 @@
 ﻿#include "D3D12Wrapper.h"
 #include <cassert>
+#include "FileUtil.h" 
+
+struct Vertex
+{
+	DirectX::XMFLOAT3   Position;    // 位置座標です.
+	DirectX::XMFLOAT4   Color;       // 頂点カラーです.
+};
 
 D3D12Wrapper::D3D12Wrapper()
+	: m_hWnd(nullptr)
+	, m_pFactory(nullptr)
+	, m_pDevice(nullptr)
+	, m_pQueue(nullptr)
+	, m_pSwapChain(nullptr)
+	, m_pCmdList(nullptr)
+	, m_pHeapRTV(nullptr)
+	, m_pFence(nullptr)
+	, m_FenceEvent(nullptr)
+	, m_FrameIndex(0)
 {
+	for (auto i = 0u; i < Constants::FrameCount; ++i)
+	{
+		m_pColorBuffer[i] = nullptr;
+		m_pCmdAllocator[i] = nullptr;
+		m_FenceCounter[i] = 0;
+	}
 }
 
 D3D12Wrapper::~D3D12Wrapper()
@@ -281,6 +304,12 @@ void D3D12Wrapper::Terminate()
 
 void D3D12Wrapper::Render()
 {
+	// 更新処理
+	{
+		m_RotateAngle += 0.025f;
+		m_CBV[m_FrameIndex].pBuffer->World = DirectX::XMMatrixRotationY(m_RotateAngle);
+	}
+
 	// コマンドの記録を開始
 	m_pCmdAllocator[m_FrameIndex]->Reset();
 	m_pCmdList->Reset(m_pCmdAllocator[m_FrameIndex].Get(), nullptr);
@@ -308,7 +337,17 @@ void D3D12Wrapper::Render()
 
 	// 描画処理
 	{
-		// TODO : ポリゴン描画用の処理を追加
+		m_pCmdList->SetGraphicsRootSignature(m_pRootSignature.Get());
+		m_pCmdList->SetDescriptorHeaps(1, m_pHeapCBV.GetAddressOf());
+		m_pCmdList->SetGraphicsRootConstantBufferView(0, m_CBV[m_FrameIndex].Desc.BufferLocation);
+		m_pCmdList->SetPipelineState(m_pPSO.Get());
+
+		m_pCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_pCmdList->IASetVertexBuffers(0, 1, &m_VBV);
+		m_pCmdList->RSSetViewports(1, &m_Viewport);
+		m_pCmdList->RSSetScissorRects(1, &m_Scissor);
+
+		m_pCmdList->DrawInstanced(3, 1, 0, 0);
 	}
 
 	// リソースバリアの設定
@@ -331,6 +370,344 @@ void D3D12Wrapper::Render()
 
 	// 画面に表示
 	Present(1);
+}
+
+bool D3D12Wrapper::InitializeRendering()
+{
+	// 頂点バッファの生成
+	{
+		// 頂点データ
+		Vertex vertices[] = {
+			{ DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) },
+			{ DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f), DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
+			{ DirectX::XMFLOAT3(0.0f,  1.0f, 0.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) },
+		};
+
+		// ヒーププロパティ
+		D3D12_HEAP_PROPERTIES prop = {};
+		prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+		prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		prop.CreationNodeMask = 1;
+		prop.VisibleNodeMask = 1;
+
+		// リソースの設定
+		D3D12_RESOURCE_DESC desc = {};
+		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Alignment = 0;
+		desc.Width = sizeof(vertices);
+		desc.Height = 1;
+		desc.DepthOrArraySize = 1;
+		desc.MipLevels = 1;
+		desc.Format = DXGI_FORMAT_UNKNOWN;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+		// リソースを生成
+		auto hr = m_pDevice->CreateCommittedResource(
+			&prop,
+			D3D12_HEAP_FLAG_NONE,
+			&desc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(m_pVB.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// マッピングする
+		void* ptr = nullptr;
+		hr = m_pVB->Map(0, nullptr, &ptr);
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// 頂点データをマッピング先に設定
+		memcpy(ptr, vertices, sizeof(vertices));
+
+		// マッピング解除
+		m_pVB->Unmap(0, nullptr);
+
+		// 頂点バッファビューの設定
+		m_VBV.BufferLocation = m_pVB->GetGPUVirtualAddress();
+		m_VBV.SizeInBytes = static_cast<UINT>(sizeof(vertices));
+		m_VBV.StrideInBytes = static_cast<UINT>(sizeof(Vertex));
+	}
+
+	// 定数バッファ用ディスクリプタヒープの生成
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		desc.NumDescriptors = 1 * Constants::FrameCount;
+		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		desc.NodeMask = 0;
+
+		auto hr = m_pDevice->CreateDescriptorHeap(
+			&desc,
+			IID_PPV_ARGS(m_pHeapCBV.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			return false;
+		}
+	}
+
+	// 定数バッファの生成
+	{
+		// ヒーププロパティ
+		D3D12_HEAP_PROPERTIES prop = {};
+		prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+		prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		prop.CreationNodeMask = 1;
+		prop.VisibleNodeMask = 1;
+
+		// リソースの設定
+		D3D12_RESOURCE_DESC desc = {};
+		desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Alignment = 0;
+		desc.Width = sizeof(Transform);
+		desc.Height = 1;
+		desc.DepthOrArraySize = 1;
+		desc.MipLevels = 1;
+		desc.Format = DXGI_FORMAT_UNKNOWN;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+		desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+		auto incrementSize = m_pDevice
+			->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+		for (auto i = 0; i < Constants::FrameCount; ++i)
+		{
+			// リソース生成.
+			auto hr = m_pDevice->CreateCommittedResource(
+				&prop,
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(m_pCB[i].GetAddressOf()));
+			if (FAILED(hr))
+			{
+				return false;
+			}
+
+			auto address = m_pCB[i]->GetGPUVirtualAddress();
+			auto handleCPU = m_pHeapCBV->GetCPUDescriptorHandleForHeapStart();
+			auto handleGPU = m_pHeapCBV->GetGPUDescriptorHandleForHeapStart();
+
+			handleCPU.ptr += incrementSize * i;
+			handleGPU.ptr += incrementSize * i;
+
+			// 定数バッファビューの設定
+			m_CBV[i].HandleCPU = handleCPU;
+			m_CBV[i].HandleGPU = handleGPU;
+			m_CBV[i].Desc.BufferLocation = address;
+			m_CBV[i].Desc.SizeInBytes = sizeof(Transform);
+
+			// 定数バッファビューを生成
+			m_pDevice->CreateConstantBufferView(&m_CBV[i].Desc, handleCPU);
+
+			// マッピング
+			hr = m_pCB[i]->Map(0, nullptr, reinterpret_cast<void**>(&m_CBV[i].pBuffer));
+			if (FAILED(hr))
+			{
+				return false;
+			}
+
+			auto eyePos = DirectX::XMVectorSet(0.0f, 0.0f, 5.0f, 0.0f);
+			auto targetPos = DirectX::XMVectorZero();
+			auto upward = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+			auto fovY = DirectX::XMConvertToRadians(37.5f);
+			auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
+
+			// 変換行列の設定
+			m_CBV[i].pBuffer->World = DirectX::XMMatrixIdentity();
+			m_CBV[i].pBuffer->View = DirectX::XMMatrixLookAtRH(eyePos, targetPos, upward);
+			m_CBV[i].pBuffer->Proj = DirectX::XMMatrixPerspectiveFovRH(fovY, aspect, 1.0f, 1000.0f);
+		}
+	}
+
+	// ルートシグニチャの生成
+	{
+		auto flag = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+
+		// ルートパラメータの設定
+		D3D12_ROOT_PARAMETER param = {};
+		param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		param.Descriptor.ShaderRegister = 0;
+		param.Descriptor.RegisterSpace = 0;
+		param.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+
+		// ルートシグニチャの設定
+		D3D12_ROOT_SIGNATURE_DESC desc = {};
+		desc.NumParameters = 1;
+		desc.NumStaticSamplers = 0;
+		desc.pParameters = &param;
+		desc.pStaticSamplers = nullptr;
+		desc.Flags = flag;
+
+		ComPtr<ID3DBlob> pBlob;
+		ComPtr<ID3DBlob> pErrorBlob;
+
+		// シリアライズ
+		auto hr = D3D12SerializeRootSignature(
+			&desc,
+			D3D_ROOT_SIGNATURE_VERSION_1_0,
+			pBlob.GetAddressOf(),
+			pErrorBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// ルートシグニチャを生成
+		hr = m_pDevice->CreateRootSignature(
+			0,
+			pBlob->GetBufferPointer(),
+			pBlob->GetBufferSize(),
+			IID_PPV_ARGS(m_pRootSignature.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			return false;
+		}
+	}
+
+	// パイプラインステートの生成
+	{
+		// 入力レイアウトの設定
+		D3D12_INPUT_ELEMENT_DESC elements[2];
+		elements[0].SemanticName = "POSITION";
+		elements[0].SemanticIndex = 0;
+		elements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		elements[0].InputSlot = 0;
+		elements[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		elements[0].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		elements[0].InstanceDataStepRate = 0;
+
+		elements[1].SemanticName = "COLOR";
+		elements[1].SemanticIndex = 0;
+		elements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		elements[1].InputSlot = 0;
+		elements[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+		elements[1].InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		elements[1].InstanceDataStepRate = 0;
+
+		// ラスタライザーステートの設定
+		D3D12_RASTERIZER_DESC descRS;
+		descRS.FillMode = D3D12_FILL_MODE_SOLID;
+		descRS.CullMode = D3D12_CULL_MODE_NONE;
+		descRS.FrontCounterClockwise = FALSE;
+		descRS.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+		descRS.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+		descRS.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+		descRS.DepthClipEnable = FALSE;
+		descRS.MultisampleEnable = FALSE;
+		descRS.AntialiasedLineEnable = FALSE;
+		descRS.ForcedSampleCount = 0;
+		descRS.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+		// レンダーターゲットのブレンド設定
+		D3D12_RENDER_TARGET_BLEND_DESC descRTBS = {
+			FALSE, FALSE,
+			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+			D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+			D3D12_LOGIC_OP_NOOP,
+			D3D12_COLOR_WRITE_ENABLE_ALL
+		};
+
+		// ブレンドステートの設定
+		D3D12_BLEND_DESC descBS;
+		descBS.AlphaToCoverageEnable = FALSE;
+		descBS.IndependentBlendEnable = FALSE;
+		for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
+		{
+			descBS.RenderTarget[i] = descRTBS;
+		}
+
+		ComPtr<ID3DBlob> pVSBlob;
+		ComPtr<ID3DBlob> pPSBlob;
+
+		std::wstring vsPath;
+		std::wstring psPath;
+
+		if (!SearchFilePath(L"SimpleVS.cso", vsPath))
+		{
+			return false;
+		}
+
+		if (!SearchFilePath(L"SimplePS.cso", psPath))
+		{
+			return false;
+		}
+
+		// 頂点シェーダ読み込み.
+		auto hr = D3DReadFileToBlob(vsPath.c_str(), pVSBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// ピクセルシェーダ読み込み.
+		hr = D3DReadFileToBlob(psPath.c_str(), pPSBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// パイプラインステートの設定
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+		desc.InputLayout = { elements, _countof(elements) };
+		desc.pRootSignature = m_pRootSignature.Get();
+		desc.VS = { pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize() };
+		desc.PS = { pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize() };
+		desc.RasterizerState = descRS;
+		desc.BlendState = descBS;
+		desc.DepthStencilState.DepthEnable = FALSE;
+		desc.DepthStencilState.StencilEnable = FALSE;
+		desc.SampleMask = UINT_MAX;
+		desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		desc.NumRenderTargets = 1;
+		desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+
+		// パイプラインステートを生成
+		hr = m_pDevice->CreateGraphicsPipelineState(
+			&desc,
+			IID_PPV_ARGS(m_pPSO.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			return false;
+		}
+	}
+
+	// ビューポートとシザー矩形の設定
+	{
+		m_Viewport.TopLeftX = 0;
+		m_Viewport.TopLeftY = 0;
+		m_Viewport.Width = static_cast<float>(Constants::WindowWidth);
+		m_Viewport.Height = static_cast<float>(Constants::WindowHeight);
+		m_Viewport.MinDepth = 0.0f;
+		m_Viewport.MaxDepth = 1.0f;
+
+		m_Scissor.left = 0;
+		m_Scissor.right = Constants::WindowWidth;
+		m_Scissor.top = 0;
+		m_Scissor.bottom = Constants::WindowHeight;
+	}
+
+	return true;
 }
 
 void D3D12Wrapper::InitializeDebug()
@@ -373,6 +750,9 @@ void D3D12Wrapper::Present(uint32_t interval)
 	// 画面に表示
 	m_pSwapChain->Present(interval, 0);
 
+	// デバッグ
+	auto fenceValue = m_pFence->GetCompletedValue();
+
 	// シグナル処理
 	const auto currentValue = m_FenceCounter[m_FrameIndex];
 	m_pQueue->Signal(m_pFence.Get(), currentValue);
@@ -381,11 +761,15 @@ void D3D12Wrapper::Present(uint32_t interval)
 	m_FrameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
 
 	// 次のフレームの描画準備がまだであれば待機する
-	if (m_pFence->GetCompletedValue() < m_FenceCounter[m_FrameIndex])
+	//if (m_pFence->GetCompletedValue() < m_FenceCounter[m_FrameIndex] + 1)
+	if (m_pFence->GetCompletedValue() < currentValue)
 	{
 		m_pFence->SetEventOnCompletion(m_FenceCounter[m_FrameIndex], m_FenceEvent);
 		WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 	}
+
+	// デバッグ
+	fenceValue = m_pFence->GetCompletedValue();
 
 	// 次のフレームのフェンスカウンターを増やす
 	m_FenceCounter[m_FrameIndex] = currentValue + 1;

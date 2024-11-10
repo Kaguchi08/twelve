@@ -159,6 +159,9 @@
     <ClCompile Include="D3D12Wrapper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="FileUtil.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="FBXVertexShader.hlsl">
@@ -186,6 +189,12 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="Main.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SimpleVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SimplePS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>
@@ -321,6 +330,9 @@
     </ClInclude>
     <ClInclude Include="D3D12Wrapper.h">
       <Filter>ヘッダー ファイル\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
