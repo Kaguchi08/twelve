@@ -47,7 +47,8 @@ bool Game::Initialize()
 		return false;
 	}
 
-	if (!m_d3d12.InitializeRendering())
+	// 描画処理の初期化
+	if (!m_d3d12.InitializeGraphicsPipeline())
 	{
 		return false;
 	}
@@ -104,6 +105,9 @@ void Game::Terminate()
 	// Direct3D 12の終了処理
 	//dx12_->Terminate();
 
+	m_d3d12.ReleaseGraphicsResources();
+
+	// D3D12の終了処理
 	m_d3d12.Terminate();
 
 	// ウィンドウの終了処理

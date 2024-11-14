@@ -29,6 +29,13 @@ struct ConstantBufferView
 	T* pBuffer;
 };
 
+struct Texture
+{
+	ComPtr<ID3D12Resource>          pResource;
+	D3D12_CPU_DESCRIPTOR_HANDLE     HandleCPU;
+	D3D12_GPU_DESCRIPTOR_HANDLE     HandleGPU;
+};
+
 class D3D12Wrapper
 {
 public:
@@ -39,7 +46,8 @@ public:
 	void Terminate();
 	void Render();
 
-	bool InitializeRendering();
+	bool InitializeGraphicsPipeline();
+	void ReleaseGraphicsResources();
 
 private:
 	HWND m_hWnd;
@@ -55,7 +63,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap>        m_pHeapRTV;
 	ComPtr<ID3D12Fence>                 m_pFence;
 	ComPtr<ID3D12DescriptorHeap>        m_pHeapDSV;
-	ComPtr<ID3D12DescriptorHeap>		m_pHeapCBV;
+	ComPtr<ID3D12DescriptorHeap>		m_pHeapCBV_SRV_UAV;
 	ComPtr<ID3D12Resource>              m_pVB;
 	ComPtr<ID3D12Resource>              m_pIB;
 	ComPtr<ID3D12Resource>              m_pCB[Constants::FrameCount * 2];
@@ -73,8 +81,9 @@ private:
 	D3D12_RECT							m_Scissor;
 	ConstantBufferView<Transform>		m_CBV[Constants::FrameCount * 2];
 	float								m_RotateAngle;
+	Texture								m_Texture;
 
 	void InitializeDebug();
-	void WaitGpu();
+	void WaitGPU();
 	void Present(uint32_t interval);
 };

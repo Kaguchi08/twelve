@@ -197,6 +197,12 @@
     <FxCompile Include="SimplePS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="SimpleTexVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SimpleTexPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -209,6 +215,7 @@
     <None Include="PrimitiveHeader.hlsli">
       <Filter>Shader</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dx12Wrapper.h">
