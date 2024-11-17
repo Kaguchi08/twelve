@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <DirectXMath.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -10,161 +10,177 @@
 
 using Microsoft::WRL::ComPtr;
 
-// \‘¢‘Ì
+// æ§‹é€ ä½“
 
-enum ModelType {
-    PMD,
-    FBX,
+enum ModelType
+{
+	PMD,
+	FBX,
 };
 
-// ƒVƒF[ƒ_[‘¤‚É“Š‚°‚ç‚ê‚éƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^
-struct MaterialForHlsl {
-    DirectX::XMFLOAT3 diffuse;
-    float alpha;  // ƒfƒBƒtƒ…[ƒY‚ÌƒAƒ‹ƒtƒ@’l
-    DirectX::XMFLOAT3 specular;
-    float specularity;
-    DirectX::XMFLOAT3 ambient;
+// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼å´ã«æŠ•ã’ã‚‰ã‚Œã‚‹ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿
+struct MaterialForHlsl
+{
+	DirectX::XMFLOAT3 diffuse;
+	float alpha;  // ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚ºã®ã‚¢ãƒ«ãƒ•ã‚¡å€¤
+	DirectX::XMFLOAT3 specular;
+	float specularity;
+	DirectX::XMFLOAT3 ambient;
 };
 
-// ‚»‚Ì‘¼‚Ìƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^
-struct AdditionalMaterial {
-    std::string tex_path;
-    int toon_idx;
-    bool edge_flg;
+// ãã®ä»–ã®ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿
+struct AdditionalMaterial
+{
+	std::string tex_path;
+	int toon_idx;
+	bool edge_flg;
 };
 
-// ‘S‘Ì‚ğ‚Ü‚Æ‚ß‚½ƒf[ƒ^
-struct Material {
-    unsigned int indices_num;
-    MaterialForHlsl hlsl;
-    AdditionalMaterial additional;
+// å…¨ä½“ã‚’ã¾ã¨ã‚ãŸãƒ‡ãƒ¼ã‚¿
+struct MaterialAll
+{
+	unsigned int indices_num;
+	MaterialForHlsl hlsl;
+	AdditionalMaterial additional;
 };
 
-struct BoneNode {
-    uint32_t bone_idx;
-    uint32_t bone_type;
-    uint32_t parent_bone;
-    uint32_t ik_parent_bone;
-    DirectX::XMFLOAT3 start_pos;
-    std::vector<BoneNode*> children;
+struct BoneNode
+{
+	uint32_t bone_idx;
+	uint32_t bone_type;
+	uint32_t parent_bone;
+	uint32_t ik_parent_bone;
+	DirectX::XMFLOAT3 start_pos;
+	std::vector<BoneNode*> children;
 };
 
-struct PMDIK {
-    uint16_t bone_idx;
-    uint16_t target_bone_idx;
-    uint16_t iterations;
-    float limit;
-    std::vector<uint16_t> node_idxes;
-    ;
+struct PMDIK
+{
+	uint16_t bone_idx;
+	uint16_t target_bone_idx;
+	uint16_t iterations;
+	float limit;
+	std::vector<uint16_t> node_idxes;
+	;
 };
 
-// ƒ‚[ƒVƒ‡ƒ“ŠÖ˜A
-struct KeyFrame {
-    unsigned int frame_no;
-    DirectX::XMVECTOR quaternion;
-    DirectX::XMFLOAT3 offset;
-    DirectX::XMFLOAT2 p1, p2;
+// ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³é–¢é€£
+struct KeyFrame
+{
+	unsigned int frame_no;
+	DirectX::XMVECTOR quaternion;
+	DirectX::XMFLOAT3 offset;
+	DirectX::XMFLOAT2 p1, p2;
 
-    KeyFrame(unsigned int fno,
-             const DirectX::XMVECTOR& q,
-             const DirectX::XMFLOAT3& ofst,
-             const DirectX::XMFLOAT2& ip1,
-             const DirectX::XMFLOAT2& ip2) : frame_no(fno),
-                                             quaternion(q),
-                                             offset(ofst),
-                                             p1(ip1),
-                                             p2(ip2) {
-    }
+	KeyFrame(unsigned int fno,
+			 const DirectX::XMVECTOR& q,
+			 const DirectX::XMFLOAT3& ofst,
+			 const DirectX::XMFLOAT2& ip1,
+			 const DirectX::XMFLOAT2& ip2) : frame_no(fno),
+		quaternion(q),
+		offset(ofst),
+		p1(ip1),
+		p2(ip2)
+	{
+	}
 };
 
-// IKƒIƒ“ƒIƒtƒf[ƒ^
-struct VMDIKEnable {
-    uint32_t frame_no;
-    std::unordered_map<std::string, bool> ik_enable_table;
+// IKã‚ªãƒ³ã‚ªãƒ•ãƒ‡ãƒ¼ã‚¿
+struct VMDIKEnable
+{
+	uint32_t frame_no;
+	std::unordered_map<std::string, bool> ik_enable_table;
 };
 
-// FBXƒ‚ƒfƒ‹‚Ì’¸“_ƒf[ƒ^
-struct FBXVertex {
-    DirectX::XMFLOAT3 pos;       // x, y, z // À•W
-    DirectX::XMFLOAT3 normal;    // nx, ny, nz // –@üƒxƒNƒgƒ‹
-    DirectX::XMFLOAT2 uv;        // u, v // UVÀ•W
-    DirectX::XMFLOAT3 tangent;   // tx, ty, tz // ÚƒxƒNƒgƒ‹
-    DirectX::XMFLOAT3 binormal;  // bx, by, bz // ]–@üƒxƒNƒgƒ‹
+// FBXãƒ¢ãƒ‡ãƒ«ã®é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
+struct FBXVertex
+{
+	DirectX::XMFLOAT3 pos;       // x, y, z // åº§æ¨™
+	DirectX::XMFLOAT3 normal;    // nx, ny, nz // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
+	DirectX::XMFLOAT2 uv;        // u, v // UVåº§æ¨™
+	DirectX::XMFLOAT3 tangent;   // tx, ty, tz // æ¥ãƒ™ã‚¯ãƒˆãƒ«
+	DirectX::XMFLOAT3 binormal;  // bx, by, bz // å¾“æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
 };
 
-// PMDƒ‚ƒfƒ‹î•ñ‚ğ‚Ü‚Æ‚ß‚½\‘¢‘Ì
-struct PMDModel {
-    // ‘S‘Ì‚ÌƒCƒ“ƒfƒbƒNƒX”
-    unsigned int indices_num;
-    // ’¸“_”z—ñ
-    std::vector<DirectX::XMFLOAT3> vertices;
+// PMDãƒ¢ãƒ‡ãƒ«æƒ…å ±ã‚’ã¾ã¨ã‚ãŸæ§‹é€ ä½“
+struct PMDModel
+{
+	// å…¨ä½“ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+	unsigned int indices_num;
+	// é ‚ç‚¹é…åˆ—
+	std::vector<DirectX::XMFLOAT3> vertices;
 
-    // ƒ}ƒeƒŠƒAƒ‹ŠÖ˜A
-    std::vector<Material> material_table;
-    ComPtr<ID3D12Resource> material_const_buffer = nullptr;
-    ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
-    std::vector<ComPtr<ID3D12Resource>> texture_resources;
-    std::vector<ComPtr<ID3D12Resource>> sph_resources;
-    std::vector<ComPtr<ID3D12Resource>> spa_resources;
-    std::vector<ComPtr<ID3D12Resource>> toon_resources;
+	// ãƒãƒ†ãƒªã‚¢ãƒ«é–¢é€£
+	std::vector<MaterialAll> material_table;
+	ComPtr<ID3D12Resource> material_const_buffer = nullptr;
+	ComPtr<ID3D12DescriptorHeap> material_cbv_heap = nullptr;
+	std::vector<ComPtr<ID3D12Resource>> texture_resources;
+	std::vector<ComPtr<ID3D12Resource>> sph_resources;
+	std::vector<ComPtr<ID3D12Resource>> spa_resources;
+	std::vector<ComPtr<ID3D12Resource>> toon_resources;
 
-    // ’¸“_ŠÖ˜A
-    ComPtr<ID3D12Resource> vertex_buffer = nullptr;
-    ComPtr<ID3D12Resource> index_buffer = nullptr;
+	// é ‚ç‚¹é–¢é€£
+	ComPtr<ID3D12Resource> vertex_buffer = nullptr;
+	ComPtr<ID3D12Resource> index_buffer = nullptr;
 
-    // ƒrƒ…[
-    D3D12_VERTEX_BUFFER_VIEW vb_view = {};
-    D3D12_INDEX_BUFFER_VIEW ib_view = {};
+	// ãƒ“ãƒ¥ãƒ¼
+	D3D12_VERTEX_BUFFER_VIEW vb_view = {};
+	D3D12_INDEX_BUFFER_VIEW ib_view = {};
 
-    // ƒ{[ƒ“î•ñ
-    std::unordered_map<std::string, BoneNode> bone_node_table;
-    std::vector<std::string> bone_name_array;
-    std::vector<BoneNode*> bone_node_address_array;
-    std::vector<PMDIK> ik_data;
-    std::vector<uint32_t> knee_idxes;
+	// ãƒœãƒ¼ãƒ³æƒ…å ±
+	std::unordered_map<std::string, BoneNode> bone_node_table;
+	std::vector<std::string> bone_name_array;
+	std::vector<BoneNode*> bone_node_address_array;
+	std::vector<PMDIK> ik_data;
+	std::vector<uint32_t> knee_idxes;
 };
 
-struct FBXMeshData {
-    ComPtr<ID3D12Resource> vertex_buffer;
-    ComPtr<ID3D12Resource> index_buffer;
-    D3D12_VERTEX_BUFFER_VIEW vb_view;
-    D3D12_INDEX_BUFFER_VIEW ib_view;
-    std::vector<FBXVertex> vertices;
-    std::vector<unsigned int> indices;
-    std::string material_name;
+struct FBXMeshData
+{
+	ComPtr<ID3D12Resource> vertex_buffer;
+	ComPtr<ID3D12Resource> index_buffer;
+	D3D12_VERTEX_BUFFER_VIEW vb_view;
+	D3D12_INDEX_BUFFER_VIEW ib_view;
+	std::vector<FBXVertex> vertices;
+	std::vector<unsigned int> indices;
+	std::string material_name;
 };
 
-struct FBXMaterial {
-    float ambient[4];
-    float diffuse[4];
-    float specular[4];
+struct FBXMaterial
+{
+	float ambient[4];
+	float diffuse[4];
+	float specular[4];
 };
 
-// FBXƒ‚ƒfƒ‹î•ñ‚ğ‚Ü‚Æ‚ß‚½\‘¢‘Ì
-struct FBXModel {
-    // ‘S‘Ì‚ÌƒCƒ“ƒfƒbƒNƒX”
-    unsigned int indices_num;
+// FBXãƒ¢ãƒ‡ãƒ«æƒ…å ±ã‚’ã¾ã¨ã‚ãŸæ§‹é€ ä½“
+struct FBXModel
+{
+	// å…¨ä½“ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹æ•°
+	unsigned int indices_num;
 
-    // ƒƒbƒVƒ…ƒf[ƒ^
-    std::vector<FBXMeshData> mesh_data;
+	// ãƒ¡ãƒƒã‚·ãƒ¥ãƒ‡ãƒ¼ã‚¿
+	std::vector<FBXMeshData> mesh_data;
 
-    // ƒ}ƒeƒŠƒAƒ‹ŠÖ˜A
-    std::unordered_map<std::string, FBXMaterial> material_table;  // ƒ}ƒeƒŠƒAƒ‹–¼‚Æƒ}ƒeƒŠƒAƒ‹ƒf[ƒ^‚Ì‘Î‰•\
-    std::unordered_map<std::string, ComPtr<ID3D12Resource>> material_const_buffer_table;
-    std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> material_cbv_heap_table;
+	// ãƒãƒ†ãƒªã‚¢ãƒ«é–¢é€£
+	std::unordered_map<std::string, FBXMaterial> material_table;  // ãƒãƒ†ãƒªã‚¢ãƒ«åã¨ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ‡ãƒ¼ã‚¿ã®å¯¾å¿œè¡¨
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> material_const_buffer_table;
+	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> material_cbv_heap_table;
 
-    // ƒeƒNƒXƒ`ƒƒ
-    std::unordered_map<std::string, ComPtr<ID3D12Resource>> texture_resource_table;        // ƒ}ƒeƒŠƒAƒ‹–¼‚ÆƒeƒNƒXƒ`ƒƒƒŠƒ\[ƒX‚Ì‘Î‰•\
-    std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> texture_srv_heap_table;  // ƒ}ƒeƒŠƒAƒ‹–¼‚ÆƒeƒNƒXƒ`ƒƒSRVƒq[ƒv‚Ì‘Î‰•\
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£
+	std::unordered_map<std::string, ComPtr<ID3D12Resource>> texture_resource_table;        // ãƒãƒ†ãƒªã‚¢ãƒ«åã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒªã‚½ãƒ¼ã‚¹ã®å¯¾å¿œè¡¨
+	std::unordered_map<std::string, ComPtr<ID3D12DescriptorHeap>> texture_srv_heap_table;  // ãƒãƒ†ãƒªã‚¢ãƒ«åã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£SRVãƒ’ãƒ¼ãƒ—ã®å¯¾å¿œè¡¨
 };
 
-struct VMDAnimation {
-    std::unordered_map<std::string, std::vector<KeyFrame>> motion_table;
-    std::vector<VMDIKEnable> ik_enable_table;
-    unsigned int duration;
+struct VMDAnimation
+{
+	std::unordered_map<std::string, std::vector<KeyFrame>> motion_table;
+	std::vector<VMDIKEnable> ik_enable_table;
+	unsigned int duration;
 };
 
-struct Animation {
-    std::shared_ptr<VMDAnimation> vmd_anim;
-    bool is_loop;
+struct Animation
+{
+	std::shared_ptr<VMDAnimation> vmd_anim;
+	bool is_loop;
 };

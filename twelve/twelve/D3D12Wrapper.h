@@ -9,6 +9,7 @@
 #include <DirectXMath.h>
 
 #include "Constants.h"
+#include "Mesh.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -82,6 +83,8 @@ private:
 	ConstantBufferView<Transform>		m_CBV[Constants::FrameCount * 2];
 	float								m_RotateAngle;
 	Texture								m_Texture;
+	std::vector<Mesh>					m_Meshes;
+	std::vector<Material>				m_Materials;
 
 	void InitializeDebug();
 	void WaitGPU();

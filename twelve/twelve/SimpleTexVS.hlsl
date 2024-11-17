@@ -10,7 +10,9 @@
 struct VSInput
 {
     float3 Position : POSITION; // 位置座標です.
+    float3 Normal : NORMAL; // 法線ベクトルです.
     float2 TexCoord : TEXCOORD; // テクスチャ座標です.
+    float3 Tangent : TANGENT; // 接線ベクトルです.
 };
 
 ///////////////////////////////////////////////////////////////////////////////
