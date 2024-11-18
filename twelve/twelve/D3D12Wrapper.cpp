@@ -462,7 +462,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 	// 頂点バッファの生成
 	{
-		auto size = sizeof(MeshVertex) * m_Meshes[0].Vertices.size();
+		auto size = sizeof(MeshVertex2) * m_Meshes[0].Vertices.size();
 		auto vertices = m_Meshes[0].Vertices.data();
 
 		// ヒーププロパティ
@@ -517,7 +517,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		// 頂点バッファビューの設定
 		m_VBV.BufferLocation = m_pVB->GetGPUVirtualAddress();
 		m_VBV.SizeInBytes = static_cast<UINT>(size);
-		m_VBV.StrideInBytes = static_cast<UINT>(sizeof(MeshVertex));
+		m_VBV.StrideInBytes = static_cast<UINT>(sizeof(MeshVertex2));
 	}
 
 	// インデックスバッファの生成
@@ -825,7 +825,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 		// パイプラインステートの設定
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
-		desc.InputLayout = MeshVertex::InputLayout;
+		desc.InputLayout = MeshVertex2::InputLayout;
 		desc.pRootSignature = m_pRootSignature.Get();
 		desc.VS = { pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize() };
 		desc.PS = { pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize() };

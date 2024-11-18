@@ -4,14 +4,12 @@
 #include <cstdint>
 #include <d3d12.h>
 #include <dxgi1_4.h>
-#include <wrl/client.h>
 #include <d3dcompiler.h> 
 #include <DirectXMath.h>
 
+#include "ComPtr.h"
 #include "Constants.h"
-#include "Mesh.h"
-
-using Microsoft::WRL::ComPtr;
+#include "Mesh2.h"
 
 struct alignas(256) Transform
 {
@@ -30,7 +28,7 @@ struct ConstantBufferView
 	T* pBuffer;
 };
 
-struct Texture
+struct TextureTmp
 {
 	ComPtr<ID3D12Resource>          pResource;
 	D3D12_CPU_DESCRIPTOR_HANDLE     HandleCPU;
@@ -82,9 +80,9 @@ private:
 	D3D12_RECT							m_Scissor;
 	ConstantBufferView<Transform>		m_CBV[Constants::FrameCount * 2];
 	float								m_RotateAngle;
-	Texture								m_Texture;
-	std::vector<Mesh>					m_Meshes;
-	std::vector<Material>				m_Materials;
+	TextureTmp								m_Texture;
+	std::vector<Mesh2>					m_Meshes;
+	std::vector<Material2>				m_Materials;
 
 	void InitializeDebug();
 	void WaitGPU();

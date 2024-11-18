@@ -43,8 +43,11 @@
     <Filter Include="ソース ファイル\Primitive">
       <UniqueIdentifier>{04494499-9838-4870-8a3f-f1fee885a74c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\D3D12">
-      <UniqueIdentifier>{75d4d2f3-1091-48ce-8070-c721f84fcad6}</UniqueIdentifier>
+    <Filter Include="ソース ファイル\D3D12Framework">
+      <UniqueIdentifier>{606ec209-c1a2-4913-b0de-ccf33b375e5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\D3D12Framework">
+      <UniqueIdentifier>{ce2645e1-0e4b-435f-994c-a3deb8846694}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -156,14 +159,53 @@
     <ClCompile Include="TestScene.cpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="D3D12Wrapper.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="FileUtil.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Mesh.cpp">
+    <ClCompile Include="Mesh2.cpp">
       <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorPool.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantBuffer.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderTarget.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D12Wrapper.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthTarget.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandList.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Fence.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="IndexBuffer.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="VertexBuffer.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="ResMesh.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -338,14 +380,59 @@
     <ClInclude Include="Constants.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="D3D12Wrapper.h">
-      <Filter>ヘッダー ファイル\D3D12</Filter>
-    </ClInclude>
     <ClInclude Include="FileUtil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h">
+    <ClInclude Include="Mesh2.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Pool.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorPool.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="ComPtr.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstantBuffer.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTarget.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D12Wrapper.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="DepthTarget.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandList.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Fence.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="IndexBuffer.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexBuffer.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="ResMesh.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

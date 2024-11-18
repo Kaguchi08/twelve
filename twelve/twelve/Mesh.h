@@ -1,56 +1,44 @@
 ﻿#pragma once
 
-#include <d3d12.h>
-#include <DirectXMath.h>
-#include <string>
-#include <vector>
+#include "ResMesh.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
-struct MeshVertex
+class Mesh
 {
-	DirectX::XMFLOAT3 Position;
-	DirectX::XMFLOAT3 Normal;
-	DirectX::XMFLOAT2 TexCoord;
-	DirectX::XMFLOAT3 Tangent;
+public:
+	Mesh();
+	virtual ~Mesh();
 
-	MeshVertex() = default;
+	/// <summary>
+	/// 初期化処理
+	/// </summary>
+	/// <param name="pDevice">デバイス</param>
+	/// <param name="resourse">リソースメッシュ</param>
+	/// <returns></returns>
+	bool Init(
+		ID3D12Device* pDevice,
+		const ResMesh* resourse);
 
-	MeshVertex(
-		DirectX::XMFLOAT3 const& position,
-		DirectX::XMFLOAT3 const& normal,
-		DirectX::XMFLOAT2 const& texCoord,
-		DirectX::XMFLOAT3 const& tangent)
-		:
-		Position(position),
-		Normal(normal),
-		TexCoord(texCoord),
-		Tangent(tangent)
-	{
-	}
+	/// <summary>
+	/// 終了処理
+	/// </summary>
+	void Term();
 
-	static const D3D12_INPUT_LAYOUT_DESC InputLayout;
+	/// <summary>
+	/// 描画処理
+	/// </summary>
+	/// <param name="pCmdList">コマンドリスト</param>
+	void Draw(ID3D12GraphicsCommandList* pCmdList);
+
+	uint32_t GetMaterialId() const;
 
 private:
-	static const int InputElementCount = 4;
-	static const D3D12_INPUT_ELEMENT_DESC InputElements[InputElementCount];
-};
+	VertexBuffer m_VB; // 頂点バッファ
+	IndexBuffer m_IB; // インデックスバッファ
+	uint32_t m_MaterialId; // マテリアル番号
+	uint32_t m_IndexCount; // インデックス数
 
-struct Material
-{
-	DirectX::XMFLOAT3 Diffuse;
-	DirectX::XMFLOAT3 Specular;
-	float Alpha;
-	float Shininess;
-	std::string DiffuseMap;
+	Mesh(const Mesh&) = delete;
+	void operator=(const Mesh&) = delete;
 };
-
-struct Mesh
-{
-	std::vector<MeshVertex> Vertices;
-	std::vector<uint32_t> Indices;
-	uint32_t MaterialId;
-};
-
-bool LoadMesh(
-	const wchar_t* fileName,
-	std::vector<Mesh>& meshes,
-	std::vector<Material>& materials);

@@ -159,11 +159,16 @@
     <ClCompile Include="CameraComponent.cpp" />
     <ClCompile Include="Checkerboard.cpp" />
     <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="CommandList.cpp" />
     <ClCompile Include="Component.cpp" />
+    <ClCompile Include="ConstantBuffer.cpp" />
     <ClCompile Include="D3D12Wrapper.cpp" />
+    <ClCompile Include="DepthTarget.cpp" />
+    <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="Dx12Wrapper.cpp" />
     <ClCompile Include="FBXActor.cpp" />
     <ClCompile Include="FBXComponent.cpp" />
+    <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameScene.cpp" />
@@ -175,10 +180,14 @@
     <ClCompile Include="imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="IndexBuffer.cpp" />
     <ClCompile Include="InputSystem.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Mesh2.cpp" />
     <ClCompile Include="ModelComponent.cpp" />
     <ClCompile Include="ModelLoader.cpp" />
     <ClCompile Include="ModelMoveComponent.cpp" />
@@ -190,9 +199,13 @@
     <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RenderTarget.cpp" />
+    <ClCompile Include="ResMesh.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="TestScene.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="VertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="DefferedLighting.hlsl">
@@ -303,12 +316,18 @@
     <ClInclude Include="CameraComponent.h" />
     <ClInclude Include="Checkerboard.h" />
     <ClInclude Include="Collision.h" />
+    <ClInclude Include="CommandList.h" />
     <ClInclude Include="Component.h" />
+    <ClInclude Include="ComPtr.h" />
+    <ClInclude Include="ConstantBuffer.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="D3D12Wrapper.h" />
+    <ClInclude Include="DepthTarget.h" />
+    <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="FBXActor.h" />
     <ClInclude Include="FBXComponent.h" />
+    <ClInclude Include="Fence.h" />
     <ClInclude Include="FileUtil.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameScene.h" />
@@ -321,9 +340,13 @@
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Mesh2.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="ModelComponent.h" />
     <ClInclude Include="ModelLoader.h" />
@@ -333,12 +356,17 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="PlaneActor.h" />
     <ClInclude Include="PlayerActor.h" />
+    <ClInclude Include="Pool.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="PrimitiveComponent.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RenderTarget.h" />
+    <ClInclude Include="ResMesh.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="TestScene.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="XMFLOAT_Helper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
