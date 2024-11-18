@@ -434,5 +434,8 @@
     <ClInclude Include="Material.h">
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
+    <ClInclude Include="InlineUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

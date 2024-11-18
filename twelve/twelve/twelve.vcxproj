@@ -341,6 +341,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="IndexBuffer.h" />
+    <ClInclude Include="InlineUtil.h" />
     <ClInclude Include="InputSystem.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Logger.h" />

@@ -32,7 +32,7 @@ public:
 	{
 		std::lock_guard<std::mutex> guard(m_Mutex);
 
-		m_pBuffer = static_cast<uint8_t*>(malloc(sizeof(Item) * count + 2));
+		m_pBuffer = static_cast<uint8_t*>(malloc(sizeof(Item) * (count + 2)));
 		if (m_pBuffer == nullptr)
 		{
 			return false;
@@ -199,8 +199,20 @@ private:
 	{
 		assert(0 <= index && index <= m_Capacity + 2);
 
+		return reinterpret_cast<Item*>(m_pBuffer + sizeof(Item) * index);
+	}
+
+	/// <summary>
+	/// アイテムにメモリを割り当てる
+	/// </summary>
+	/// <param name="index">取得するアイテムのインデックス</param>
+	/// <returns>アイテムへのポインタ</returns>
+	Item* AssignItem(uint32_t index)
+	{
+		assert(0 <= index && index <= m_Capacity + 2);
+
 		auto buf = (m_pBuffer + sizeof(Item) * index);
-		return new (buf)Item;
+		return new (buf) Item;
 	}
 
 	Pool(const Pool&) = delete;

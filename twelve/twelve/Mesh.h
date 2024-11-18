@@ -18,7 +18,7 @@ public:
 	/// <returns></returns>
 	bool Init(
 		ID3D12Device* pDevice,
-		const ResMesh* resourse);
+		const ResMesh& resourse);
 
 	/// <summary>
 	/// 終了処理

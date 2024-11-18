@@ -79,18 +79,26 @@ DescriptorHandle* DescriptorPool::AllocHandle()
 	{
 		auto handleCPU = m_pHeap->GetCPUDescriptorHandleForHeapStart();
 		handleCPU.ptr += m_DescriptorSize * index;
-
-		auto handleGPU = m_pHeap->GetGPUDescriptorHandleForHeapStart();
-		handleGPU.ptr += m_DescriptorSize * index;
-
 		pHandle->HandleCPU = handleCPU;
-		pHandle->HandleGPU = handleGPU;
+
+		// シェーダー可視フラグが設定されている場合のみ GPU ハンドルを取得
+		if (m_pHeap->GetDesc().Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+		{
+			auto handleGPU = m_pHeap->GetGPUDescriptorHandleForHeapStart();
+			handleGPU.ptr += m_DescriptorSize * index;
+			pHandle->HandleGPU = handleGPU;
+		}
+		else
+		{
+			// シェーダー不可視のヒープには GPU ハンドルを設定しない
+			pHandle->HandleGPU.ptr = 0;
+		}
 	};
 
 	return m_Pool.Alloc(func);
 }
 
-void DescriptorPool::FreeHandle(DescriptorHandle* pHandle)
+void DescriptorPool::FreeHandle(DescriptorHandle*& pHandle)
 {
 	if (pHandle != nullptr)
 	{

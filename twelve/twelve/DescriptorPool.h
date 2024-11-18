@@ -57,7 +57,7 @@ public:
 	/// ディスクリプタハンドルを解放する
 	/// </summary>
 	/// <param name="pHandle">解放するハンドルのポインタ</param>
-	void FreeHandle(DescriptorHandle* pHandle);
+	void FreeHandle(DescriptorHandle*& pHandle);
 
 	/// <summary>
 	/// 利用可能なハンドル数を取得する

@@ -21,7 +21,7 @@ Material::~Material()
 
 bool Material::Init(ID3D12Device* pDevice, DescriptorPool* pPool, size_t bufferSize, size_t count)
 {
-	if (pDevice == nullptr || pPool == nullptr || bufferSize == 0 || count == 0)
+	if (pDevice == nullptr || pPool == nullptr || count == 0)
 	{
 		ELOG("Error : Invalid Argument.");
 		return false;
@@ -119,7 +119,7 @@ void Material::Term()
 		itr.second = nullptr;
 	}
 
-	for (size_t i = 0; m_Subsets.size(); ++i)
+	for (size_t i = 0; i < m_Subsets.size(); ++i)
 	{
 		if (m_Subsets[i].pConstantBuffer != nullptr)
 		{

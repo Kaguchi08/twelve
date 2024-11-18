@@ -9,31 +9,16 @@
 
 #include "ComPtr.h"
 #include "Constants.h"
-#include "Mesh2.h"
-
-struct alignas(256) Transform
-{
-	DirectX::XMMATRIX   World;
-	DirectX::XMMATRIX   View;
-	DirectX::XMMATRIX   Proj;
-};
-
-
-template<typename T>
-struct ConstantBufferView
-{
-	D3D12_CONSTANT_BUFFER_VIEW_DESC Desc;
-	D3D12_CPU_DESCRIPTOR_HANDLE     HandleCPU;
-	D3D12_GPU_DESCRIPTOR_HANDLE     HandleGPU;
-	T* pBuffer;
-};
-
-struct TextureTmp
-{
-	ComPtr<ID3D12Resource>          pResource;
-	D3D12_CPU_DESCRIPTOR_HANDLE     HandleCPU;
-	D3D12_GPU_DESCRIPTOR_HANDLE     HandleGPU;
-};
+#include "DescriptorPool.h"
+#include "RenderTarget.h"
+#include "DepthTarget.h"
+#include "CommandList.h"
+#include "Fence.h"
+#include "Mesh.h"
+#include "ConstantBuffer.h"
+#include "Texture.h"
+#include "Material.h"
+#include "InlineUtil.h"
 
 class D3D12Wrapper
 {
@@ -49,42 +34,41 @@ public:
 	void ReleaseGraphicsResources();
 
 private:
-	HWND m_hWnd;
+	enum POOL_TYPE
+	{
+		POOL_TYPE_RES = 0, // CBV / SRV / UAV
+		POOL_TYPE_SMP,     // Sampler
+		POOL_TYPE_RTV,     // RTV
+		POOL_TYPE_DSV,     // DSView
+
+		POOL_COUNT
+	};
+
+	HWND								m_hWnd;
 
 	ComPtr<IDXGIFactory4>				m_pFactory;
 	ComPtr<ID3D12Device>                m_pDevice;
 	ComPtr<ID3D12CommandQueue>          m_pQueue;
 	ComPtr<IDXGISwapChain3>             m_pSwapChain;
-	ComPtr<ID3D12Resource>              m_pColorBuffer[Constants::FrameCount];
-	ComPtr<ID3D12Resource>              m_pDepthBuffer;
-	ComPtr<ID3D12CommandAllocator>      m_pCmdAllocator[Constants::FrameCount];
-	ComPtr<ID3D12GraphicsCommandList>   m_pCmdList;
-	ComPtr<ID3D12DescriptorHeap>        m_pHeapRTV;
-	ComPtr<ID3D12Fence>                 m_pFence;
-	ComPtr<ID3D12DescriptorHeap>        m_pHeapDSV;
-	ComPtr<ID3D12DescriptorHeap>		m_pHeapCBV_SRV_UAV;
-	ComPtr<ID3D12Resource>              m_pVB;
-	ComPtr<ID3D12Resource>              m_pIB;
-	ComPtr<ID3D12Resource>              m_pCB[Constants::FrameCount * 2];
-	ComPtr<ID3D12RootSignature>         m_pRootSignature;
-	ComPtr<ID3D12PipelineState>         m_pPSO;
 
-	HANDLE                              m_FenceEvent;
-	uint64_t                            m_FenceCounter[Constants::FrameCount];
+	RenderTarget						m_RenderTarget[Constants::FrameCount];
+	DepthTarget							m_DepthTarget;
+	DescriptorPool* m_pPool[POOL_COUNT];
+	CommandList							m_CommandList;
+	Fence								m_Fence;
+
 	uint32_t                            m_FrameIndex;
-	D3D12_CPU_DESCRIPTOR_HANDLE         m_HandleRTV[Constants::FrameCount];
-	D3D12_CPU_DESCRIPTOR_HANDLE			m_HandleDSV;
-	D3D12_VERTEX_BUFFER_VIEW			m_VBV;
-	D3D12_INDEX_BUFFER_VIEW				m_IBV;
 	D3D12_VIEWPORT						m_Viewport;
 	D3D12_RECT							m_Scissor;
-	ConstantBufferView<Transform>		m_CBV[Constants::FrameCount * 2];
+
+	std::vector<Mesh*>					m_pMeshes;
+	std::vector<ConstantBuffer*>		m_pTransforms;
+	Material							m_Material;
+	ComPtr<ID3D12PipelineState>			m_pPSO;
+	ComPtr<ID3D12RootSignature>         m_pRootSignature;
+
 	float								m_RotateAngle;
-	TextureTmp								m_Texture;
-	std::vector<Mesh2>					m_Meshes;
-	std::vector<Material2>				m_Materials;
 
 	void InitializeDebug();
-	void WaitGPU();
 	void Present(uint32_t interval);
 };

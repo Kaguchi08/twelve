@@ -59,8 +59,9 @@ bool VertexBuffer::Init(ID3D12Device* pDevice, size_t size, size_t stride, const
 
 	// 頂点バッファビューの設定
 	m_View.BufferLocation = m_pBuffer->GetGPUVirtualAddress();
-	m_View.SizeInBytes = UINT(stride);
-	m_View.StrideInBytes = UINT(size);
+	m_View.StrideInBytes = UINT(stride);
+	m_View.SizeInBytes = UINT(size);
+
 
 	// 初期化データがあれば書き込む
 	if (pInitData != nullptr)
@@ -106,5 +107,5 @@ void VertexBuffer::Unmap()
 
 D3D12_VERTEX_BUFFER_VIEW VertexBuffer::GetView() const
 {
-	return D3D12_VERTEX_BUFFER_VIEW();
+	return m_View;
 }
