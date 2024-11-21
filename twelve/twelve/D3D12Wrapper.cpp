@@ -6,17 +6,32 @@
 #include <CommonStates.h>
 #include <VertexTypes.h>
 #include <DirectXHelpers.h>
+#include <SimpleMath.h>
 
 #include "FileUtil.h" 
 #include "Logger.h"
+
+using namespace DirectX::SimpleMath;
 
 namespace
 {
 	struct Transform
 	{
-		DirectX::XMMATRIX   World;
-		DirectX::XMMATRIX   View;
-		DirectX::XMMATRIX   Proj;
+		Matrix World;
+		Matrix View;
+		Matrix Proj;
+	};
+
+	struct LightBuffer
+	{
+		Vector4 LitghtPosition;
+		Color LightColor;
+	};
+
+	struct MaterialBuffer
+	{
+		Vector3 Diffuse;
+		float Alpha;
 	};
 }
 
@@ -306,7 +321,7 @@ void D3D12Wrapper::Render()
 	{
 		m_RotateAngle += 0.005f;
 		auto pTransform = m_pTransforms[m_FrameIndex]->GetPtr<Transform>();
-		pTransform->World = DirectX::XMMatrixRotationY(m_RotateAngle);
+		pTransform->World = Matrix::CreateRotationY(m_RotateAngle);
 	}
 
 	// コマンドの記録を開始
@@ -344,6 +359,7 @@ void D3D12Wrapper::Render()
 		pCmd->SetGraphicsRootSignature(m_pRootSignature.Get());
 		pCmd->SetDescriptorHeaps(1, pHeaps);
 		pCmd->SetGraphicsRootConstantBufferView(0, m_pTransforms[m_FrameIndex]->GetAddress());
+		pCmd->SetGraphicsRootConstantBufferView(1, m_pLight->GetAddress());
 		pCmd->SetPipelineState(m_pPSO.Get());
 		pCmd->RSSetViewports(1, &m_Viewport);
 		pCmd->RSSetScissorRects(1, &m_Scissor);
@@ -353,8 +369,11 @@ void D3D12Wrapper::Render()
 			// マテリアル番号を取得
 			auto id = m_pMeshes[i]->GetMaterialId();
 
+			// 定数バッファを設定
+			pCmd->SetGraphicsRootConstantBufferView(2, m_Material.GetBufferAddress(i));
+
 			// テクスチャを設定
-			pCmd->SetGraphicsRootDescriptorTable(1, m_Material.GetTextureHandle(id, TU_DIFFUSE));
+			pCmd->SetGraphicsRootDescriptorTable(3, m_Material.GetTextureHandle(id, TU_DIFFUSE));
 
 			// 描画
 			m_pMeshes[i]->Draw(pCmd);
@@ -433,7 +452,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		m_pMeshes.shrink_to_fit();
 
 		// マテリアル初期化
-		if (!m_Material.Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], 0, resMaterial.size()))
+		if (!m_Material.Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(MaterialBuffer), resMaterial.size()))
 		{
 			ELOG("Error : Material::Init() Failed.");
 			return false;
@@ -445,9 +464,13 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		// バッチ開始
 		batch.Begin();
 
-		// テクスチャ設定
+		// テクスチャとマテリアルを設定
 		for (size_t i = 0; i < resMaterial.size(); ++i)
 		{
+			auto ptr = m_Material.GetBufferPtr<MaterialBuffer>(i);
+			ptr->Diffuse = resMaterial[i].Diffuse;
+			ptr->Alpha = resMaterial[i].Alpha;
+
 			std::wstring path = dir + resMaterial[i].DiffuseMap;
 			m_Material.SetTexture(i, TU_DIFFUSE, path, batch);
 		}
@@ -458,6 +481,29 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		// バッチ完了を待機
 		future.wait();
 	}
+
+	// ライトバッファの設定
+	{
+		auto pCB = new(std::nothrow) ConstantBuffer();
+		if (pCB == nullptr)
+		{
+			ELOG("Error : Out of Memory.");
+			return false;
+		}
+
+		if (!pCB->Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(LightBuffer)))
+		{
+			ELOG("Error : ConstantBuffer::Init() Failed.");
+			return false;
+		}
+
+		auto ptr = pCB->GetPtr<LightBuffer>();
+		ptr->LitghtPosition = Vector4(0.0f, 50.0f, 100.0f, 0.0f);
+		ptr->LightColor = Color(1.0f, 1.0f, 1.0f, 0.0f);
+
+		m_pLight = pCB;
+	}
+
 
 	// ルートシグニチャの生成
 	{
@@ -475,36 +521,33 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		range.OffsetInDescriptorsFromTableStart = 0;
 
 		// ルートパラメータの設定
-		D3D12_ROOT_PARAMETER param[2] = {};
+		D3D12_ROOT_PARAMETER param[4] = {};
 		param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		param[0].Descriptor.ShaderRegister = 0;
 		param[0].Descriptor.RegisterSpace = 0;
 		param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 
-		param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		param[1].DescriptorTable.NumDescriptorRanges = 1;
-		param[1].DescriptorTable.pDescriptorRanges = &range;
+		param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		param[1].Descriptor.ShaderRegister = 1;
+		param[1].Descriptor.RegisterSpace = 0;
 		param[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+		param[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		param[2].Descriptor.ShaderRegister = 2;
+		param[2].Descriptor.RegisterSpace = 0;
+		param[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		param[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		param[3].DescriptorTable.NumDescriptorRanges = 1;
+		param[3].DescriptorTable.pDescriptorRanges = &range;
+		param[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 		// スタティックサンプラーの設定
-		D3D12_STATIC_SAMPLER_DESC sampler = {};
-		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		sampler.MipLODBias = D3D12_DEFAULT_MIP_LOD_BIAS;
-		sampler.MaxAnisotropy = 1;
-		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-		sampler.MinLOD = -D3D12_FLOAT32_MAX;
-		sampler.MaxLOD = +D3D12_FLOAT32_MAX;
-		sampler.ShaderRegister = 0;
-		sampler.RegisterSpace = 0;
-		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		auto sampler = DirectX::CommonStates::StaticLinearWrap(0, D3D12_SHADER_VISIBILITY_PIXEL);
 
 		// ルートシグニチャの設定
 		D3D12_ROOT_SIGNATURE_DESC desc = {};
-		desc.NumParameters = 2;
+		desc.NumParameters = _countof(param);
 		desc.NumStaticSamplers = 1;
 		desc.pParameters = param;
 		desc.pStaticSamplers = &sampler;
@@ -624,9 +667,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 			}
 
 			// カメラ設定
-			auto eyePos = DirectX::XMVectorSet(0.0f, 1.0f, 2.0f, 0.0f);
-			auto targetPos = DirectX::XMVectorZero();
-			auto upward = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+			auto eyePos = Vector3(0.0f, 1.0f, 2.0f);
+			auto targetPos = Vector3::Zero;
+			auto upward = Vector3::UnitY;
 
 			// 垂直画角とアスペクト比の設定.
 			auto fovY = DirectX::XMConvertToRadians(37.5f);
@@ -634,9 +677,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 			// 変換行列を設定.
 			auto ptr = pCB->GetPtr<Transform>();
-			ptr->World = DirectX::XMMatrixIdentity();
-			ptr->View = DirectX::XMMatrixLookAtRH(eyePos, targetPos, upward);
-			ptr->Proj = DirectX::XMMatrixPerspectiveFovRH(fovY, aspect, 1.0f, 1000.0f);
+			ptr->World = Matrix::Identity;
+			ptr->View = Matrix::CreateLookAt(eyePos, targetPos, upward);
+			ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
 
 			m_pTransforms.push_back(pCB);
 		}
@@ -649,8 +692,6 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 void D3D12Wrapper::ReleaseGraphicsResources()
 {
-	//WaitGPU();
-
 	// メッシュの破棄
 	for (size_t i = 0; i < m_pMeshes.size(); ++i)
 	{
@@ -662,6 +703,9 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 
 	// マテリアルの破棄
 	m_Material.Term();
+
+	// ライト破棄
+	SafeDelete(m_pLight);
 
 	// 変換バッファの破棄
 	for (size_t i = 0; i < m_pTransforms.size(); ++i)
