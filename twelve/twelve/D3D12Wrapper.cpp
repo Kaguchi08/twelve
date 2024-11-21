@@ -26,12 +26,15 @@ namespace
 	{
 		Vector4 LitghtPosition;
 		Color LightColor;
+		Vector4 CameraPosition;
 	};
 
 	struct MaterialBuffer
 	{
 		Vector3 Diffuse;
 		float Alpha;
+		Vector3 Specular;
+		float Shininess;
 	};
 }
 
@@ -470,6 +473,8 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 			auto ptr = m_Material.GetBufferPtr<MaterialBuffer>(i);
 			ptr->Diffuse = resMaterial[i].Diffuse;
 			ptr->Alpha = resMaterial[i].Alpha;
+			ptr->Specular = resMaterial[i].Specular;
+			ptr->Shininess = resMaterial[i].Shininess;
 
 			std::wstring path = dir + resMaterial[i].DiffuseMap;
 			m_Material.SetTexture(i, TU_DIFFUSE, path, batch);
@@ -500,6 +505,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		auto ptr = pCB->GetPtr<LightBuffer>();
 		ptr->LitghtPosition = Vector4(0.0f, 50.0f, 100.0f, 0.0f);
 		ptr->LightColor = Color(1.0f, 1.0f, 1.0f, 0.0f);
+		ptr->CameraPosition = Vector4(0.0f, 1.0f, 2.0f, 0.0f);
 
 		m_pLight = pCB;
 	}
