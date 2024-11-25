@@ -377,6 +377,7 @@ void D3D12Wrapper::Render()
 
 			// テクスチャを設定
 			pCmd->SetGraphicsRootDescriptorTable(3, m_Material.GetTextureHandle(id, TU_DIFFUSE));
+			pCmd->SetGraphicsRootDescriptorTable(4, m_Material.GetTextureHandle(id, TU_NORMAL));
 
 			// 描画
 			m_pMeshes[i]->Draw(pCmd);
@@ -478,6 +479,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 			std::wstring path = dir + resMaterial[i].DiffuseMap;
 			m_Material.SetTexture(i, TU_DIFFUSE, path, batch);
+
+			path = dir + resMaterial[i].NormalMap;
+			m_Material.SetTexture(i, TU_NORMAL, path, batch);
 		}
 
 		// バッチ終了
@@ -519,15 +523,21 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 		// ディスクリプタレンジの設定
-		D3D12_DESCRIPTOR_RANGE range = {};
-		range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		range.NumDescriptors = 1;
-		range.BaseShaderRegister = 0;
-		range.RegisterSpace = 0;
-		range.OffsetInDescriptorsFromTableStart = 0;
+		D3D12_DESCRIPTOR_RANGE range[2] = {};
+		range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		range[0].NumDescriptors = 1;
+		range[0].BaseShaderRegister = 0;
+		range[0].RegisterSpace = 0;
+		range[0].OffsetInDescriptorsFromTableStart = 0;
+
+		range[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		range[1].NumDescriptors = 1;
+		range[1].BaseShaderRegister = 1;
+		range[1].RegisterSpace = 0;
+		range[1].OffsetInDescriptorsFromTableStart = 0;
 
 		// ルートパラメータの設定
-		D3D12_ROOT_PARAMETER param[4] = {};
+		D3D12_ROOT_PARAMETER param[5] = {};
 		param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		param[0].Descriptor.ShaderRegister = 0;
 		param[0].Descriptor.RegisterSpace = 0;
@@ -545,8 +555,13 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 		param[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		param[3].DescriptorTable.NumDescriptorRanges = 1;
-		param[3].DescriptorTable.pDescriptorRanges = &range;
+		param[3].DescriptorTable.pDescriptorRanges = &range[0];
 		param[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		param[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		param[4].DescriptorTable.NumDescriptorRanges = 1;
+		param[4].DescriptorTable.pDescriptorRanges = &range[1];
+		param[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		// スタティックサンプラーの設定
 		auto sampler = DirectX::CommonStates::StaticLinearWrap(0, D3D12_SHADER_VISIBILITY_PIXEL);

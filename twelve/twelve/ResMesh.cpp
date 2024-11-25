@@ -269,7 +269,14 @@ namespace
 			}
 			else
 			{
-				dstMaterial.NormalMap.clear();
+				if (pSrcMaterial->Get(AI_MATKEY_TEXTURE_HEIGHT(0), path) == AI_SUCCESS)
+				{
+					dstMaterial.NormalMap = Convert(path);
+				}
+				else
+				{
+					dstMaterial.NormalMap.clear();
+				}
 			}
 		}
 	}
