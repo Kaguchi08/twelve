@@ -65,12 +65,12 @@ bool Game::Initialize()
 	/*renderer_.reset(new Renderer(dx12_.get()));
 	renderer_->Initialize();*/
 
-	input_system_ = new InputSystem(this);
+	/*input_system_ = new InputSystem(this);
 
 	if (!input_system_->Initialize())
 	{
 		return false;
-	}
+	}*/
 
 	//current_scene_ = new GameScene(this);
 	// current_scene_ = new TestScene(this);
@@ -124,14 +124,14 @@ SIZE Game::GetWindowSize() const
 
 void Game::ProcessInput()
 {
-	input_system_->Update();
+	/*input_system_->Update();
 
 	const InputState& state = input_system_->GetState();
 
 	if (state.keyboard.GetKeyState(VK_ESCAPE) == ButtonState::kPressed)
 	{
 		PostQuitMessage(0);
-	}
+	}*/
 
 	if (game_state_ == GameState::kPlay)
 	{

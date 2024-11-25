@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// File : SimpleVS.hlsl
-// Desc : Simple Vertex Shader.
+// File : PhongVS.hlsl
+// Desc : Phong Lighting Vertex Shader.
 // Copyright(c) Pocol. All right reserved.
 //-----------------------------------------------------------------------------
 
@@ -22,6 +22,12 @@ struct VSOutput
 {
     float4 Position : SV_POSITION; // 位置座標です.
     float2 TexCoord : TEXCOORD; // テクスチャ座標です.
+    float4 WorldPos : WORLD_POS; // ワールド空間での位置座標です.
+#if 0
+    float3x3    TangentBasis    : TANGENT_BASIS;        // 接線空間への基底変換行列です.
+#else
+    float3x3 InvTangentBasis : INV_TANGENT_BASIS; // 接線空間への基底変換行列の逆行列です.
+#endif
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -48,6 +54,25 @@ VSOutput main(VSInput input)
 
     output.Position = projPos;
     output.TexCoord = input.TexCoord;
+    output.WorldPos = worldPos;
+
+    // 基底ベクトル
+    float3 N = normalize(mul((float3x3) World, input.Normal));
+    float3 T = normalize(mul((float3x3) World, input.Tangent));
+    float3 B = normalize(cross(N, T));
+
+#if 0
+    /* 接線空間上でライティングする場合 */
+
+    // 基底変換行列.
+    output.TangentBasis    = float3x3(T, B, N);
+
+#else
+    /* ワールド空間上でライティングする場合 */
+
+    // 基底変換行列の逆行列.
+    output.InvTangentBasis = transpose(float3x3(T, B, N));
+#endif
 
     return output;
 }

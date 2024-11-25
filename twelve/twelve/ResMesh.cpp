@@ -203,7 +203,19 @@ namespace
 			}
 		}
 
-		// 透過成分は？
+		// 透過成分
+		{
+			auto alpha = 1.0f;
+
+			if (pSrcMaterial->Get(AI_MATKEY_OPACITY, alpha) == AI_SUCCESS)
+			{
+				dstMaterial.Alpha = alpha;
+			}
+			else
+			{
+				dstMaterial.Alpha = 1.0f;
+			}
+		}
 
 		// ディフーズマップ
 		{
@@ -257,7 +269,14 @@ namespace
 			}
 			else
 			{
-				dstMaterial.NormalMap.clear();
+				if (pSrcMaterial->Get(AI_MATKEY_TEXTURE_HEIGHT(0), path) == AI_SUCCESS)
+				{
+					dstMaterial.NormalMap = Convert(path);
+				}
+				else
+				{
+					dstMaterial.NormalMap.clear();
+				}
 			}
 		}
 	}
