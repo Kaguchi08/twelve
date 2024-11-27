@@ -17,24 +17,24 @@ namespace
 {
 	struct Transform
 	{
-		Matrix World;
-		Matrix View;
-		Matrix Proj;
+		Matrix World;	// ワールド行列
+		Matrix View;	// ビュー行列
+		Matrix Proj;	// 射影行列
 	};
 
 	struct LightBuffer
 	{
-		Vector4 LitghtPosition;
-		Color LightColor;
-		Vector4 CameraPosition;
+		Vector4 LitghtPosition;		// ライトの位置
+		Color LightColor;			// ライトから―
+		Vector4 CameraPosition;		// カメラの位置
 	};
 
 	struct MaterialBuffer
 	{
-		Vector3 Diffuse;
-		float Alpha;
-		Vector3 Specular;
-		float Shininess;
+		Vector3 BaseColor;		// 基本色
+		float Alpha;			// 透過度
+		float Metalic;			// 金属度
+		float Shininess;		// 鏡面反射強度
 	};
 }
 
@@ -235,7 +235,7 @@ bool D3D12Wrapper::Initialize(HWND hWind)
 	{
 		for (auto i = 0u; i < Constants::FrameCount; ++i)
 		{
-			if (!m_RenderTarget[i].InitFromBackBuffer(m_pDevice.Get(), m_pPool[POOL_TYPE_RTV], i, m_pSwapChain.Get()))
+			if (!m_RenderTarget[i].InitFromBackBuffer(m_pDevice.Get(), m_pPool[POOL_TYPE_RTV], true, i, m_pSwapChain.Get()))
 			{
 				return false;
 			}
@@ -472,9 +472,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		for (size_t i = 0; i < resMaterial.size(); ++i)
 		{
 			auto ptr = m_Material.GetBufferPtr<MaterialBuffer>(i);
-			ptr->Diffuse = resMaterial[i].Diffuse;
+			ptr->BaseColor = resMaterial[i].Diffuse;
 			ptr->Alpha = resMaterial[i].Alpha;
-			ptr->Specular = resMaterial[i].Specular;
+			ptr->Metalic = 0.5f;
 			ptr->Shininess = resMaterial[i].Shininess;
 
 			std::wstring path = dir + resMaterial[i].DiffuseMap;
