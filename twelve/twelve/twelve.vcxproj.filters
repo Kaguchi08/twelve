@@ -207,6 +207,9 @@
     <ClCompile Include="Material.cpp">
       <Filter>ソース ファイル\D3D12Framework</Filter>
     </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="FBXVertexShader.hlsl">
@@ -435,6 +438,9 @@
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
     <ClInclude Include="InlineUtil.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

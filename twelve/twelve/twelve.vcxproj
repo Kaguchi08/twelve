@@ -170,6 +170,7 @@
     <ClCompile Include="FBXComponent.cpp" />
     <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FileUtil.cpp" />
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="Game2.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Helper.cpp" />
@@ -329,6 +330,7 @@
     <ClInclude Include="FBXComponent.h" />
     <ClInclude Include="Fence.h" />
     <ClInclude Include="FileUtil.h" />
+    <ClInclude Include="Game.h" />
     <ClInclude Include="Game2.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Helper.h" />
