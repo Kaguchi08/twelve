@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include "Game.h"
+#include "Game2.h"
 #include "InputSystem.h"
 
-GameScene::GameScene(Game* game) : Scene(game),
+GameScene::GameScene(Game2* game) : Scene(game),
 player_model_(nullptr)
 {
 	std::string pmd_model_path = "../Assets/Model/初音ミクVer2.pmd";

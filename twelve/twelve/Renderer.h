@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <d3d12.h>
 #include <wrl.h>
 
@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-#include "Game.h"
+#include "Game2.h"
 #include "Helper.h"
 #include "Model.h"
 #include "Primitive.h"
@@ -15,162 +15,164 @@ using Microsoft::WRL::ComPtr;
 
 const int kLightDepthMapSize = 4096;
 
-class Renderer {
-   public:
-    Renderer(class Dx12Wrapper* dx);
-    ~Renderer();
-    void Initialize();
+class Renderer
+{
+public:
+	Renderer(class Dx12Wrapper* dx);
+	~Renderer();
+	void Initialize();
 
-    void Draw(GameState state);
+	void Draw(GameState state);
 
-    void AddModelComponent(class ModelComponent* model);
-    void RemoveModelComponent(class ModelComponent* model);
+	void AddModelComponent(class ModelComponent* model);
+	void RemoveModelComponent(class ModelComponent* model);
 
-    void AddFBXComponent(class FBXComponent* model);
-    void RemoveFBXComponent(class FBXComponent* model);
+	void AddFBXComponent(class FBXComponent* model);
+	void RemoveFBXComponent(class FBXComponent* model);
 
-    void AddPrimitiveComponent(class PrimitiveComponent* primitive);
-    void RemovePrimitiveComponent(class PrimitiveComponent* primitive);
+	void AddPrimitiveComponent(class PrimitiveComponent* primitive);
+	void RemovePrimitiveComponent(class PrimitiveComponent* primitive);
 
-    class Dx12Wrapper* GetDx() { return dx12_; }
+	class Dx12Wrapper* GetDx() { return dx12_; }
 
-    // ”Ä—pƒeƒNƒXƒ`ƒƒ
-    ComPtr<ID3D12Resource> white_texture_ = nullptr;
-    ComPtr<ID3D12Resource> black_texture_ = nullptr;
-    ComPtr<ID3D12Resource> grad_texture_ = nullptr;
+	// æ±ç”¨ãƒ†ã‚¯ã‚¹ãƒãƒ£
+	ComPtr<ID3D12Resource> white_texture_ = nullptr;
+	ComPtr<ID3D12Resource> black_texture_ = nullptr;
+	ComPtr<ID3D12Resource> grad_texture_ = nullptr;
 
-   private:
-    // G-Buffer ‚Ì’è‹`
-    enum GBuffer {
-        kAlbedo,
-        kNormal,
-        kWorldPos,
-        kArm,
-        kShadow,
-        kNumGBuffer,
-    };
+private:
+	// G-Buffer ã®å®šç¾©
+	enum GBuffer
+	{
+		kAlbedo,
+		kNormal,
+		kWorldPos,
+		kArm,
+		kShadow,
+		kNumGBuffer,
+	};
 
-    class Dx12Wrapper* dx12_;
+	class Dx12Wrapper* dx12_;
 
-    // ƒpƒCƒvƒ‰ƒCƒ“
-    ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> primitive_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> deferred_lighting_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> post_effect_pipeline_state_ = nullptr;
+	// ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³
+	ComPtr<ID3D12PipelineState> pmd_model_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> fbx_model_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> deferred_lighting_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> post_effect_pipeline_state_ = nullptr;
 
-    // ‰e—p
-    ComPtr<ID3D12PipelineState> pmd_shadow_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> fbx_shadow_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> primitive_shadow_pipeline_state_ = nullptr;
+	// å½±ç”¨
+	ComPtr<ID3D12PipelineState> pmd_shadow_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> fbx_shadow_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_shadow_pipeline_state_ = nullptr;
 
-    // ZPrepass
-    ComPtr<ID3D12PipelineState> fbx_zprepass_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> primitive_zprepass_pipeline_state_ = nullptr;
+	// ZPrepass
+	ComPtr<ID3D12PipelineState> fbx_zprepass_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_zprepass_pipeline_state_ = nullptr;
 
-    // G-Buffer
-    ComPtr<ID3D12PipelineState> fbx_gbuffer_pipeline_state_ = nullptr;
-    ComPtr<ID3D12PipelineState> primitive_gbuffer_pipeline_state_ = nullptr;
+	// G-Buffer
+	ComPtr<ID3D12PipelineState> fbx_gbuffer_pipeline_state_ = nullptr;
+	ComPtr<ID3D12PipelineState> primitive_gbuffer_pipeline_state_ = nullptr;
 
-    // ƒ‹[ƒgƒVƒOƒlƒ`ƒƒ
-    ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
-    ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
-    ComPtr<ID3D12RootSignature> primitive_root_signature_ = nullptr;
-    ComPtr<ID3D12RootSignature> deferred_lighting_root_signature_ = nullptr;
-    ComPtr<ID3D12RootSignature> post_effect_root_signature_ = nullptr;
+	// ãƒ«ãƒ¼ãƒˆã‚·ã‚°ãƒãƒãƒ£
+	ComPtr<ID3D12RootSignature> pmd_model_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> fbx_model_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> primitive_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> deferred_lighting_root_signature_ = nullptr;
+	ComPtr<ID3D12RootSignature> post_effect_root_signature_ = nullptr;
 
-    // ƒ‚ƒfƒ‹
-    std::vector<class ModelComponent*> pmd_models_;
-    std::vector<class FBXComponent*> fbx_models_;
-    std::vector<class PrimitiveComponent*> primitives_;
+	// ãƒ¢ãƒ‡ãƒ«
+	std::vector<class ModelComponent*> pmd_models_;
+	std::vector<class FBXComponent*> fbx_models_;
+	std::vector<class PrimitiveComponent*> primitives_;
 
-    // ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg
-    std::vector<ID3D12Resource*> render_targets_;
-    ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
+	// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+	std::vector<ID3D12Resource*> render_targets_;
+	ComPtr<ID3D12DescriptorHeap> rtv_heap_ = nullptr;
 
-    // ƒIƒtƒXƒNƒŠ[ƒ“ƒŒƒ“ƒ_ƒŠƒ“ƒO
-    ComPtr<ID3D12Resource> deferred_lighting_render_target = nullptr;
-    std::array<ComPtr<ID3D12Resource>, kNumGBuffer> g_buffers_;
-    ComPtr<ID3D12DescriptorHeap> off_screen_rtv_heap_;
-    ComPtr<ID3D12DescriptorHeap> off_sceen_srv_heap_;
+	// ã‚ªãƒ•ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
+	ComPtr<ID3D12Resource> deferred_lighting_render_target = nullptr;
+	std::array<ComPtr<ID3D12Resource>, kNumGBuffer> g_buffers_;
+	ComPtr<ID3D12DescriptorHeap> off_screen_rtv_heap_;
+	ComPtr<ID3D12DescriptorHeap> off_sceen_srv_heap_;
 
-    std::unique_ptr<D3D12_VIEWPORT> view_port_;
-    std::unique_ptr<D3D12_RECT> scissor_rect_;
+	std::unique_ptr<D3D12_VIEWPORT> view_port_;
+	std::unique_ptr<D3D12_RECT> scissor_rect_;
 
-    ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);
+	ID3D12Resource* CreateDefaultTexture(size_t width, size_t height);
 
-    ID3D12Resource* CreateWhiteTexture();
-    ID3D12Resource* CreateBlackTexture();
-    ID3D12Resource* CreateGradTexture();
+	ID3D12Resource* CreateWhiteTexture();
+	ID3D12Resource* CreateBlackTexture();
+	ID3D12Resource* CreateGradTexture();
 
-    // ƒpƒCƒvƒ‰ƒCƒ“‰Šú‰»
-    HRESULT CreatePMDModelGraphicsPipeline();
-    HRESULT CreateFBXModelGraphicsPipeline();
-    HRESULT CreatePrimitiveGraphicsPipeline();
-    HRESULT CreateDefferedLightingGraphicsPipeline();
-    HRESULT CreatePostEffectGraphicsPipeline();
+	// ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³åˆæœŸåŒ–
+	HRESULT CreatePMDModelGraphicsPipeline();
+	HRESULT CreateFBXModelGraphicsPipeline();
+	HRESULT CreatePrimitiveGraphicsPipeline();
+	HRESULT CreateDefferedLightingGraphicsPipeline();
+	HRESULT CreatePostEffectGraphicsPipeline();
 
-    // ƒ‹[ƒgƒVƒOƒlƒ`ƒƒ‰Šú‰»
-    HRESULT CreatePMDModelRootSignature();
-    HRESULT CreateFBXModelRootSignature();
-    HRESULT CreatePrimitiveRootSignature();
-    HRESULT CreateDeferredLightingRootSignature();
-    HRESULT CreatePostEffectRootSignature();
+	// ãƒ«ãƒ¼ãƒˆã‚·ã‚°ãƒãƒãƒ£åˆæœŸåŒ–
+	HRESULT CreatePMDModelRootSignature();
+	HRESULT CreateFBXModelRootSignature();
+	HRESULT CreatePrimitiveRootSignature();
+	HRESULT CreateDeferredLightingRootSignature();
+	HRESULT CreatePostEffectRootSignature();
 
-    // ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg
-    HRESULT CreateRenderTarget();
-    bool CreateOffScreenResourceAndView();
+	// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+	HRESULT CreateRenderTarget();
+	bool CreateOffScreenResourceAndView();
 
-    void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void BarrierTransResource(ID3D12Resource* resource, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
-    // •`‰æ
-    // ƒVƒƒƒhƒEƒ}ƒbƒv‚Ö‚Ì•`‰æ
-    void DrawToShadowMap();
+	// æç”»
+	// ã‚·ãƒ£ãƒ‰ã‚¦ãƒãƒƒãƒ—ã¸ã®æç”»
+	void DrawToShadowMap();
 
-    // ZPrepass
-    void DrawToZPrepass();
+	// ZPrepass
+	void DrawToZPrepass();
 
-    // G-Buffer
-    void DrawToGBuffer();
+	// G-Buffer
+	void DrawToGBuffer();
 
-    // ƒfƒBƒtƒ@[ƒhƒ‰ƒCƒeƒBƒ“ƒO
-    void DrawDeferredLighting();
+	// ãƒ‡ã‚£ãƒ•ã‚¡ãƒ¼ãƒ‰ãƒ©ã‚¤ãƒ†ã‚£ãƒ³ã‚°
+	void DrawDeferredLighting();
 
-    // ƒtƒHƒ[ƒhƒŒƒ“ƒ_ƒŠƒ“ƒO
-    void ForwardRendering();
+	// ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
+	void ForwardRendering();
 
-    // ƒ|ƒXƒgƒGƒtƒFƒNƒg
-    void PostEffect();
+	// ãƒã‚¹ãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+	void PostEffect();
 
-    void EndDraw();
+	void EndDraw();
 
-    // ƒIƒuƒWƒFƒNƒg
-    void DrawPMDModel(bool is_shadow);
-    void DrawFBXModel(bool is_shadow);
-    void DrawPrimitive(bool is_shadow);
+	// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+	void DrawPMDModel(bool is_shadow);
+	void DrawFBXModel(bool is_shadow);
+	void DrawPrimitive(bool is_shadow);
 
-    // ƒVƒƒƒhƒEƒ}ƒbƒv
-    void PrepareShadowMap();
-    void BeforeDrawPMDShadowMap();
-    void BeforeDrawFBXShadowMap();
-    void BeforeDrawPrimitiveShadowMap();
+	// ã‚·ãƒ£ãƒ‰ã‚¦ãƒãƒƒãƒ—
+	void PrepareShadowMap();
+	void BeforeDrawPMDShadowMap();
+	void BeforeDrawFBXShadowMap();
+	void BeforeDrawPrimitiveShadowMap();
 
-    // Zprepass
-    void PrepareZPrepass();
-    void BeforeDrawFBXZPrepass();
-    void BeforeDrawPrimitiveZPrepass();
+	// Zprepass
+	void PrepareZPrepass();
+	void BeforeDrawFBXZPrepass();
+	void BeforeDrawPrimitiveZPrepass();
 
-    // G-Buffer
-    void PrepareGBuffer();
-    void BeforeDrawFBXGBuffer();
-    void BeforeDrawPrimitiveGBuffer();
-    void EndDrawGBuffer();
+	// G-Buffer
+	void PrepareGBuffer();
+	void BeforeDrawFBXGBuffer();
+	void BeforeDrawPrimitiveGBuffer();
+	void EndDrawGBuffer();
 
-    // ƒtƒHƒ[ƒhƒŒƒ“ƒ_ƒŠƒ“ƒO
-    void PrepareForwardRendering();
-    void BeforeDrawPMD();
-    void EndForwardRendering();
+	// ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
+	void PrepareForwardRendering();
+	void BeforeDrawPMD();
+	void EndForwardRendering();
 
-    // Helper‚ÉˆÚ“®‚µ‚Ä‚à‚¢‚¢‚©‚à
-    bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
+	// Helperã«ç§»å‹•ã—ã¦ã‚‚ã„ã„ã‹ã‚‚
+	bool CheckShaderCompileResult(HRESULT result, ID3DBlob* error = nullptr);
 };

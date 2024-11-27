@@ -5,7 +5,7 @@
 
 #include "Actor.h"
 #include "Dx12Wrapper.h"
-#include "Game.h"
+#include "Game2.h"
 #include "Helper.h"
 #include "Model.h"
 #include "Renderer.h"

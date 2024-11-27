@@ -1,4 +1,4 @@
-﻿#include "Game.h"
+﻿#include "Game2.h"
 
 #include <tchar.h>
 
@@ -21,7 +21,7 @@ namespace
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-Game::Game()
+Game2::Game2()
 	: m_hInst(nullptr),
 	m_hWnd(nullptr),
 	m_Width(Constants::WindowWidth),
@@ -29,11 +29,11 @@ Game::Game()
 {
 }
 
-Game::~Game()
+Game2::~Game2()
 {
 }
 
-bool Game::Initialize()
+bool Game2::Initialize()
 {
 	// ウィンドウの初期化
 	if (!InitWnd())
@@ -80,7 +80,7 @@ bool Game::Initialize()
 	return true;
 }
 
-void Game::RunLoop()
+void Game2::RunLoop()
 {
 	MSG msg = {};
 
@@ -100,7 +100,7 @@ void Game::RunLoop()
 	}
 }
 
-void Game::Terminate()
+void Game2::Terminate()
 {
 	// Direct3D 12の終了処理
 	//dx12_->Terminate();
@@ -114,7 +114,7 @@ void Game::Terminate()
 	TermWnd();
 }
 
-SIZE Game::GetWindowSize() const
+SIZE Game2::GetWindowSize() const
 {
 	SIZE ret{};
 	ret.cx = Constants::WindowWidth;
@@ -122,7 +122,7 @@ SIZE Game::GetWindowSize() const
 	return ret;
 }
 
-void Game::ProcessInput()
+void Game2::ProcessInput()
 {
 	/*input_system_->Update();
 
@@ -141,7 +141,7 @@ void Game::ProcessInput()
 	//current_scene_->ProcessInput(state);
 }
 
-void Game::UpdateGame()
+void Game2::UpdateGame()
 {
 	auto end_time = tick_count_ + 16;
 
@@ -166,7 +166,7 @@ void Game::UpdateGame()
 	}
 }
 
-void Game::GenerateOutput()
+void Game2::GenerateOutput()
 {
 	//dx12_->SetCameraSetting();
 
@@ -182,15 +182,15 @@ void Game::GenerateOutput()
 	m_d3d12.Render();
 }
 
-void Game::LoadData()
+void Game2::LoadData()
 {
 }
 
-void Game::UnloadData()
+void Game2::UnloadData()
 {
 }
 
-bool Game::InitWnd()
+bool Game2::InitWnd()
 {
 	// インスタンスハンドルを取得
 	auto hInst = GetModuleHandle(nullptr);
@@ -262,7 +262,7 @@ bool Game::InitWnd()
 	return true;
 }
 
-void Game::TermWnd()
+void Game2::TermWnd()
 {
 	if (m_hInst != nullptr)
 	{
@@ -273,7 +273,7 @@ void Game::TermWnd()
 	m_hWnd = nullptr;
 }
 
-LRESULT CALLBACK Game::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK Game2::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 	switch (msg)
 	{

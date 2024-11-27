@@ -7,7 +7,7 @@
 
 #include <cassert>
 
-#include "Game.h"
+#include "Game2.h"
 #include "Helper.h"
 #include "ModelLoader.h"
 #include "Renderer.h"
@@ -34,7 +34,7 @@ Dx12Wrapper::~Dx12Wrapper()
 
 bool Dx12Wrapper::Initialize()
 {
-	Game game;
+	Game2 game;
 	m_WindowSize = game.GetWindowSize();
 
 	light_ = std::make_unique<Light>();
@@ -205,7 +205,7 @@ void Dx12Wrapper::SetSceneCB()
 
 void Dx12Wrapper::SetCameraSetting()
 {
-	Game game;
+	Game2 game;
 	auto w_size = game.GetWindowSize();
 
 	scene_matrix_->eye = eye_;

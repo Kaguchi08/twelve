@@ -4,7 +4,7 @@
 class Scene
 {
 public:
-	Scene(class Game* game);
+	Scene(class Game2* game);
 
 	void Update(float delta_time);
 
@@ -15,12 +15,12 @@ public:
 
 	virtual void ProcessInput(const struct InputState& state) = 0;
 
-	class Game* GetGame() const { return game_; }
+	class Game2* GetGame() const { return game_; }
 
 protected:
 	virtual void UpdateActor(float delta_time) = 0;
 
-	class Game* game_;
+	class Game2* game_;
 
 	std::vector<class Actor*> actors_;
 	std::vector<class Actor*> pending_actors_;

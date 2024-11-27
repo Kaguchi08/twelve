@@ -24,11 +24,11 @@ enum GameState
 	kPause,
 };
 
-class Game
+class Game2
 {
 public:
-	Game();
-	~Game();
+	Game2();
+	~Game2();
 
 	bool Initialize();
 	void RunLoop();

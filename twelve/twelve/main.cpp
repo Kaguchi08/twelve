@@ -1,4 +1,4 @@
-﻿#include "Game.h"
+﻿#include "Game2.h"
 
 #ifndef _DEBUG
 int main()
@@ -8,7 +8,7 @@ int main()
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 #endif
-	Game game;
+	Game2 game;
 
 	if (game.Initialize())
 	{

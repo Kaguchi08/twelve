@@ -2,7 +2,7 @@
 
 #include "Actor.h"
 #include "Dx12Wrapper.h"
-#include "Game.h"
+#include "Game2.h"
 #include "Scene.h"
 
 CameraComponent::CameraComponent(Actor* owner, int update_order) : Component(owner, update_order)

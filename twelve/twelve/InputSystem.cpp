@@ -1,65 +1,81 @@
-#include "InputSystem.h"
+ï»¿#include "InputSystem.h"
 
-#include "Game.h"
+#include "Game2.h"
 
-ButtonState KeyboardState::GetKeyState(BYTE keycode) const {
-    if (current_state_[keycode] & 0x80) {
-        if (prev_state_[keycode] & 0x80) {
-            return ButtonState::kHeld;
-        } else {
-            return ButtonState::kPressed;
-        }
-    } else {
-        if (prev_state_[keycode] & 0x80) {
-            return ButtonState::kReleased;
-        } else {
-            return ButtonState::kNone;
-        }
-    }
+ButtonState KeyboardState::GetKeyState(BYTE keycode) const
+{
+	if (current_state_[keycode] & 0x80)
+	{
+		if (prev_state_[keycode] & 0x80)
+		{
+			return ButtonState::kHeld;
+		}
+		else
+		{
+			return ButtonState::kPressed;
+		}
+	}
+	else
+	{
+		if (prev_state_[keycode] & 0x80)
+		{
+			return ButtonState::kReleased;
+		}
+		else
+		{
+			return ButtonState::kNone;
+		}
+	}
 }
 
-bool KeyboardState::GetKeyDown(BYTE keycode) const {
-    return current_state_[keycode] & 0x80;
+bool KeyboardState::GetKeyDown(BYTE keycode) const
+{
+	return current_state_[keycode] & 0x80;
 }
 
-const DirectX::XMFLOAT2& MouseState::GetDelta() const {
-    return position_ - center_;
+const DirectX::XMFLOAT2& MouseState::GetDelta() const
+{
+	return position_ - center_;
 }
 
-InputSystem::InputSystem(Game* game) : game_(game),
-                                       state_() {
+InputSystem::InputSystem(Game2* game) : game_(game),
+state_()
+{
 }
 
-bool InputSystem::Initialize() {
-    // ’†‰›‚ÌÀ•W‚ğæ“¾
-    RECT rect;
-    GetWindowRect(game_->GetWindowHandle(), &rect);
-    state_.mouse.center_.x = (rect.right - rect.left) / 2;
-    state_.mouse.center_.y = (rect.bottom - rect.top) / 2;
+bool InputSystem::Initialize()
+{
+	// ä¸­å¤®ã®åº§æ¨™ã‚’å–å¾—
+	RECT rect;
+	GetWindowRect(game_->GetWindowHandle(), &rect);
+	state_.mouse.center_.x = (rect.right - rect.left) / 2;
+	state_.mouse.center_.y = (rect.bottom - rect.top) / 2;
 
-    SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
-    // ƒJ[ƒ\ƒ‹‚Í•\¦‚µ‚È‚¢
-    ShowCursor(false);
+	SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
+	// ã‚«ãƒ¼ã‚½ãƒ«ã¯è¡¨ç¤ºã—ãªã„
+	ShowCursor(false);
 
-    // ƒŠƒZƒbƒg
-    memset(state_.keyboard.prev_state_, 0x00, 256);
-    memset(state_.keyboard.current_state_, 0x00, 256);
+	// ãƒªã‚»ãƒƒãƒˆ
+	memset(state_.keyboard.prev_state_, 0x00, 256);
+	memset(state_.keyboard.current_state_, 0x00, 256);
 
-    return true;
+	return true;
 }
 
-void InputSystem::Update() {
-    // ƒL[ƒ{[ƒh‚Ìó‘Ô‚ğXV
-    memcpy(state_.keyboard.prev_state_, state_.keyboard.current_state_, 256);
-    GetKeyboardState(state_.keyboard.current_state_);
+void InputSystem::Update()
+{
+	// ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰ã®çŠ¶æ…‹ã‚’æ›´æ–°
+	memcpy(state_.keyboard.prev_state_, state_.keyboard.current_state_, 256);
+	GetKeyboardState(state_.keyboard.current_state_);
 
-    // ƒ}ƒEƒX‚Ìó‘Ô‚ğXV
-    POINT current_pos;
-    GetCursorPos(&current_pos);
-    state_.mouse.position_ = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
+	// ãƒã‚¦ã‚¹ã®çŠ¶æ…‹ã‚’æ›´æ–°
+	POINT current_pos;
+	GetCursorPos(&current_pos);
+	state_.mouse.position_ = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
 
-    if (game_->GetGameState() == GameState::kPlay) {
-        // ’†‰›‚É–ß‚·
-        SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
-    }
+	if (game_->GetGameState() == GameState::kPlay)
+	{
+		// ä¸­å¤®ã«æˆ»ã™
+		SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
+	}
 }

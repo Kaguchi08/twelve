@@ -1,142 +1,155 @@
-#include "PrimitiveComponent.h"
+ï»¿#include "PrimitiveComponent.h"
 
 #include "Actor.h"
-#include "Game.h"
+#include "Game2.h"
 #include "Renderer.h"
 #include "Scene.h"
 
 PrimitiveComponent::PrimitiveComponent(Actor* owner, PrimitiveType type, int draw_order) : Component(owner),
-                                                                                           type_(type) {
-    dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-    renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+type_(type)
+{
+	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
 
-    renderer_->AddPrimitiveComponent(this);
+	renderer_->AddPrimitiveComponent(this);
 
-    switch (type) {
-        case kPlane:
-            primitive_ = std::make_shared<Plane>();
+	switch (type)
+	{
+		case kPlane:
+			primitive_ = std::make_shared<Plane>();
 
-            primitive_->CreateVertexBuffer(dx12_->GetDevice().Get());
-            primitive_->CreateIndexBuffer(dx12_->GetDevice().Get());
+			primitive_->CreateVertexBuffer(dx12_->GetDevice().Get());
+			primitive_->CreateIndexBuffer(dx12_->GetDevice().Get());
 
-            break;
-        default:
-            break;
-    }
+			break;
+		default:
+			break;
+	}
 
-    // À•W•ÏŠ·—pƒŠƒ\[ƒXì¬
-    auto result = CreateTransformResourceAndView();
+	// åº§æ¨™å¤‰æ›ç”¨ãƒªã‚½ãƒ¼ã‚¹ä½œæˆ
+	auto result = CreateTransformResourceAndView();
 
-    if (FAILED(result)) {
-        assert(0);
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+	}
 }
 
-PrimitiveComponent::~PrimitiveComponent() {
-    renderer_->RemovePrimitiveComponent(this);
+PrimitiveComponent::~PrimitiveComponent()
+{
+	renderer_->RemovePrimitiveComponent(this);
 }
 
-void PrimitiveComponent::Update(float delta_time) {
-    // ƒ[ƒ‹ƒhs—ñ‚ÌXV
-    auto pos = owner_->GetPosition();
-    auto rot = owner_->GetRotation();
+void PrimitiveComponent::Update(float delta_time)
+{
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—ã®æ›´æ–°
+	auto pos = owner_->GetPosition();
+	auto rot = owner_->GetRotation();
 
-    *world_matrix_ = DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+	*world_matrix_ = DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 }
 
-void PrimitiveComponent::Draw(bool is_shadow) {
-    auto cmd_list = dx12_->GetCommandList();
+void PrimitiveComponent::Draw(bool is_shadow)
+{
+	auto cmd_list = dx12_->GetCommandList();
 
-    cmd_list->IASetVertexBuffers(0, 1, &primitive_->GetVertexBufferView());
-    cmd_list->IASetIndexBuffer(&primitive_->GetIndexBufferView());
-    cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmd_list->IASetVertexBuffers(0, 1, &primitive_->GetVertexBufferView());
+	cmd_list->IASetIndexBuffer(&primitive_->GetIndexBufferView());
+	cmd_list->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // ƒ[ƒ‹ƒhs—ñ
-    ID3D12DescriptorHeap* trans_heaps[] = {transform_cbv_heap_.Get()};
-    cmd_list->SetDescriptorHeaps(1, trans_heaps);
-    cmd_list->SetGraphicsRootDescriptorTable(7, transform_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—
+	ID3D12DescriptorHeap* trans_heaps[] = { transform_cbv_heap_.Get() };
+	cmd_list->SetDescriptorHeaps(1, trans_heaps);
+	cmd_list->SetGraphicsRootDescriptorTable(7, transform_cbv_heap_->GetGPUDescriptorHandleForHeapStart());
 
-    if (is_shadow) {
-        cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
-    } else {
-        // ƒeƒNƒXƒ`ƒƒ
-        cmd_list->SetDescriptorHeaps(1, primitive_->GetTextureSRVHeap().GetAddressOf());
-        auto handle = primitive_->GetTextureSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-        cmd_list->SetGraphicsRootDescriptorTable(2, handle);
+	if (is_shadow)
+	{
+		cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
+	}
+	else
+	{
+		// ãƒ†ã‚¯ã‚¹ãƒãƒ£
+		cmd_list->SetDescriptorHeaps(1, primitive_->GetTextureSRVHeap().GetAddressOf());
+		auto handle = primitive_->GetTextureSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+		cmd_list->SetGraphicsRootDescriptorTable(2, handle);
 
-        // –@üƒ}ƒbƒv
-        cmd_list->SetDescriptorHeaps(1, primitive_->GetNormalMapSRVHeap().GetAddressOf());
-        handle = primitive_->GetNormalMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-        cmd_list->SetGraphicsRootDescriptorTable(4, handle);
+		// æ³•ç·šãƒžãƒƒãƒ—
+		cmd_list->SetDescriptorHeaps(1, primitive_->GetNormalMapSRVHeap().GetAddressOf());
+		handle = primitive_->GetNormalMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+		cmd_list->SetGraphicsRootDescriptorTable(4, handle);
 
-        // ARMƒ}ƒbƒv
-        cmd_list->SetDescriptorHeaps(1, primitive_->GetArmMapSRVHeap().GetAddressOf());
-        handle = primitive_->GetArmMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
-        cmd_list->SetGraphicsRootDescriptorTable(5, handle);
+		// ARMãƒžãƒƒãƒ—
+		cmd_list->SetDescriptorHeaps(1, primitive_->GetArmMapSRVHeap().GetAddressOf());
+		handle = primitive_->GetArmMapSRVHeap()->GetGPUDescriptorHandleForHeapStart();
+		cmd_list->SetGraphicsRootDescriptorTable(5, handle);
 
-        cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
-    }
+		cmd_list->DrawIndexedInstanced(primitive_->GetIndexNum(), 1, 0, 0, 0);
+	}
 
-    // ˆ—•ª‚¯‚é•K—v‚È‚¢‚©‚à
-    /*switch (type_)
-    {
-            case kPlane:
+	// å‡¦ç†åˆ†ã‘ã‚‹å¿…è¦ãªã„ã‹ã‚‚
+	/*switch (type_)
+	{
+			case kPlane:
 
 
-                    break;
-            default:
-                    break;
-    }*/
+					break;
+			default:
+					break;
+	}*/
 }
 
-HRESULT PrimitiveComponent::CreateTransformResourceAndView() {
-    // GPUƒoƒbƒtƒ@‚Ìì¬
-    auto buffer_size = sizeof(DirectX::XMMATRIX);                                                // ƒ[ƒ‹ƒhs—ñ
-    buffer_size = AligmentedValue(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);  // 256‚Ì”{”‚É‚·‚é
+HRESULT PrimitiveComponent::CreateTransformResourceAndView()
+{
+	// GPUãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
+	auto buffer_size = sizeof(DirectX::XMMATRIX);                                                // ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—
+	buffer_size = AligmentedValue(buffer_size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);  // 256ã®å€æ•°ã«ã™ã‚‹
 
-    auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-    auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
+	auto heap_prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto res_desc = CD3DX12_RESOURCE_DESC::Buffer(buffer_size);
 
-    auto result = dx12_->GetDevice()->CreateCommittedResource(
-        &heap_prop,
-        D3D12_HEAP_FLAG_NONE,
-        &res_desc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(transform_const_buffer_.ReleaseAndGetAddressOf()));
+	auto result = dx12_->GetDevice()->CreateCommittedResource(
+		&heap_prop,
+		D3D12_HEAP_FLAG_NONE,
+		&res_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(transform_const_buffer_.ReleaseAndGetAddressOf()));
 
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
 
-    // ƒ}ƒbƒv
-    result = transform_const_buffer_->Map(0, nullptr, (void**)&world_matrix_);
+	// ãƒžãƒƒãƒ—
+	result = transform_const_buffer_->Map(0, nullptr, (void**)&world_matrix_);
 
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
 
-    // ƒrƒ…[‚Ìì¬
-    D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
-    heap_desc.NumDescriptors = 1;
-    heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    heap_desc.NodeMask = 0;
-    heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	// ãƒ“ãƒ¥ãƒ¼ã®ä½œæˆ
+	D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+	heap_desc.NumDescriptors = 1;
+	heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	heap_desc.NodeMask = 0;
+	heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 
-    result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(transform_cbv_heap_.ReleaseAndGetAddressOf()));
+	result = dx12_->GetDevice()->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(transform_cbv_heap_.ReleaseAndGetAddressOf()));
 
-    if (FAILED(result)) {
-        assert(0);
-        return result;
-    }
+	if (FAILED(result))
+	{
+		assert(0);
+		return result;
+	}
 
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
-    cbv_desc.BufferLocation = transform_const_buffer_->GetGPUVirtualAddress();
-    cbv_desc.SizeInBytes = buffer_size;
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc = {};
+	cbv_desc.BufferLocation = transform_const_buffer_->GetGPUVirtualAddress();
+	cbv_desc.SizeInBytes = buffer_size;
 
-    dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, transform_cbv_heap_->GetCPUDescriptorHandleForHeapStart());
+	dx12_->GetDevice()->CreateConstantBufferView(&cbv_desc, transform_cbv_heap_->GetCPUDescriptorHandleForHeapStart());
 
-    return S_OK;
+	return S_OK;
 }

@@ -23,25 +23,29 @@ public:
 	/// <param name="width">横幅</param>
 	/// <param name="height">縦幅</param>
 	/// <param name="format">ピクセルフォーマット</param>
+	/// <param name="useSRGB">sRGBフォーマットを使用するか</param>
 	/// <returns></returns>
 	bool Init(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
 		uint32_t width,
 		uint32_t height,
-		DXGI_FORMAT format);
+		DXGI_FORMAT format,
+		bool useSRGB);
 
 	/// <summary>
 	/// 初期化処理（バックバッファから）
 	/// </summary>
 	/// <param name="pDevice">デバイス</param>
 	/// <param name="pPool">ディスクリプタプール</param>
+	/// <param name="useSRGB">sRGBフォーマットを使用するか</param>
 	/// <param name="index">バックバッファ番号</param>
 	/// <param name="pSwapChain">スワップチェイン</param>
 	/// <returns></returns>
 	bool InitFromBackBuffer(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
+		bool useSRGB,
 		uint32_t index,
 		IDXGISwapChain* pSwapChain);
 

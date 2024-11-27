@@ -3,6 +3,49 @@
 #include "DescriptorPool.h"
 #include "Logger.h"
 
+namespace
+{
+	DXGI_FORMAT ConvertToSRGB(DXGI_FORMAT format)
+	{
+		DXGI_FORMAT result = format;
+		switch (format)
+		{
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			{ result = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC1_UNORM:
+			{ result = DXGI_FORMAT_BC1_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC2_UNORM:
+			{ result = DXGI_FORMAT_BC2_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC3_UNORM:
+			{ result = DXGI_FORMAT_BC3_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			{ result = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_B8G8R8X8_UNORM:
+			{ result = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC7_UNORM:
+			{ result = DXGI_FORMAT_BC7_UNORM_SRGB; }
+			break;
+
+			default:
+				break;
+		}
+
+		return result;
+	}
+}
+
 RenderTarget::RenderTarget()
 	: m_pTarget(nullptr)
 	, m_pHandle(nullptr)
@@ -15,7 +58,7 @@ RenderTarget::~RenderTarget()
 	Term();
 }
 
-bool RenderTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t width, uint32_t height, DXGI_FORMAT format)
+bool RenderTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t width, uint32_t height, DXGI_FORMAT format, bool useSRGB)
 {
 	if (pDevice == nullptr || pPool == nullptr || width == 0 || height == 0)
 	{
@@ -82,9 +125,17 @@ bool RenderTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t w
 		return false;
 	}
 
+	auto view_format = format;
+
+	// sRGBフォーマットを使用する場合
+	if (useSRGB)
+	{
+		view_format = ConvertToSRGB(format);
+	}
+
 	// レンダーターゲットビューの設定
 	m_Desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	m_Desc.Format = format;
+	m_Desc.Format = view_format;
 	m_Desc.Texture2D.MipSlice = 0;
 	m_Desc.Texture2D.PlaneSlice = 0;
 
@@ -94,7 +145,7 @@ bool RenderTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t w
 	return true;
 }
 
-bool RenderTarget::InitFromBackBuffer(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t index, IDXGISwapChain* pSwapChain)
+bool RenderTarget::InitFromBackBuffer(ID3D12Device* pDevice, DescriptorPool* pPool, bool useSRGB, uint32_t index, IDXGISwapChain* pSwapChain)
 {
 	if (pDevice == nullptr || pPool == nullptr || pSwapChain == nullptr)
 	{
@@ -128,9 +179,17 @@ bool RenderTarget::InitFromBackBuffer(ID3D12Device* pDevice, DescriptorPool* pPo
 	DXGI_SWAP_CHAIN_DESC desc = {};
 	pSwapChain->GetDesc(&desc);
 
+	DXGI_FORMAT format = desc.BufferDesc.Format;
+
+	// sRGBフォーマットを使用する場合
+	if (useSRGB)
+	{
+		format = ConvertToSRGB(format);
+	}
+
 	// レンダーターゲットビューの設定
 	m_Desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	m_Desc.Format = desc.BufferDesc.Format;
+	m_Desc.Format = format;
 	m_Desc.Texture2D.MipSlice = 0;
 	m_Desc.Texture2D.PlaneSlice = 0;
 
