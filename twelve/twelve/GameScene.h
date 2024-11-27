@@ -21,7 +21,6 @@ private:
 	std::vector<FBXActor*> fbx_actor_table;
 
 	bool Initialize(const char* file_name);
-	void UpdateActor(float deltaTime) override;
 
 	FBXActor* CreateFBXActor(const char* model, const char* normal, const char* arm,
 							 const float scale = 1.0f,

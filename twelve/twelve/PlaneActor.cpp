@@ -20,15 +20,15 @@ void PlaneActor::UpdateActor(float delta_time)
 
 void PlaneActor::SetTexture(const char* file_name)
 {
-	primitive_->GetPrimitive()->CreateTextureAndView(scene_->GetGame()->GetDx12().get(), file_name);
+	//primitive_->GetPrimitive()->CreateTextureAndView(scene_->GetGame()->GetDx12().get(), file_name);
 }
 
 void PlaneActor::SetNormalMap(const char* file_name)
 {
-	primitive_->GetPrimitive()->CreateNormalMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
+	//primitive_->GetPrimitive()->CreateNormalMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
 }
 
 void PlaneActor::SetArmMap(const char* file_name)
 {
-	primitive_->GetPrimitive()->CreateArmMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
+	//primitive_->GetPrimitive()->CreateArmMapAndView(scene_->GetGame()->GetDx12().get(), file_name);
 }

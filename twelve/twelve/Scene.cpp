@@ -4,73 +4,37 @@
 
 #include "Actor.h"
 
-Scene::Scene(Game2* game) : game_(game),
-is_update_actors_(false)
+Scene::Scene(std::shared_ptr<D3D12Wrapper> pD3D12)
+	: m_pD3D12(pD3D12)
 {
 }
 
-void Scene::Update(float delta_time)
+void Scene::Update(float deltaTime)
 {
-	is_update_actors_ = true;
-	for (auto actor : actors_)
+	for (auto& actor : m_pActors)
 	{
-		actor->Update(delta_time);
-	}
-	is_update_actors_ = false;
-	for (auto pending : pending_actors_)
-	{
-		// pending->ComputeWorldTransform();
-		actors_.emplace_back(pending);
-	}
-	pending_actors_.clear();
-	std::vector<Actor*> dead_actors;
-	for (auto actor : actors_)
-	{
-		if (actor->GetState() == Actor::State::EDead)
-		{
-			dead_actors.emplace_back(actor);
-		}
-	}
-	for (auto actor : dead_actors)
-	{
-		delete actor;
+		actor->Update(deltaTime);
 	}
 }
 
-void Scene::AddActor(Actor* actor)
+void Scene::AddActor(std::shared_ptr<Actor> pActor)
 {
-	if (is_update_actors_)
-	{
-		pending_actors_.emplace_back(actor);
-	}
-	else
-	{
-		actors_.emplace_back(actor);
-	}
+	m_pActors.push_back(pActor);
 }
 
-void Scene::RemoveActor(Actor* actor)
+void Scene::RemoveActor(std::shared_ptr<Actor> pActor)
 {
-	auto iter = std::find(actors_.begin(), actors_.end(), actor);
-	if (iter != actors_.end())
+	auto iter = std::find(m_pActors.begin(), m_pActors.end(), pActor);
+	if (iter != m_pActors.end())
 	{
-		std::iter_swap(iter, actors_.end() - 1);
-		actors_.pop_back();
-	}
-	else
-	{
-		iter = std::find(pending_actors_.begin(), pending_actors_.end(), actor);
-		if (iter != pending_actors_.end())
-		{
-			std::iter_swap(iter, pending_actors_.end() - 1);
-			pending_actors_.pop_back();
-		}
+		std::iter_swap(iter, m_pActors.end() - 1);
+		m_pActors.pop_back();
 	}
 }
 
 void Scene::ActorInput(const InputState& state)
 {
-	for (auto actor : actors_)
+	for (auto& actor : m_pActors)
 	{
 		actor->ProcessInput(state);
 	}

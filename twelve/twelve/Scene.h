@@ -1,28 +1,29 @@
 ﻿#pragma once
+
+#include <memory>
 #include <vector>
+
+class D3D12Wrapper;
+class Actor;
+struct InputState;
 
 class Scene
 {
 public:
-	Scene(class Game2* game);
+	Scene(std::shared_ptr<D3D12Wrapper> pD3D12);
 
-	void Update(float delta_time);
+	void Update(float deltaTime);
 
-	void AddActor(class Actor* actor);
-	void RemoveActor(class Actor* actor);
+	void AddActor(std::shared_ptr<Actor> pActor);
+	void RemoveActor(std::shared_ptr<Actor> pActor);
 
-	void ActorInput(const struct InputState& state);
+	void ActorInput(const InputState& state);
 
-	virtual void ProcessInput(const struct InputState& state) = 0;
-
-	class Game2* GetGame() const { return game_; }
+	virtual void ProcessInput(const InputState& state) = 0;
 
 protected:
-	virtual void UpdateActor(float delta_time) = 0;
+	std::shared_ptr<D3D12Wrapper> m_pD3D12;
+	std::vector<std::shared_ptr<Actor>> m_pActors;
 
-	class Game2* game_;
-
-	std::vector<class Actor*> actors_;
-	std::vector<class Actor*> pending_actors_;
-	bool is_update_actors_;
+	virtual bool Initialize() = 0;
 };

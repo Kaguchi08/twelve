@@ -11,18 +11,18 @@ CameraComponent::CameraComponent(Actor* owner, int update_order) : Component(own
 
 void CameraComponent::SetViewMatrix(const DirectX::XMMATRIX& view)
 {
-	std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
-	dx12->SetViewMatrix(view);
+	/*std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
+	dx12->SetViewMatrix(view);*/
 }
 
 void CameraComponent::SetEyePosition(const DirectX::XMFLOAT3& eye)
 {
-	std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
-	dx12->SetEye(eye);
+	/*std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
+	dx12->SetEye(eye);*/
 }
 
 void CameraComponent::SetTargetPosition(const DirectX::XMFLOAT3& target)
 {
-	std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
-	dx12->SetTarget(target);
+	/*std::shared_ptr<Dx12Wrapper> dx12 = owner_->GetScene()->GetGame()->GetDx12();
+	dx12->SetTarget(target);*/
 }

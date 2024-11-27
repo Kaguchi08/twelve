@@ -17,8 +17,8 @@ FBXComponent::FBXComponent(Actor* owner, const char* file_name, int draw_order) 
 fbx_model_(nullptr),
 world_matrix_(nullptr)
 {
-	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();*/
 
 	renderer_->AddFBXComponent(this);
 

@@ -8,8 +8,8 @@
 PrimitiveComponent::PrimitiveComponent(Actor* owner, PrimitiveType type, int draw_order) : Component(owner),
 type_(type)
 {
-	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();*/
 
 	renderer_->AddPrimitiveComponent(this);
 

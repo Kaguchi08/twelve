@@ -20,8 +20,8 @@ mapped_matrices_(nullptr),
 current_animation_(AnimationType::Idle),
 animation_time_(0.0f)
 {
-	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();*/
 
 	renderer_->AddModelComponent(this);
 
