@@ -1,14 +1,16 @@
-#pragma once
+﻿#pragma once
 #include <DirectXMath.h>
 
 #include "MoveComponent.h"
 
-class ModelMoveComponent : public MoveComponent {
-   public:
-    ModelMoveComponent(class Actor* owner, int update_order = 10);
+class ModelMoveComponent : public MoveComponent
+{
+public:
+	ModelMoveComponent(class Actor* owner);
 
-    void ProcessInput(const struct InputState& state) override;
+	void ProcessInput(const struct InputState& state) override;
+	void GenerateOutput() override {}
 
-   private:
-    void UpdateAnimation(bool isMoving);
+private:
+	void UpdateAnimation(bool isMoving);
 };

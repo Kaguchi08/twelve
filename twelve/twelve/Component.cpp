@@ -1,15 +1,17 @@
-#include "Component.h"
+﻿#include "Component.h"
 
 #include "Actor.h"
 
-Component::Component(Actor* owner, int update_order) : owner_(owner),
-                                                       update_order_(update_order) {
-    owner_->AddComponent(this);
+Component::Component(Actor* owner)
+	: m_pOwner(owner)
+{
 }
 
-Component::~Component() {
-    owner_->RemoveComponent(this);
+Component::~Component()
+{
 }
 
-void Component::Update(float delta_time) {
+void Component::SetD3D12(std::shared_ptr<D3D12Wrapper> pD3D12)
+{
+	m_pD3D12 = pD3D12;
 }

@@ -1,16 +1,24 @@
-#pragma once
-#include <cstdint>
+﻿#pragma once
 
-class Component {
-   public:
-    Component(class Actor* owner, int update_order = 100);
-    virtual ~Component();
-    virtual void Update(float delta_time);
-    virtual void ProcessInput(const struct InputState& state) {}
+#include <memory>
 
-    int GetUpdateOrder() const { return update_order_; }
+class Actor;
+class D3D12Wrapper;
+struct InputState;
 
-   protected:
-    class Actor* owner_;
-    int update_order_;
+class Component
+{
+public:
+	Component(Actor* pOwner);
+	~Component();
+
+	void SetD3D12(std::shared_ptr<D3D12Wrapper> pD3D12);
+
+	virtual void Update(float deltaTime) = 0;
+	virtual void ProcessInput(const InputState& state) = 0;
+	virtual void GenerateOutput() = 0;
+
+protected:
+	Actor* m_pOwner;
+	std::shared_ptr<D3D12Wrapper> m_pD3D12;
 };

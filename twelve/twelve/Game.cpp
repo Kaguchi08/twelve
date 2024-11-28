@@ -85,6 +85,22 @@ void Game::Terminate()
 
 	// ウィンドウの終了処理
 	TermWind();
+
+	// リソースの解放
+	if (m_pScene != nullptr)
+	{
+		m_pScene.reset();
+	}
+
+	if (m_pInputSystem != nullptr)
+	{
+		m_pInputSystem.reset();
+	}
+
+	if (m_pD3D12 != nullptr)
+	{
+		m_pD3D12.reset();
+	}
 }
 
 void Game::ProcessInput()

@@ -13,12 +13,12 @@
 // "-" オペランド等が使えないため
 using namespace DirectX;
 
-FBXComponent::FBXComponent(Actor* owner, const char* file_name, int draw_order) : Component(owner, draw_order),
+FBXComponent::FBXComponent(Actor* owner, const char* file_name) : Component(owner),
 fbx_model_(nullptr),
 world_matrix_(nullptr)
 {
-	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();*/
 
 	renderer_->AddFBXComponent(this);
 
@@ -40,11 +40,19 @@ FBXComponent::~FBXComponent()
 void FBXComponent::Update(float delta_time)
 {
 	// ワールド行列の更新
-	auto pos = owner_->GetPosition();
-	auto rot = owner_->GetRotation();
-	auto scale = owner_->GetScale();
+	auto pos = m_pOwner->GetPosition();
+	auto rot = m_pOwner->GetRotation();
+	auto scale = m_pOwner->GetScale();
 
 	*world_matrix_ = DirectX::XMMatrixScaling(scale, scale, scale) * DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+}
+
+void FBXComponent::ProcessInput(const InputState& state)
+{
+}
+
+void FBXComponent::GenerateOutput()
+{
 }
 
 void FBXComponent::Draw(bool is_shadow)

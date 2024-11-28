@@ -14,14 +14,14 @@
 
 using namespace DirectX;
 
-ModelComponent::ModelComponent(Actor* owner, const char* file_name, int draw_order) : Component(owner, draw_order),
+ModelComponent::ModelComponent(Actor* owner, const char* file_name) : Component(owner),
 pmd_model_(nullptr),
 mapped_matrices_(nullptr),
 current_animation_(AnimationType::Idle),
 animation_time_(0.0f)
 {
-	dx12_ = owner_->GetScene()->GetGame()->GetDx12();
-	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();
+	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
+	renderer_ = owner_->GetScene()->GetGame()->GetRenderer();*/
 
 	renderer_->AddModelComponent(this);
 
@@ -47,8 +47,8 @@ ModelComponent::~ModelComponent()
 void ModelComponent::Update(float delta_time)
 {
 	// ワールド行列更新
-	DirectX::XMFLOAT3 pos = owner_->GetPosition();
-	DirectX::XMFLOAT3 rot = owner_->GetRotation();
+	DirectX::XMFLOAT3 pos = m_pOwner->GetPosition();
+	DirectX::XMFLOAT3 rot = m_pOwner->GetRotation();
 
 	mapped_matrices_[0] = DirectX::XMMatrixRotationY(rot.y) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
 

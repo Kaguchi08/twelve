@@ -4,6 +4,11 @@
 // Copyright(c) Pocol. All right reserved.
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// Constant Values
+//-----------------------------------------------------------------------------
+static const float F_PI = 3.141596535f;
+
 ///////////////////////////////////////////////////////////////////////////////
 // VSOutput structure
 ///////////////////////////////////////////////////////////////////////////////
@@ -42,11 +47,12 @@ cbuffer LightBuffer : register(b1)
 ///////////////////////////////////////////////////////////////////////////////
 cbuffer MaterialBuffer : register(b2)
 {
-    float3 Diffuse : packoffset(c0); // 拡散反射率です.
+    float3 BaseColor : packoffset(c0); // 基本色です.
     float Alpha : packoffset(c0.w); // 透過度です.
-    float3 Specular : packoffset(c1); // 鏡面反射率です.
-    float Shininess : packoffset(c1.w); // 鏡面反射強度です.
+    float Metallic : packoffset(c1); // 金属度です.
+    float Shininess : packoffset(c1.y); // 鏡面反射強度です.
 };
+
 
 //-----------------------------------------------------------------------------
 // Textures and Samplers
@@ -91,12 +97,15 @@ PSOutput main(VSOutput input)
 
     // 反射ベクトル.
     float3 R = normalize(-reflect(V, N));
+    
+    float NL = saturate(dot(N, L));
+    float LR = saturate(dot(L, R));
 
     float4 color = ColorMap.Sample(WrapSmp, input.TexCoord);
-    float3 diffuse = Diffuse * LightColor * saturate(dot(L, N));
-    float3 specular = Specular * LightColor * pow(saturate(dot(L, R)), Shininess);
+    float3 diffuse = BaseColor * (1 - Metallic) * (1.0 / F_PI);
+    float3 specular = BaseColor * Metallic * ((Shininess + 2) / (2 * F_PI)) * pow(LR, Shininess);
 
-    output.Color = float4(color.rgb * (diffuse + specular), color.a * Alpha);
+    output.Color = float4(color.rgb * (diffuse + specular) * NL, color.a * Alpha);
 
     return output;
 }
