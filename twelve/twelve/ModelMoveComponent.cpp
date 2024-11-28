@@ -5,7 +5,7 @@
 #include "PlayerActor.h"
 #include "XMFLOAT_Helper.h"
 
-ModelMoveComponent::ModelMoveComponent(Actor* owner, int update_order) : MoveComponent(owner, update_order)
+ModelMoveComponent::ModelMoveComponent(Actor* owner) : MoveComponent(owner)
 {
 	SetInputSpeed(50.0f);
 }
@@ -20,7 +20,7 @@ void ModelMoveComponent::ProcessInput(const InputState& state)
 void ModelMoveComponent::UpdateAnimation(bool isMoving)
 {
 	// アニメーションを更新
-	PlayerActor* player = dynamic_cast<PlayerActor*>(owner_);
+	PlayerActor* player = dynamic_cast<PlayerActor*>(m_pOwner);
 	if (player != nullptr)
 	{
 		player->SetCurrentAnimation(isMoving ? AnimationType::Run : AnimationType::Idle);

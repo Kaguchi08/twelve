@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <DirectXMath.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -13,72 +13,76 @@
 
 using Microsoft::WRL::ComPtr;
 
-enum AnimationType {
-    Idle,
-    Run,
-    Max
+enum AnimationType
+{
+	Idle,
+	Run,
+	Max
 };
 
-class ModelComponent : public Component {
-   public:
-    ModelComponent(class Actor* owner, const char* file_name, int draw_order = 100);
-    ~ModelComponent();
+class ModelComponent : public Component
+{
+public:
+	ModelComponent(class Actor* owner, const char* file_name);
+	~ModelComponent();
 
-    void Update(float delta_time) override;
+	void Update(float delta_time) override;
+	void ProcessInput(const InputState& state) override {};
+	void GenerateOutput() override {};
 
-    void DrawPMD(bool is_shadow);
+	void DrawPMD(bool is_shadow);
 
-    void AddAnimation(const char* file_name, const AnimationType& name, bool is_loop = true);
-    void DeleteAnimation(AnimationType);
+	void AddAnimation(const char* file_name, const AnimationType& name, bool is_loop = true);
+	void DeleteAnimation(AnimationType);
 
-    AnimationType GetCurrentAnimation() const { return current_animation_; }
+	AnimationType GetCurrentAnimation() const { return current_animation_; }
 
-    void SetCurrentAnimation(const AnimationType& name) { current_animation_ = name; }
+	void SetCurrentAnimation(const AnimationType& name) { current_animation_ = name; }
 
-   private:
-    std::shared_ptr<Dx12Wrapper> dx12_;
-    std::shared_ptr<class Renderer> renderer_;
+private:
+	std::shared_ptr<Dx12Wrapper> dx12_;
+	std::shared_ptr<class Renderer> renderer_;
 
-    // ƒ‚ƒfƒ‹
-    std::shared_ptr<PMDModel> pmd_model_;
+	// ãƒ¢ãƒ‡ãƒ«
+	std::shared_ptr<PMDModel> pmd_model_;
 
-    DirectX::XMMATRIX* mapped_matrices_;
+	DirectX::XMMATRIX* mapped_matrices_;
 
-    // ƒ{[ƒ“s—ñ
-    std::vector<DirectX::XMMATRIX> bone_matrices_;
+	// ãƒœãƒ¼ãƒ³è¡Œåˆ—
+	std::vector<DirectX::XMMATRIX> bone_matrices_;
 
-    // À•W•ÏŠ·
-    ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
+	// åº§æ¨™å¤‰æ›
+	ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
 
-    HRESULT CreateTransformResourceAndView();
+	HRESULT CreateTransformResourceAndView();
 
-    // ƒ‚[ƒVƒ‡ƒ“
-    void MotionUpdate(float delta_time);
-    void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);
+	// ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³
+	void MotionUpdate(float delta_time);
+	void RecursiveMatrixMultipy(BoneNode* node, const DirectX::XMMATRIX& mat);
 
-    std::unordered_map<AnimationType, Animation> animations_;
-    AnimationType current_animation_;
-    float animation_time_ = 0.0f;
+	std::unordered_map<AnimationType, Animation> animations_;
+	AnimationType current_animation_;
+	float animation_time_ = 0.0f;
 
-    // IKŠÖ˜A
-    /// <summary>
-    /// CCD-IK‚É‚æ‚èƒ{[ƒ“•ûŒü‚ğ‰ğŒˆ
-    /// </summary>
-    /// <param name="ik"></param>
-    void SolveCCDIK(const PMDIK& ik);
+	// IKé–¢é€£
+	/// <summary>
+	/// CCD-IKã«ã‚ˆã‚Šãƒœãƒ¼ãƒ³æ–¹å‘ã‚’è§£æ±º
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveCCDIK(const PMDIK& ik);
 
-    /// <summary>
-    /// —]Œ·’è—IK‚É‚æ‚èƒ{[ƒ“•ûŒü‚ğ‰ğŒˆ
-    /// </summary>
-    /// <param name="ik"></param>
-    void SolveCosineIK(const PMDIK& ik);
+	/// <summary>
+	/// ä½™å¼¦å®šç†IKã«ã‚ˆã‚Šãƒœãƒ¼ãƒ³æ–¹å‘ã‚’è§£æ±º
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveCosineIK(const PMDIK& ik);
 
-    /// <summary>
-    /// LookAts—ñ‚É‚æ‚èƒ{[ƒ“•ûŒü‚ğ‰ğŒˆ
-    /// </summary>
-    /// <param name="ik"></param>
-    void SolveLookAt(const PMDIK& ik);
+	/// <summary>
+	/// LookAtè¡Œåˆ—ã«ã‚ˆã‚Šãƒœãƒ¼ãƒ³æ–¹å‘ã‚’è§£æ±º
+	/// </summary>
+	/// <param name="ik"></param>
+	void SolveLookAt(const PMDIK& ik);
 
-    void IKSolve(int frame_no);
+	void IKSolve(int frame_no);
 };

@@ -5,7 +5,7 @@
 #include "PrimitiveComponent.h"
 #include "Scene.h"
 
-PlaneActor::PlaneActor(Scene* scene) : Actor(scene)
+PlaneActor::PlaneActor() : Actor()
 {
 	primitive_ = new PrimitiveComponent(this, PrimitiveType::kPlane);
 }

@@ -5,7 +5,7 @@
 #include "Renderer.h"
 #include "Scene.h"
 
-PrimitiveComponent::PrimitiveComponent(Actor* owner, PrimitiveType type, int draw_order) : Component(owner),
+PrimitiveComponent::PrimitiveComponent(Actor* owner, PrimitiveType type) : Component(owner),
 type_(type)
 {
 	/*dx12_ = owner_->GetScene()->GetGame()->GetDx12();
@@ -43,10 +43,18 @@ PrimitiveComponent::~PrimitiveComponent()
 void PrimitiveComponent::Update(float delta_time)
 {
 	// ワールド行列の更新
-	auto pos = owner_->GetPosition();
-	auto rot = owner_->GetRotation();
+	auto pos = m_pOwner->GetPosition();
+	auto rot = m_pOwner->GetRotation();
 
 	*world_matrix_ = DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z);
+}
+
+void PrimitiveComponent::ProcessInput(const InputState& state)
+{
+}
+
+void PrimitiveComponent::GenerateOutput()
+{
 }
 
 void PrimitiveComponent::Draw(bool is_shadow)

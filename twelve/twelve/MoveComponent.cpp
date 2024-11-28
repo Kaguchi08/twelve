@@ -4,7 +4,7 @@
 #include "InputSystem.h"
 #include "XMFLOAT_Helper.h"
 
-MoveComponent::MoveComponent(Actor* owner, int update_order) : Component(owner, update_order)
+MoveComponent::MoveComponent(Actor* owner) : Component(owner)
 {
 	velocity_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 	angular_velocity_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -28,14 +28,14 @@ void MoveComponent::Update(float delta_time)
 	}
 
 	// 位置を更新
-	DirectX::XMFLOAT3 pos = owner_->GetPosition();
+	DirectX::XMFLOAT3 pos = m_pOwner->GetPosition();
 	pos += (velocity_ + input_velocity_) * delta_time;
-	owner_->SetPosition(pos);
+	m_pOwner->SetPosition(pos);
 
 	// 回転を更新
-	DirectX::XMFLOAT3 rot = owner_->GetRotation();
+	DirectX::XMFLOAT3 rot = m_pOwner->GetRotation();
 	rot += angular_velocity_ * delta_time;
-	owner_->SetRotation(rot);
+	m_pOwner->SetRotation(rot);
 
 	input_velocity_ = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
@@ -56,7 +56,7 @@ void MoveComponent::ProcessInput(const InputState& state)
 		angle += DirectX::XM_PI;
 
 		// ownerの向きを進む向きに設定（Y軸方向の回転のみを対象）
-		owner_->SetRotation(DirectX::XMFLOAT3(0, angle, 0));
+		m_pOwner->SetRotation(DirectX::XMFLOAT3(0, angle, 0));
 
 		// 速度ベクトルに対してスケール適用
 		velocity *= input_speed_;
@@ -67,8 +67,8 @@ void MoveComponent::ProcessInput(const InputState& state)
 
 DirectX::XMFLOAT3 MoveComponent::CalculateMovementVector(const InputState& state)
 {
-	DirectX::XMFLOAT3 forward = owner_->GetForward();
-	DirectX::XMFLOAT3 right = owner_->GetRight();
+	DirectX::XMFLOAT3 forward = m_pOwner->GetForward();
+	DirectX::XMFLOAT3 right = m_pOwner->GetRight();
 	DirectX::XMFLOAT3 up = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
 
 	DirectX::XMFLOAT3 forward_velocity = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);

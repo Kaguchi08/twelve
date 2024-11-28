@@ -54,7 +54,7 @@ void OrbitCameraComponent::Update(float delta_time)
 		&up_, DirectX::XMVector3Rotate(DirectX::XMLoadFloat3(&up_), pitch_quat));
 
 	// 変換行列を計算
-	DirectX::XMFLOAT3 target = owner_->GetPosition();
+	DirectX::XMFLOAT3 target = m_pOwner->GetPosition();
 	// 注視点が低すぎるので少し上にずらす
 	target.y += 10.0f;
 	DirectX::XMFLOAT3 camera_pos = target + offset_;
@@ -82,10 +82,10 @@ void OrbitCameraComponent::Update(float delta_time)
 						   ToNormalizeXMVECTOR(camera_right_vector));
 
 	// Actorの前方ベクトルを更新
-	owner_->SetForward(DirectX::XMFLOAT3(camera_forward_vector));
+	m_pOwner->SetForward(DirectX::XMFLOAT3(camera_forward_vector));
 
 	// Actorの右方ベクトルを更新
-	owner_->SetRight(DirectX::XMFLOAT3(camera_right_vector));
+	m_pOwner->SetRight(DirectX::XMFLOAT3(camera_right_vector));
 
 	// 視点座標のセット
 	SetEyePosition(camera_pos);

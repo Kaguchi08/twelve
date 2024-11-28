@@ -5,7 +5,7 @@
 #include "Game2.h"
 #include "Scene.h"
 
-CameraComponent::CameraComponent(Actor* owner, int update_order) : Component(owner, update_order)
+CameraComponent::CameraComponent(Actor* owner) : Component(owner)
 {
 }
 

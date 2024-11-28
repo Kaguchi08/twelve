@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 #include <d3d12.h>
 
 #include <memory>
@@ -8,34 +8,38 @@
 #include "Plane.h"
 #include "Primitive.h"
 
-enum PrimitiveType {
-    kPlane,
+enum PrimitiveType
+{
+	kPlane,
 };
 
-class PrimitiveComponent : public Component {
-   public:
-    PrimitiveComponent(class Actor* owner, PrimitiveType type, int draw_order = 100);
-    ~PrimitiveComponent();
+class PrimitiveComponent : public Component
+{
+public:
+	PrimitiveComponent(class Actor* owner, PrimitiveType type);
+	~PrimitiveComponent();
 
-    void Update(float delta_time) override;
+	void Update(float delta_time) override;
+	void ProcessInput(const InputState& state) override;
+	void GenerateOutput() override;
 
-    void Draw(bool is_shadow);
+	void Draw(bool is_shadow);
 
-    PrimitiveType GetType() const { return type_; }
-    std::shared_ptr<Primitive> GetPrimitive() const { return primitive_; }
+	PrimitiveType GetType() const { return type_; }
+	std::shared_ptr<Primitive> GetPrimitive() const { return primitive_; }
 
-   private:
-    std::shared_ptr<Dx12Wrapper> dx12_;
-    std::shared_ptr<class Renderer> renderer_;
+private:
+	std::shared_ptr<Dx12Wrapper> dx12_;
+	std::shared_ptr<class Renderer> renderer_;
 
-    PrimitiveType type_;
+	PrimitiveType type_;
 
-    std::shared_ptr<Primitive> primitive_;
+	std::shared_ptr<Primitive> primitive_;
 
-    // ç¿ïWïœä∑
-    DirectX::XMMATRIX* world_matrix_ = nullptr;
-    ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
+	// Â∫ßÊ®ôÂ§âÊèõ
+	DirectX::XMMATRIX* world_matrix_ = nullptr;
+	ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
 
-    HRESULT CreateTransformResourceAndView();
+	HRESULT CreateTransformResourceAndView();
 };

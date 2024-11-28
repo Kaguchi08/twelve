@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <DirectXMath.h>
 #include <d3d12.h>
 #include <wrl.h>
@@ -11,44 +11,47 @@
 
 using Microsoft::WRL::ComPtr;
 
-class FBXComponent : public Component {
-   public:
-    FBXComponent(class Actor* owner, const char* file_name, int draw_order = 100);
-    ~FBXComponent();
+class FBXComponent : public Component
+{
+public:
+	FBXComponent(class Actor* owner, const char* file_name);
+	~FBXComponent();
 
-    void Update(float delta_time) override;
+	void Update(float delta_time) override;
+	void ProcessInput(const InputState& state) override;
+	void GenerateOutput() override;
 
-    void Draw(bool is_shadow);
+	void Draw(bool is_shadow);
 
-    // Šeíƒ}ƒbƒvƒeƒNƒXƒ`ƒƒ‚Ìì¬
-    bool CreateNormalMapAndView(const char* file_name);
-    bool CreateArmMapAndView(const char* file_name);
+	// å„ç¨®ãƒãƒƒãƒ—ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ä½œæˆ
+	bool CreateNormalMapAndView(const char* file_name);
+	bool CreateArmMapAndView(const char* file_name);
 
-   private:
-    std::shared_ptr<Dx12Wrapper> dx12_;
-    std::shared_ptr<class Renderer> renderer_;
+private:
+	std::shared_ptr<Dx12Wrapper> dx12_;
+	std::shared_ptr<class Renderer> renderer_;
 
-    // ƒ‚ƒfƒ‹
-    std::shared_ptr<FBXModel> fbx_model_;
+	// ãƒ¢ãƒ‡ãƒ«
+	std::shared_ptr<FBXModel> fbx_model_;
 
-    // À•W•ÏŠ·
-    DirectX::XMMATRIX* world_matrix_ = nullptr;
-    ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
+	// åº§æ¨™å¤‰æ›
+	DirectX::XMMATRIX* world_matrix_ = nullptr;
+	ComPtr<ID3D12Resource> transform_const_buffer_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> transform_cbv_heap_ = nullptr;
 
-    // Šeíƒ}ƒbƒvƒŠƒ\[ƒX
-    ComPtr<ID3D12Resource> normal_map_resource_ = nullptr;
-    ComPtr<ID3D12Resource> arm_map_resource_ = nullptr;
+	// å„ç¨®ãƒãƒƒãƒ—ãƒªã‚½ãƒ¼ã‚¹
+	ComPtr<ID3D12Resource> normal_map_resource_ = nullptr;
+	ComPtr<ID3D12Resource> arm_map_resource_ = nullptr;
 
-    ComPtr<ID3D12DescriptorHeap> normal_map_srv_heap_ = nullptr;
-    ComPtr<ID3D12DescriptorHeap> arm_map_srv_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> normal_map_srv_heap_ = nullptr;
+	ComPtr<ID3D12DescriptorHeap> arm_map_srv_heap_ = nullptr;
 
-    HRESULT CreateTransformResourceAndView();
+	HRESULT CreateTransformResourceAndView();
 
-    // FBXƒ‚ƒfƒ‹‚Ìƒ}ƒeƒŠƒAƒ‹ŠÖ˜A
-    HRESULT CreateMaterialResourceAndView(std::string material_name);
-    // FBXƒ‚ƒfƒ‹‚ÌƒeƒNƒXƒ`ƒƒŠÖ˜A
-    HRESULT CreateTextureView(std::string material_name);
+	// FBXãƒ¢ãƒ‡ãƒ«ã®ãƒãƒ†ãƒªã‚¢ãƒ«é–¢é€£
+	HRESULT CreateMaterialResourceAndView(std::string material_name);
+	// FBXãƒ¢ãƒ‡ãƒ«ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£é–¢é€£
+	HRESULT CreateTextureView(std::string material_name);
 
-    void CalculateTangentAndBinormal(FBXMeshData& mesh_data);
+	void CalculateTangentAndBinormal(FBXMeshData& mesh_data);
 };

@@ -1,29 +1,33 @@
-#include "AABBComponent.h"
+ï»¿#include "AABBComponent.h"
 
 #include "Actor.h"
 
-AABBComponent::AABBComponent(Actor* owner, int update_order) : Component(owner, update_order),
-                                                               object_box_(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, 0)),
-                                                               world_box_(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, 0)),
-                                                               should_rotate_(true) {
+AABBComponent::AABBComponent(Actor* owner) : Component(owner),
+object_box_(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, 0)),
+world_box_(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, 0)),
+should_rotate_(true)
+{
 }
 
-AABBComponent::~AABBComponent() {
+AABBComponent::~AABBComponent()
+{
 }
 
-void AABBComponent::UpdateCollision() {
-    world_box_ = object_box_;
+void AABBComponent::UpdateCollision()
+{
+	world_box_ = object_box_;
 
-    // ƒXƒP[ƒŠƒ“ƒO
-    world_box_.min.x *= owner_->GetScale();
-    world_box_.min.y *= owner_->GetScale();
+	// ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°
+	world_box_.min.x *= m_pOwner->GetScale();
+	world_box_.min.y *= m_pOwner->GetScale();
 
-    // ‰ñ“]
-    if (should_rotate_) {
-        world_box_.Rotate(owner_->GetRotation());
-    }
+	// å›žè»¢
+	if (should_rotate_)
+	{
+		world_box_.Rotate(m_pOwner->GetRotation());
+	}
 
-    // ˆÚ“®
-    world_box_.min += owner_->GetPosition();
-    world_box_.max += owner_->GetPosition();
+	// ç§»å‹•
+	world_box_.min += m_pOwner->GetPosition();
+	world_box_.max += m_pOwner->GetPosition();
 }

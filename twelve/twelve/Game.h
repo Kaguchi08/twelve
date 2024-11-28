@@ -4,8 +4,6 @@
 #include <cstdint>
 #include <memory>
 
-
-
 class D3D12Wrapper;
 class InputSystem;
 class Scene;
