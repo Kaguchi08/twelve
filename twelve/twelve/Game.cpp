@@ -48,6 +48,11 @@ bool Game::Initialize()
 	}
 
 	// 入力管理の初期化
+	m_pInputSystem = std::make_shared<InputSystem>();
+	if (!m_pInputSystem->Initialize(m_hWnd))
+	{
+		return false;
+	}
 
 	// シーンの初期化
 
@@ -105,6 +110,14 @@ void Game::Terminate()
 
 void Game::ProcessInput()
 {
+	// 入力の更新
+	m_pInputSystem->Update(m_state);
+
+	auto& state = m_pInputSystem->GetState();
+	if (state.keyboard.GetKeyState(VK_ESCAPE) == ButtonState::Pressed)
+	{
+		PostQuitMessage(0);
+	}
 }
 
 void Game::UpdateGame()

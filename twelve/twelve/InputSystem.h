@@ -6,10 +6,10 @@
 
 enum ButtonState
 {
-	kNone,
-	kPressed,
-	kReleased,
-	kHeld
+	None,
+	Pressed,
+	Released,
+	Hold
 };
 
 class KeyboardState
@@ -21,8 +21,8 @@ public:
 	bool GetKeyDown(BYTE keycode) const;
 
 private:
-	BYTE prev_state_[256];
-	BYTE current_state_[256];
+	BYTE m_prevState[256];
+	BYTE m_currentState[256];
 };
 
 class MouseState
@@ -30,13 +30,13 @@ class MouseState
 public:
 	friend class InputSystem;
 
-	const DirectX::XMFLOAT2& GetPosition() const { return position_; }
+	const DirectX::XMFLOAT2& GetPosition() const { return m_position; }
 	const DirectX::XMFLOAT2& GetDelta() const;
-	const DirectX::XMFLOAT2& GetCenter() const { return center_; }
+	const DirectX::XMFLOAT2& GetCenter() const { return m_center; }
 
 private:
-	DirectX::XMFLOAT2 position_;
-	DirectX::XMFLOAT2 center_;
+	DirectX::XMFLOAT2 m_position;
+	DirectX::XMFLOAT2 m_center;
 };
 
 struct InputState
@@ -48,14 +48,13 @@ struct InputState
 class InputSystem
 {
 public:
-	InputSystem(class Game2* game);
+	InputSystem();
 
-	bool Initialize();
-	void Update();
+	bool Initialize(HWND hWind);
+	void Update(enum State state);
 
-	const InputState& GetState() const { return state_; }
+	const InputState& GetState() const { return m_state; }
 
 private:
-	class Game2* game_;
-	InputState state_;
+	InputState m_state;
 };
