@@ -44,5 +44,7 @@ private:
 	bool InitWind();
 	void TermWind();
 
+	void CheckSupportHDR();
+
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 };

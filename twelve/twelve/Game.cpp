@@ -200,13 +200,48 @@ void Game::TermWind()
 	m_hWnd = nullptr;
 }
 
+void Game::CheckSupportHDR()
+{
+	if (m_pD3D12 == nullptr)
+	{
+		return;
+	}
+
+	m_pD3D12->CheckSupportHDR();
+}
+
 LRESULT Game::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+	auto instance = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
 	switch (msg)
 	{
+		case WM_CREATE:
+		{
+			auto pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lp);
+			auto pGame = reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, pGame);
+		} break;
+
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
+		} break;
+
+		case WM_MOVE:
+		{
+			if (instance != nullptr)
+			{
+				instance->CheckSupportHDR();
+			}
+		} break;
+
+		case WM_DISPLAYCHANGE:
+		{
+			if (instance != nullptr)
+			{
+				instance->CheckSupportHDR();
+			}
 		} break;
 
 		default:

@@ -7,6 +7,7 @@
 #include <VertexTypes.h>
 #include <DirectXHelpers.h>
 #include <SimpleMath.h>
+#include <algorithm>
 
 #include "FileUtil.h" 
 #include "Logger.h"
@@ -36,6 +37,21 @@ namespace
 		float Metalic;			// 金属度
 		float Shininess;		// 鏡面反射強度
 	};
+
+	/// <summary>
+	/// 領域の交差判定を計算する
+	/// </summary>
+	inline int ComputeIntersectionArea
+	(
+		int ax1, int ay1,
+		int ax2, int ay2,
+		int bx1, int by1,
+		int bx2, int by2
+	)
+	{
+		return std::max(0, std::min(ax2, bx2) - std::max(ax1, bx1))
+			* std::max(0, std::min(ay2, by2) - std::max(ay1, by1));
+	}
 }
 
 D3D12Wrapper::D3D12Wrapper()
@@ -736,6 +752,95 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 
 	m_pTransforms.clear();
 	m_pTransforms.shrink_to_fit();
+}
+
+void D3D12Wrapper::CheckSupportHDR()
+{
+	if (m_pSwapChain == nullptr || m_pFactory == nullptr || m_pDevice == nullptr)
+	{
+		return;
+	}
+
+	HRESULT hr = S_OK;
+
+	// ウィンドウ領域を取得
+	RECT rect = {};
+	GetWindowRect(m_hWnd, &rect);
+
+	if (m_pFactory->IsCurrent() == false)
+	{
+		m_pFactory.Reset();
+		hr = CreateDXGIFactory2(0, IID_PPV_ARGS(m_pFactory.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			return;
+		}
+	}
+
+	ComPtr<IDXGIAdapter1> pAdapter;
+	hr = m_pFactory->EnumAdapters1(0, pAdapter.GetAddressOf());
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	UINT i = 0;
+	ComPtr<IDXGIOutput> pCurrentOutput;
+	ComPtr<IDXGIOutput> pBestOutput;
+	int bestIntersectArea = -1;
+
+	// 各ディスプレイを調べる
+	while (pAdapter->EnumOutputs(i, &pCurrentOutput) != DXGI_ERROR_NOT_FOUND)
+	{
+		auto ax1 = rect.left;
+		auto ay1 = rect.top;
+		auto ax2 = rect.right;
+		auto ay2 = rect.bottom;
+
+		// ディスプレイの設定を取得
+		DXGI_OUTPUT_DESC desc;
+		hr = pCurrentOutput->GetDesc(&desc);
+		if (FAILED(hr))
+		{
+			return;
+		}
+
+		auto bx1 = desc.DesktopCoordinates.left;
+		auto by1 = desc.DesktopCoordinates.top;
+		auto bx2 = desc.DesktopCoordinates.right;
+		auto by2 = desc.DesktopCoordinates.bottom;
+
+		// 領域が一致するかどうか調べる
+		int intersectArea = ComputeIntersectionArea(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
+		if (intersectArea > bestIntersectArea)
+		{
+			pBestOutput = pCurrentOutput;
+			bestIntersectArea = intersectArea;
+		}
+
+		i++;
+	}
+
+	// 一番適しているディスプレイ
+	ComPtr<IDXGIOutput6> pOutput6;
+	hr = pBestOutput.As(&pOutput6);
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	// 出力設定を取得
+	DXGI_OUTPUT_DESC1 desc1;
+	hr = pOutput6->GetDesc1(&desc1);
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	// 色空間が ITU-R BT.2100 PQ をサポートしているかどうかチェック
+	m_SupportHDR = (desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+	m_MaxLuminance = desc1.MaxLuminance;
+	m_MinLuminance = desc1.MinLuminance;
 }
 
 void D3D12Wrapper::InitializeDebug()

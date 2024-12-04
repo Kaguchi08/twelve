@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#define NOMINMAX
 #include <Windows.h>
 #include <cstdint>
 #include <d3d12.h>
@@ -32,6 +33,12 @@ public:
 
 	bool InitializeGraphicsPipeline();
 	void ReleaseGraphicsResources();
+
+	void CheckSupportHDR();
+
+	bool  IsSupportHDR() const { return m_SupportHDR; }
+	float GetMaxLuminance() const { return m_MaxLuminance; }
+	float GetMinLuminance() const { return m_MinLuminance; }
 
 private:
 	enum POOL_TYPE
@@ -69,6 +76,10 @@ private:
 	ComPtr<ID3D12RootSignature>         m_pRootSignature;
 
 	float								m_RotateAngle;
+
+	bool								m_SupportHDR;   // HDRディスプレイをサポートしているかどうか
+	float								m_MaxLuminance; // ディスプレイの最大輝度値
+	float								m_MinLuminance; // ディスプレイの裁量輝度値
 
 	void InitializeDebug();
 	void Present(uint32_t interval);
