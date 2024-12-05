@@ -5,8 +5,10 @@
 
 DepthTarget::DepthTarget()
 	: m_pTarget(nullptr)
-	, m_pHandle(nullptr)
-	, m_pPool(nullptr)
+	, m_pHandleDSV(nullptr)
+	, m_pHandleSRV(nullptr)
+	, m_pPoolDSV(nullptr)
+	, m_pPoolSRV(nullptr)
 {
 }
 
@@ -15,27 +17,40 @@ DepthTarget::~DepthTarget()
 	Term();
 }
 
-bool DepthTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t width, uint32_t height, DXGI_FORMAT format)
+bool DepthTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPoolDSV, DescriptorPool* pPoolSRV, uint32_t width, uint32_t height, DXGI_FORMAT format, float clearDepth, uint8_t clearStencil)
 {
-	if (pDevice == nullptr || pPool == nullptr || width == 0 || height == 0)
+	if (pDevice == nullptr || pPoolDSV == nullptr || width == 0 || height == 0)
 	{
 		ELOG("Error : Invalid Argument.");
 		return false;
 	}
 
 	assert(m_pTarget == nullptr);
-	assert(m_pHandle == nullptr);
+	assert(m_pPoolDSV == nullptr);
 
 	// ディスクリプタプールを設定
-	m_pPool = pPool;
-	m_pPool->AddRef();
+	m_pPoolDSV = pPoolDSV;
+	m_pPoolDSV->AddRef();
 
 	// ディスクリプタハンドルを取得
-	m_pHandle = m_pPool->AllocHandle();
-	if (m_pHandle == nullptr)
+	m_pHandleDSV = m_pPoolDSV->AllocHandle();
+	if (m_pHandleDSV == nullptr)
 	{
 		ELOG("Error : Descriptor Handle is full.");
 		return false;
+	}
+
+	if (pPoolSRV != nullptr)
+	{
+		m_pPoolSRV = pPoolSRV;
+		m_pPoolSRV->AddRef();
+
+		m_pHandleSRV = m_pPoolSRV->AllocHandle();
+		if (m_pHandleSRV == nullptr)
+		{
+			ELOG("Error : Descriptor Handle is full.");
+			return false;
+		}
 	}
 
 	// ヒーププロパティの設定
@@ -60,10 +75,13 @@ bool DepthTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t wi
 	desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
+	m_ClearDepth = clearDepth;
+	m_ClearStencil = clearStencil;
+
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = format;
-	clearValue.DepthStencil.Depth = 1.0f;
-	clearValue.DepthStencil.Stencil = 0;
+	clearValue.DepthStencil.Depth = clearDepth;
+	clearValue.DepthStencil.Stencil = clearStencil;
 
 	// リソースの生成
 	auto hr = pDevice->CreateCommittedResource(
@@ -80,13 +98,28 @@ bool DepthTarget::Init(ID3D12Device* pDevice, DescriptorPool* pPool, uint32_t wi
 	}
 
 	// デプスステンシルビューの設定
-	m_Desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	m_Desc.Format = format;
-	m_Desc.Texture2D.MipSlice = 0;
-	m_Desc.Flags = D3D12_DSV_FLAG_NONE;
+	m_DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	m_DSVDesc.Format = format;
+	m_DSVDesc.Texture2D.MipSlice = 0;
+	m_DSVDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 	// デプスステンシルビューを生成
-	pDevice->CreateDepthStencilView(m_pTarget.Get(), &m_Desc, m_pHandle->HandleCPU);
+	pDevice->CreateDepthStencilView(m_pTarget.Get(), &m_DSVDesc, m_pHandleDSV->HandleCPU);
+
+	// シェーダリソースビュー
+	if (m_pHandleSRV != nullptr)
+	{
+		m_SRVDesc.Format = format;
+		m_SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		m_SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		m_SRVDesc.Texture2D.MipLevels = 1;
+		m_SRVDesc.Texture2D.MostDetailedMip = 0;
+		m_SRVDesc.Texture2D.PlaneSlice = 0;
+		m_SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+
+		// シェーダリソースビューを生成
+		pDevice->CreateShaderResourceView(m_pTarget.Get(), &m_SRVDesc, m_pHandleSRV->HandleCPU);
+	}
 
 	return true;
 }
@@ -95,24 +128,49 @@ void DepthTarget::Term()
 {
 	m_pTarget.Reset();
 
-	// ディスクリプタハンドルを解放
-	if (m_pHandle != nullptr && m_pPool != nullptr)
+	if (m_pPoolDSV != nullptr && m_pHandleDSV != nullptr)
 	{
-		m_pPool->FreeHandle(m_pHandle);
-		m_pHandle = nullptr;
+		m_pPoolDSV->FreeHandle(m_pHandleDSV);
+		m_pHandleDSV = nullptr;
 	}
 
-	// ディスクリプタプールを解放
-	if (m_pPool != nullptr)
+	if (m_pPoolDSV != nullptr)
 	{
-		m_pPool->Release();
-		m_pPool = nullptr;
+		m_pPoolDSV->Release();
+		m_pPoolDSV = nullptr;
+	}
+
+	if (m_pPoolSRV != nullptr && m_pHandleSRV != nullptr)
+	{
+		m_pPoolSRV->FreeHandle(m_pHandleSRV);
+		m_pHandleSRV = nullptr;
+	}
+
+	if (m_pHandleSRV != nullptr)
+	{
+		m_pPoolSRV->Release();
+		m_pPoolSRV = nullptr;
 	}
 }
 
-DescriptorHandle* DepthTarget::GetHandle() const
+void DepthTarget::ClearView(ID3D12GraphicsCommandList* pCmdList)
 {
-	return m_pHandle;
+	pCmdList->ClearDepthStencilView(m_pHandleDSV->HandleCPU,
+									D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+									m_ClearDepth,
+									m_ClearStencil,
+									0,
+									nullptr);
+}
+
+DescriptorHandle* DepthTarget::GetHandleDSV() const
+{
+	return m_pHandleDSV;
+}
+
+DescriptorHandle* DepthTarget::GetHandleSRV() const
+{
+	return m_pHandleSRV;
 }
 
 ID3D12Resource* DepthTarget::GetResource() const
@@ -130,7 +188,12 @@ D3D12_RESOURCE_DESC DepthTarget::GetDesc() const
 	return D3D12_RESOURCE_DESC();
 }
 
-D3D12_DEPTH_STENCIL_VIEW_DESC DepthTarget::GetViewDesc() const
+D3D12_DEPTH_STENCIL_VIEW_DESC DepthTarget::GetDSVDesc() const
 {
-	return m_Desc;
+	return m_DSVDesc;
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC DepthTarget::GetSRVDesc() const
+{
+	return m_SRVDesc;
 }

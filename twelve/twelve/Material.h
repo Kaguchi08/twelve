@@ -17,6 +17,10 @@ public:
 		TEXTURE_USAGE_SHININESS,	// シャイネスマップとして利用
 		TEXTURE_USAGE_NORMAL,		// 法線マップとして利用
 
+		TEXTURE_USAGE_BASE_COLOR,   // ベースカラーマップとして利用
+		TEXTURE_USAGE_METALLIC,     // メタリックマップとして利用
+		TEXTURE_USAGE_ROUGHNESS,    // ラフネスマップとして利用
+
 		TEXTURE_USAGE_COUNT
 	};
 
@@ -102,3 +106,7 @@ constexpr auto TU_DIFFUSE = Material::TEXTURE_USAGE_DIFFUSE;
 constexpr auto TU_SPECULAR = Material::TEXTURE_USAGE_SPECULAR;
 constexpr auto TU_SHININESS = Material::TEXTURE_USAGE_SHININESS;
 constexpr auto TU_NORMAL = Material::TEXTURE_USAGE_NORMAL;
+
+constexpr auto TU_BASE_COLOR = Material::TEXTURE_USAGE_BASE_COLOR;
+constexpr auto TU_METALLIC = Material::TEXTURE_USAGE_METALLIC;
+constexpr auto TU_ROUGHNESS = Material::TEXTURE_USAGE_ROUGHNESS;
