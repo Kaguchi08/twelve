@@ -42,12 +42,25 @@ bool Game::Initialize()
 
 	// TODO: 適切な場所に移す
 	// 描画処理の初期化
-	if (!m_pD3D12->InitializeGraphicsPipeline())
+	/*if (!m_pD3D12->InitializeGraphicsPipeline())
+	{
+		return false;
+	}*/
+
+	if (!m_pD3D12->InitHDR())
 	{
 		return false;
 	}
 
+	// 初期化直後にHDRのサポートチェックを実行
+	CheckSupportHDR();
+
 	// 入力管理の初期化
+	m_pInputSystem = std::make_shared<InputSystem>();
+	if (!m_pInputSystem->Initialize(m_hWnd))
+	{
+		return false;
+	}
 
 	// シーンの初期化
 
@@ -78,7 +91,9 @@ void Game::RunLoop()
 void Game::Terminate()
 {
 	// 描画リソースの解放
-	m_pD3D12->ReleaseGraphicsResources();
+	//m_pD3D12->ReleaseGraphicsResources();
+
+	m_pD3D12->TermHDR();
 
 	// D3D12の終了処理
 	m_pD3D12->Terminate();
@@ -105,6 +120,16 @@ void Game::Terminate()
 
 void Game::ProcessInput()
 {
+	// 入力の更新
+	m_pInputSystem->Update(m_state);
+
+	auto& state = m_pInputSystem->GetState();
+	if (state.keyboard.GetKeyState(VK_ESCAPE) == ButtonState::Pressed)
+	{
+		PostQuitMessage(0);
+	}
+
+	m_pD3D12->ProcessInput(state);
 }
 
 void Game::UpdateGame()
@@ -169,7 +194,7 @@ bool Game::InitWind()
 		nullptr,
 		nullptr,
 		m_hInst,
-		nullptr);
+		this);
 
 	if (m_hWnd == nullptr)
 	{
@@ -200,13 +225,42 @@ void Game::TermWind()
 	m_hWnd = nullptr;
 }
 
+void Game::CheckSupportHDR()
+{
+	if (m_pD3D12 == nullptr)
+	{
+		return;
+	}
+
+	m_pD3D12->CheckSupportHDR();
+}
+
 LRESULT Game::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+	auto instance = reinterpret_cast<Game*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
 	switch (msg)
 	{
+		case WM_CREATE:
+		{
+			auto pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lp);
+			auto pGame = reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA, pGame);
+		} break;
+
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
+		} break;
+
+		case WM_MOVE:
+		{
+			instance->CheckSupportHDR();
+		} break;
+
+		case WM_DISPLAYCHANGE:
+		{
+			instance->CheckSupportHDR();
 		} break;
 
 		default:

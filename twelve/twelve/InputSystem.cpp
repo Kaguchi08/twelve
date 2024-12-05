@@ -1,81 +1,81 @@
 ﻿#include "InputSystem.h"
 
-#include "Game2.h"
+#include "Game.h"
 
 ButtonState KeyboardState::GetKeyState(BYTE keycode) const
 {
-	if (current_state_[keycode] & 0x80)
+	if (m_currentState[keycode] & 0x80)
 	{
-		if (prev_state_[keycode] & 0x80)
+		if (m_prevState[keycode] & 0x80)
 		{
-			return ButtonState::kHeld;
+			return ButtonState::Hold;
 		}
 		else
 		{
-			return ButtonState::kPressed;
+			return ButtonState::Pressed;
 		}
 	}
 	else
 	{
-		if (prev_state_[keycode] & 0x80)
+		if (m_prevState[keycode] & 0x80)
 		{
-			return ButtonState::kReleased;
+			return ButtonState::Released;
 		}
 		else
 		{
-			return ButtonState::kNone;
+			return ButtonState::None;
 		}
 	}
 }
 
 bool KeyboardState::GetKeyDown(BYTE keycode) const
 {
-	return current_state_[keycode] & 0x80;
+	return m_currentState[keycode] & 0x80;
 }
 
 const DirectX::XMFLOAT2& MouseState::GetDelta() const
 {
-	return position_ - center_;
+	return m_position - m_center;
 }
 
-InputSystem::InputSystem(Game2* game) : game_(game),
-state_()
+InputSystem::InputSystem()
+	: m_state()
 {
 }
 
-bool InputSystem::Initialize()
+bool InputSystem::Initialize(HWND hWind)
 {
 	// 中央の座標を取得
 	RECT rect;
-	GetWindowRect(game_->GetWindowHandle(), &rect);
-	state_.mouse.center_.x = (rect.right - rect.left) / 2;
-	state_.mouse.center_.y = (rect.bottom - rect.top) / 2;
+	GetWindowRect(hWind, &rect);
+	m_state.mouse.m_center.x = (rect.right - rect.left) / 2;
+	m_state.mouse.m_center.y = (rect.bottom - rect.top) / 2;
 
-	SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
+	SetCursorPos(m_state.mouse.m_center.x, m_state.mouse.m_center.y);
 	// カーソルは表示しない
 	ShowCursor(false);
 
 	// リセット
-	memset(state_.keyboard.prev_state_, 0x00, 256);
-	memset(state_.keyboard.current_state_, 0x00, 256);
+	memset(m_state.keyboard.m_prevState, 0x00, 256);
+	memset(m_state.keyboard.m_currentState, 0x00, 256);
 
 	return true;
 }
 
-void InputSystem::Update()
+void InputSystem::Update(enum State state)
 {
 	// キーボードの状態を更新
-	memcpy(state_.keyboard.prev_state_, state_.keyboard.current_state_, 256);
-	GetKeyboardState(state_.keyboard.current_state_);
+	memcpy(m_state.keyboard.m_prevState, m_state.keyboard.m_currentState, 256);
+	GetKeyboardState(m_state.keyboard.m_currentState);
 
 	// マウスの状態を更新
 	POINT current_pos;
 	GetCursorPos(&current_pos);
-	state_.mouse.position_ = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
+	m_state.mouse.m_position = DirectX::XMFLOAT2(current_pos.x, current_pos.y);
 
-	if (game_->GetGameState() == GameState::kPlay)
+	if (state == State::Play)
 	{
 		// 中央に戻す
-		SetCursorPos(state_.mouse.center_.x, state_.mouse.center_.y);
+		SetCursorPos(m_state.mouse.m_center.x, m_state.mouse.m_center.y);
 	}
 }

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#define NOMINMAX
 #include <Windows.h>
 #include <cstdint>
 #include <d3d12.h>
@@ -20,6 +21,8 @@
 #include "Material.h"
 #include "InlineUtil.h"
 
+struct InputState;
+
 class D3D12Wrapper
 {
 public:
@@ -30,8 +33,15 @@ public:
 	void Terminate();
 	void Render();
 
+	void ProcessInput(const InputState& state);
+
 	bool InitializeGraphicsPipeline();
 	void ReleaseGraphicsResources();
+
+	bool InitHDR();
+	void TermHDR();
+
+	void CheckSupportHDR();
 
 private:
 	enum POOL_TYPE
@@ -49,7 +59,7 @@ private:
 	ComPtr<IDXGIFactory4>				m_pFactory;
 	ComPtr<ID3D12Device>                m_pDevice;
 	ComPtr<ID3D12CommandQueue>          m_pQueue;
-	ComPtr<IDXGISwapChain3>             m_pSwapChain;
+	ComPtr<IDXGISwapChain4>             m_pSwapChain;
 
 	RenderTarget						m_RenderTarget[Constants::FrameCount];
 	DepthTarget							m_DepthTarget;
@@ -60,6 +70,7 @@ private:
 	uint32_t                            m_FrameIndex;
 	D3D12_VIEWPORT						m_Viewport;
 	D3D12_RECT							m_Scissor;
+	DXGI_FORMAT							m_BackBufferFormat;
 
 	std::vector<Mesh*>					m_pMeshes;
 	std::vector<ConstantBuffer*>		m_pTransforms;
@@ -70,6 +81,22 @@ private:
 
 	float								m_RotateAngle;
 
+	bool								m_SupportHDR;			// HDRディスプレイをサポートしているかどうか
+	float								m_MaxDisplayLuminance;	// ディスプレイの最大輝度値
+	float								m_MinDisplayLuminance;	// ディスプレイの裁量輝度値
+	int									m_TonemapType;			// トーンマップタイプ
+	int									m_ColorSpace;			// 出力色空間
+	float								m_BaseLuminance;		// 基準輝度値
+	float								m_MaxLuminance;			// 最大輝度値
+	float								m_Exposure;				// 露光値
+
+	// HDRテスト
+	VertexBuffer m_VB;
+	ConstantBuffer m_CB[Constants::FrameCount];
+	Texture m_Texture;
+
 	void InitializeDebug();
 	void Present(uint32_t interval);
+
+	void ChangeDisplayMode(bool hdr);
 };

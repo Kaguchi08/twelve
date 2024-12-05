@@ -24,6 +24,10 @@ public:
 	void RunLoop();
 	void Terminate();
 
+	State GetState() const { return m_state; }
+	HWND GetWindowHandle() const { return m_hWnd; }
+
+
 private:
 	// Window
 	HINSTANCE m_hInst;
@@ -43,6 +47,8 @@ private:
 
 	bool InitWind();
 	void TermWind();
+
+	void CheckSupportHDR();
 
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 };
