@@ -9,6 +9,7 @@
 #include <SimpleMath.h>
 #include <algorithm>
 
+#include "InputSystem.h"
 #include "FileUtil.h" 
 #include "Logger.h"
 
@@ -52,6 +53,32 @@ namespace
 		return std::max(0, std::min(ax2, bx2) - std::max(ax1, bx1))
 			* std::max(0, std::min(ay2, by2) - std::max(ay1, by1));
 	}
+
+	enum COLOR_SPACE_TYPE
+	{
+		COLOR_SPACE_BT709,      // ITU-R BT.709
+		COLOR_SPACE_BT2100_PQ,  // ITU-R BT.2100 PQ System
+	};
+
+	enum TONEMAP_TYPE
+	{
+		TONEMAP_NONE = 0,   // トーンマップなし
+		TONEMAP_REINHARD,   // Reinhardトーンマップ
+		TONEMAP_GT,         // GTトーンマップ
+	};
+
+	struct alignas(256) CbTonemap
+	{
+		int     Type;               // トーンマップタイプ
+		int     ColorSpace;         // 出力色空間
+		float   BaseLuminance;      // 基準輝度値[nit]
+		float   MaxLuminance;       // 最大輝度値[nit]
+	};
+
+	UINT16 inline GetChromaticityCoord(double value)
+	{
+		return static_cast<UINT16>(value * 50000.0);
+	}
 }
 
 D3D12Wrapper::D3D12Wrapper()
@@ -61,6 +88,12 @@ D3D12Wrapper::D3D12Wrapper()
 	, m_pQueue(nullptr)
 	, m_pSwapChain(nullptr)
 	, m_FrameIndex(0)
+	, m_BackBufferFormat(DXGI_FORMAT_R10G10B10A2_UNORM)
+	, m_TonemapType(TONEMAP_NONE)
+	, m_ColorSpace(COLOR_SPACE_BT709)
+	, m_BaseLuminance(100.0f)
+	, m_MaxLuminance(100.0f)
+	, m_Exposure(1.0f)
 {
 }
 
@@ -163,7 +196,7 @@ bool D3D12Wrapper::Initialize(HWND hWind)
 		desc.BufferDesc.RefreshRate.Denominator = 1;
 		desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.BufferDesc.Format = m_BackBufferFormat;
 		desc.SampleDesc.Count = 1;
 		desc.SampleDesc.Quality = 0;
 		desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -182,7 +215,7 @@ bool D3D12Wrapper::Initialize(HWND hWind)
 			return false;
 		}
 
-		// IDXGISwapChain3 を取得
+		// IDXGISwapChain4 を取得
 		result = pSwapChain.As(&m_pSwapChain);
 
 		if (FAILED(result))
@@ -338,9 +371,15 @@ void D3D12Wrapper::Render()
 {
 	// 更新処理
 	{
-		m_RotateAngle += 0.005f;
+		/*m_RotateAngle += 0.005f;
 		auto pTransform = m_pTransforms[m_FrameIndex]->GetPtr<Transform>();
-		pTransform->World = Matrix::CreateRotationY(m_RotateAngle);
+		pTransform->World = Matrix::CreateRotationY(m_RotateAngle);*/
+
+		auto ptr = m_CB[m_FrameIndex].GetPtr<CbTonemap>();
+		ptr->Type = m_TonemapType;
+		ptr->ColorSpace = m_ColorSpace;
+		ptr->BaseLuminance = m_BaseLuminance;
+		ptr->MaxLuminance = m_MaxLuminance;
 	}
 
 	// コマンドの記録を開始
@@ -377,27 +416,37 @@ void D3D12Wrapper::Render()
 
 		pCmd->SetGraphicsRootSignature(m_pRootSignature.Get());
 		pCmd->SetDescriptorHeaps(1, pHeaps);
-		pCmd->SetGraphicsRootConstantBufferView(0, m_pTransforms[m_FrameIndex]->GetAddress());
-		pCmd->SetGraphicsRootConstantBufferView(1, m_pLight->GetAddress());
+
+		/*pCmd->SetGraphicsRootConstantBufferView(0, m_pTransforms[m_FrameIndex]->GetAddress());
+		pCmd->SetGraphicsRootConstantBufferView(1, m_pLight->GetAddress());*/
+
+		pCmd->SetGraphicsRootConstantBufferView(0, m_CB[m_FrameIndex].GetAddress());
+		pCmd->SetGraphicsRootDescriptorTable(1, m_Texture.GetHandleGPU());
+
 		pCmd->SetPipelineState(m_pPSO.Get());
 		pCmd->RSSetViewports(1, &m_Viewport);
 		pCmd->RSSetScissorRects(1, &m_Scissor);
 
-		for (size_t i = 0; i < m_pMeshes.size(); ++i)
-		{
-			// マテリアル番号を取得
-			auto id = m_pMeshes[i]->GetMaterialId();
+		//for (size_t i = 0; i < m_pMeshes.size(); ++i)
+		//{
+		//	// マテリアル番号を取得
+		//	auto id = m_pMeshes[i]->GetMaterialId();
 
-			// 定数バッファを設定
-			pCmd->SetGraphicsRootConstantBufferView(2, m_Material.GetBufferAddress(i));
+		//	// 定数バッファを設定
+		//	pCmd->SetGraphicsRootConstantBufferView(2, m_Material.GetBufferAddress(i));
 
-			// テクスチャを設定
-			pCmd->SetGraphicsRootDescriptorTable(3, m_Material.GetTextureHandle(id, TU_DIFFUSE));
-			pCmd->SetGraphicsRootDescriptorTable(4, m_Material.GetTextureHandle(id, TU_NORMAL));
+		//	// テクスチャを設定
+		//	pCmd->SetGraphicsRootDescriptorTable(3, m_Material.GetTextureHandle(id, TU_DIFFUSE));
+		//	pCmd->SetGraphicsRootDescriptorTable(4, m_Material.GetTextureHandle(id, TU_NORMAL));
 
-			// 描画
-			m_pMeshes[i]->Draw(pCmd);
-		}
+		//	// 描画
+		//	m_pMeshes[i]->Draw(pCmd);
+		//}
+
+		pCmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		auto vbView = m_VB.GetView();  // 一時変数に代入
+		pCmd->IASetVertexBuffers(0, 1, &vbView);
+		pCmd->DrawInstanced(3, 1, 0, 0);
 	}
 
 	// 表示用リソースバリアを設定
@@ -416,6 +465,39 @@ void D3D12Wrapper::Render()
 
 	// 画面に表示
 	Present(1);
+}
+
+void D3D12Wrapper::ProcessInput(const InputState& state)
+{
+	// HDRモード
+	if (state.keyboard.GetKeyState('H') == ButtonState::Pressed)
+	{
+		ChangeDisplayMode(true);
+	}
+
+	// SDRモード
+	if (state.keyboard.GetKeyState('S') == ButtonState::Pressed)
+	{
+		ChangeDisplayMode(false);
+	}
+
+	// トーンマップなし
+	if (state.keyboard.GetKeyState('N') == ButtonState::Pressed)
+	{
+		m_TonemapType = TONEMAP_NONE;
+	}
+
+	// Reinhardトーンマップ
+	if (state.keyboard.GetKeyState('R') == ButtonState::Pressed)
+	{
+		m_TonemapType = TONEMAP_REINHARD;
+	}
+
+	// GTトーンマップ
+	if (state.keyboard.GetKeyState('G') == ButtonState::Pressed)
+	{
+		m_TonemapType = TONEMAP_GT;
+	}
 }
 
 bool D3D12Wrapper::InitializeGraphicsPipeline()
@@ -754,6 +836,237 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 	m_pTransforms.shrink_to_fit();
 }
 
+bool D3D12Wrapper::InitHDR()
+{
+	// ルートシグニチャの生成.
+	{
+		auto flag = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS;
+		flag |= D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+
+		// ディスクリプタレンジを設定.
+		D3D12_DESCRIPTOR_RANGE range = {};
+		range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		range.NumDescriptors = 1;
+		range.BaseShaderRegister = 0;
+		range.RegisterSpace = 0;
+		range.OffsetInDescriptorsFromTableStart = 0;
+
+		// スタティックサンプラーの設定.
+		D3D12_STATIC_SAMPLER_DESC sampler = {};
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler.MipLODBias = D3D12_DEFAULT_MIP_LOD_BIAS;
+		sampler.MaxAnisotropy = 1;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		sampler.MinLOD = -D3D12_FLOAT32_MAX;
+		sampler.MaxLOD = +D3D12_FLOAT32_MAX;
+		sampler.ShaderRegister = 0;
+		sampler.RegisterSpace = 0;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		// ルートパラメータの設定.
+		D3D12_ROOT_PARAMETER param[2] = {};
+		param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		param[0].Descriptor.ShaderRegister = 0;
+		param[0].Descriptor.RegisterSpace = 0;
+		param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		param[1].DescriptorTable.NumDescriptorRanges = 1;
+		param[1].DescriptorTable.pDescriptorRanges = &range;
+		param[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+		// ルートシグニチャの設定.
+		D3D12_ROOT_SIGNATURE_DESC desc = {};
+		desc.NumParameters = 2;
+		desc.NumStaticSamplers = 1;
+		desc.pParameters = param;
+		desc.pStaticSamplers = &sampler;
+		desc.Flags = flag;
+
+		ComPtr<ID3DBlob> pBlob;
+		ComPtr<ID3DBlob> pErrorBlob;
+
+		// シリアライズ
+		auto hr = D3D12SerializeRootSignature(
+			&desc,
+			D3D_ROOT_SIGNATURE_VERSION_1,
+			pBlob.GetAddressOf(),
+			pErrorBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			return false;
+		}
+
+		// ルートシグニチャを生成.
+		hr = m_pDevice->CreateRootSignature(
+			0,
+			pBlob->GetBufferPointer(),
+			pBlob->GetBufferSize(),
+			IID_PPV_ARGS(m_pRootSignature.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			ELOG("Error : Root Signature Create Failed. retcode = 0x%x", hr);
+			return false;
+		}
+	}
+
+	// パイプラインステートの生成.
+	{
+		std::wstring vsPath;
+		std::wstring psPath;
+
+		// 頂点シェーダを検索.
+		if (!SearchFilePath(L"TonemapVS.cso", vsPath))
+		{
+			ELOG("Error : Vertex Shader Not Found.");
+			return false;
+		}
+
+		// ピクセルシェーダを検索.
+		if (!SearchFilePath(L"TonemapPS.cso", psPath))
+		{
+			ELOG("Error : Pixel Shader Node Found.");
+			return false;
+		}
+
+		ComPtr<ID3DBlob> pVSBlob;
+		ComPtr<ID3DBlob> pPSBlob;
+
+		// 頂点シェーダを読み込む.
+		auto hr = D3DReadFileToBlob(vsPath.c_str(), pVSBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			ELOG("Error : D3DReadFiledToBlob() Failed. path = %ls", vsPath.c_str());
+			return false;
+		}
+
+		// ピクセルシェーダを読み込む.
+		hr = D3DReadFileToBlob(psPath.c_str(), pPSBlob.GetAddressOf());
+		if (FAILED(hr))
+		{
+			ELOG("Error : D3DReadFileToBlob() Failed. path = %ls", psPath.c_str());
+			return false;
+		}
+
+		D3D12_INPUT_ELEMENT_DESC elements[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 8, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		};
+
+		// グラフィックスパイプラインステートを設定.
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+		desc.InputLayout = { elements, 2 };
+		desc.pRootSignature = m_pRootSignature.Get();
+		desc.VS = { pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize() };
+		desc.PS = { pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize() };
+		desc.RasterizerState = DirectX::CommonStates::CullNone;
+		desc.BlendState = DirectX::CommonStates::Opaque;
+		desc.DepthStencilState = DirectX::CommonStates::DepthDefault;
+		desc.SampleMask = UINT_MAX;
+		desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		desc.NumRenderTargets = 1;
+		desc.RTVFormats[0] = m_RenderTarget[0].GetViewDesc().Format;
+		desc.DSVFormat = m_DepthTarget.GetViewDesc().Format;
+		desc.SampleDesc.Count = 1;
+		desc.SampleDesc.Quality = 0;
+
+		// パイプラインステートを生成.
+		hr = m_pDevice->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(m_pPSO.GetAddressOf()));
+		if (FAILED(hr))
+		{
+			ELOG("Error : ID3D12Device::CreateGraphicsPipelineState() Failed. retcode = 0x%x", hr);
+			return false;
+		}
+	}
+
+	// 頂点バッファの生成.
+	{
+		struct Vertex
+		{
+			float px;
+			float py;
+
+			float tx;
+			float ty;
+		};
+
+		if (!m_VB.Init<Vertex>(m_pDevice.Get(), 3))
+		{
+			ELOG("Error : VertexBuffer::Init() Failed.");
+			return false;
+		}
+
+		auto ptr = m_VB.Map<Vertex>();
+		assert(ptr != nullptr);
+		ptr[0].px = -1.0f;  ptr[0].py = 1.0f;  ptr[0].tx = 0.0f;   ptr[0].ty = -1.0f;
+		ptr[1].px = 3.0f;  ptr[1].py = 1.0f;  ptr[1].tx = 2.0f;   ptr[1].ty = -1.0f;
+		ptr[2].px = -1.0f;  ptr[2].py = -3.0f;  ptr[2].tx = 0.0f;   ptr[2].ty = 1.0f;
+		m_VB.Unmap();
+	}
+
+	for (auto i = 0; i < Constants::FrameCount; ++i)
+	{
+		if (!m_CB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbTonemap)))
+		{
+			ELOG("Error : ConstantBuffer::Init() Failed.");
+			return false;
+		}
+	}
+
+	// テクスチャロード.
+	{
+		std::wstring path;
+		if (!SearchFilePathW(L"Assets/Textures/hdr014.dds", path))
+		{
+			ELOG("Error : Texture Not Found.");
+			return false;
+		}
+
+		DirectX::ResourceUploadBatch batch(m_pDevice.Get());
+
+		// バッチ開始.
+		batch.Begin();
+
+		// テクスチャ初期化.
+		if (!m_Texture.Init(
+			m_pDevice.Get(),
+			m_pPool[POOL_TYPE_RES],
+			path.c_str(),
+			false,
+			batch))
+		{
+			ELOG("Error : Texture Initialize Failed.");
+			return false;
+		}
+
+		// バッチ終了.
+		auto future = batch.End(m_pQueue.Get());
+
+		// 完了を待機.
+		future.wait();
+	}
+
+	return true;
+}
+
+void D3D12Wrapper::TermHDR()
+{
+	m_pRootSignature.Reset();
+	m_pPSO.Reset();
+	m_VB.Term();
+	for (auto i = 0; i < Constants::FrameCount; ++i)
+	{
+		m_CB[i].Term();
+	}
+	m_Texture.Term();
+}
+
 void D3D12Wrapper::CheckSupportHDR()
 {
 	if (m_pSwapChain == nullptr || m_pFactory == nullptr || m_pDevice == nullptr)
@@ -839,8 +1152,8 @@ void D3D12Wrapper::CheckSupportHDR()
 
 	// 色空間が ITU-R BT.2100 PQ をサポートしているかどうかチェック
 	m_SupportHDR = (desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
-	m_MaxLuminance = desc1.MaxLuminance;
-	m_MinLuminance = desc1.MinLuminance;
+	m_MaxDisplayLuminance = desc1.MaxLuminance;
+	m_MinDisplayLuminance = desc1.MinLuminance;
 }
 
 void D3D12Wrapper::InitializeDebug()
@@ -870,4 +1183,140 @@ void D3D12Wrapper::Present(uint32_t interval)
 
 	// フレーム番号を更新
 	m_FrameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
+}
+
+void D3D12Wrapper::ChangeDisplayMode(bool hdr)
+{
+	if (hdr)
+	{
+		if (m_SupportHDR)
+		{
+			MessageBox(
+				nullptr,
+				TEXT("HDRがサポートされていないディスプレイです。"),
+				TEXT("HDR非サポート"),
+				MB_OK | MB_ICONINFORMATION);
+			ELOG("Error : Display not support HDR.");
+			return;
+		}
+
+		auto hr = m_pSwapChain->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
+		if (FAILED(hr))
+		{
+			MessageBox(
+				nullptr,
+				TEXT("ITU-R BT.2100 PQ Systemの色域設定に失敗しました。"),
+				TEXT("色域設定失敗"),
+				MB_OK | MB_ICONERROR);
+			ELOG("Error : IDXGISwapChain::SetColorSpace1() Failed.");
+			return;
+		}
+
+		DXGI_HDR_METADATA_HDR10 metaData = {};
+
+		// ITU-R BT.2100の原刺激と白色点を設定
+		metaData.RedPrimary[0] = GetChromaticityCoord(0.708);
+		metaData.RedPrimary[1] = GetChromaticityCoord(0.292);
+		metaData.BluePrimary[0] = GetChromaticityCoord(0.170);
+		metaData.BluePrimary[1] = GetChromaticityCoord(0.797);
+		metaData.GreenPrimary[0] = GetChromaticityCoord(0.131);
+		metaData.GreenPrimary[1] = GetChromaticityCoord(0.046);
+		metaData.WhitePoint[0] = GetChromaticityCoord(0.3127);
+		metaData.WhitePoint[1] = GetChromaticityCoord(0.3290);
+
+		// ディスプレイがサポートすると最大輝度値と最小輝度値を設定.
+		metaData.MaxMasteringLuminance = UINT(m_MaxDisplayLuminance * 10000);
+		metaData.MinMasteringLuminance = UINT(m_MinDisplayLuminance * 0.001);
+
+		// 最大値を 2000 [nit]に設定
+		metaData.MaxContentLightLevel = 2000;
+
+		hr = m_pSwapChain->SetHDRMetaData(
+			DXGI_HDR_METADATA_TYPE_HDR10,
+			sizeof(DXGI_HDR_METADATA_HDR10),
+			&metaData);
+		if (FAILED(hr))
+		{
+			ELOG("Error : IDXGISwapChain::SetHDRMetaData() Failed.");
+		}
+
+		m_BaseLuminance = 100.0f;
+		m_MaxLuminance = m_MaxDisplayLuminance;
+
+		// 成功したことを知らせるダイアログを出す
+		std::string message;
+		message += "HDRディスプレイ用に設定を変更しました\n\n";
+		message += "色空間：ITU-R BT.2100 PQ\n";
+		message += "最大輝度値：";
+		message += std::to_string(m_MaxDisplayLuminance);
+		message += " [nit]\n";
+		message += "最小輝度値：";
+		message += std::to_string(m_MinDisplayLuminance);
+		message += " [nit]\n";
+
+		MessageBoxA(nullptr,
+					message.c_str(),
+					"HDR設定成功",
+					MB_OK | MB_ICONINFORMATION);
+	}
+	else
+	{
+		auto hr = m_pSwapChain->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+		if (FAILED(hr))
+		{
+			MessageBox(
+				nullptr,
+				TEXT("ITU-R BT.709の色域設定に失敗しました。"),
+				TEXT("色域設定失敗"),
+				MB_OK | MB_ICONERROR);
+			ELOG("Error : IDXGISwapChain::SetColorSpace1() Failed.");
+			return;
+		}
+
+		DXGI_HDR_METADATA_HDR10 metaData = {};
+
+		// ITU-R BT.709の原刺激と白色点を設定
+		metaData.RedPrimary[0] = GetChromaticityCoord(0.640);
+		metaData.RedPrimary[1] = GetChromaticityCoord(0.330);
+		metaData.BluePrimary[0] = GetChromaticityCoord(0.300);
+		metaData.BluePrimary[1] = GetChromaticityCoord(0.600);
+		metaData.GreenPrimary[0] = GetChromaticityCoord(0.150);
+		metaData.GreenPrimary[1] = GetChromaticityCoord(0.060);
+		metaData.WhitePoint[0] = GetChromaticityCoord(0.3127);
+		metaData.WhitePoint[1] = GetChromaticityCoord(0.3290);
+
+		// ディスプレイがサポートすると最大輝度値と最小輝度値を設定.
+		metaData.MaxMasteringLuminance = UINT(m_MaxDisplayLuminance * 10000);
+		metaData.MinMasteringLuminance = UINT(m_MinDisplayLuminance * 0.001);
+
+		// 最大値を 100[nit] に設定
+		metaData.MaxContentLightLevel = 100;
+
+		hr = m_pSwapChain->SetHDRMetaData(
+			DXGI_HDR_METADATA_TYPE_HDR10,
+			sizeof(DXGI_HDR_METADATA_HDR10),
+			&metaData);
+		if (FAILED(hr))
+		{
+			ELOG("Error : IDXGISwapChain::SetHDRMetaData() Failed.");
+		}
+
+		m_BaseLuminance = 100.0f;
+		m_MaxLuminance = 100.0f;
+
+		// 成功したことを知らせるダイアログを出す.
+		std::string message;
+		message += "SDRディスプレイ用に設定を変更しました\n\n";
+		message += "色空間：ITU-R BT.709\n";
+		message += "最大輝度値：";
+		message += std::to_string(m_MaxDisplayLuminance);
+		message += " [nit]\n";
+		message += "最小輝度値：";
+		message += std::to_string(m_MinDisplayLuminance);
+		message += " [nit]\n";
+		MessageBoxA(nullptr,
+					message.c_str(),
+					"SDR設定成功",
+					MB_OK | MB_ICONINFORMATION);
+	}
 }

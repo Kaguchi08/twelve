@@ -13,9 +13,9 @@ IndexBuffer::~IndexBuffer()
 	Term();
 }
 
-bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t size, const uint32_t* pInitData)
+bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t count, const uint32_t* pInitData)
 {
-	if (pDevice == nullptr || size == 0)
+	if (pDevice == nullptr || count == 0)
 	{
 		ELOG("Error : Invalid Argument.");
 		return false;
@@ -33,7 +33,7 @@ bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t size, const uint32_t* pIn
 	D3D12_RESOURCE_DESC desc = {};
 	desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	desc.Alignment = 0;
-	desc.Width = size;
+	desc.Width = UINT64(sizeof(uint32_t) * count);
 	desc.Height = 1;
 	desc.DepthOrArraySize = 1;
 	desc.MipLevels = 1;
@@ -60,7 +60,7 @@ bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t size, const uint32_t* pIn
 	// インデックスバッファビューの設定
 	m_View.BufferLocation = m_pBuffer->GetGPUVirtualAddress();
 	m_View.Format = DXGI_FORMAT_R32_UINT;
-	m_View.SizeInBytes = UINT(size);
+	m_View.SizeInBytes = UINT(desc.Width);
 
 	// 初期化データがあれば書き込む
 	if (pInitData != nullptr)
@@ -72,10 +72,12 @@ bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t size, const uint32_t* pIn
 			return false;
 		}
 
-		memcpy(ptr, pInitData, size);
+		memcpy(ptr, pInitData, desc.Width);
 
 		Unmap();
 	}
+
+	m_Count = count;
 
 	return true;
 }
@@ -107,4 +109,9 @@ void IndexBuffer::Unmap()
 D3D12_INDEX_BUFFER_VIEW IndexBuffer::GetView() const
 {
 	return m_View;
+}
+
+size_t IndexBuffer::GetCount() const
+{
+	return m_Count;
 }

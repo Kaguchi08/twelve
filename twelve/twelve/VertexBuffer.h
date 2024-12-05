@@ -29,16 +29,16 @@ public:
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	/// <param name="pDevice">デバイス</param>
-	/// <param name="size">頂点バッファサイズ</param>
+	/// <param name="count">頂点数</param>
 	/// <param name="pInitData">初期化データ</param>
 	/// <returns></returns>
 	template<typename T>
 	bool Init(
 		ID3D12Device* pDevice,
-		size_t size,
+		size_t count,
 		const T* pInitData = nullptr)
 	{
-		return Init(pDevice, size, sizeof(T), pInitData);
+		return Init(pDevice, sizeof(T) * count, sizeof(T), pInitData);
 	}
 
 	/// <summary>
@@ -50,7 +50,7 @@ public:
 	/// メモリマッピングを行う
 	/// </summary>
 	/// <returns></returns>
-	void* Map();
+	void* Map() const;
 
 	/// <summary>
 	/// メモリマッピングを解除する

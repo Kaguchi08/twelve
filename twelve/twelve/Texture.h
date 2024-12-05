@@ -20,12 +20,14 @@ public:
 	/// <param name="pDevice">デバイス</param>
 	/// <param name="pPool">ディスクリプタプール</param>
 	/// <param name="filename">ファイル名</param>
+	/// <param name="isSRGB">sRGBフォーマットにするか</param>
 	/// <param name="batch">更新バッチ</param>
 	/// <returns></returns>
 	bool Init(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
 		const wchar_t* filename,
+		bool isSRGB,
 		DirectX::ResourceUploadBatch& batch);
 
 	/// <summary>
@@ -34,12 +36,14 @@ public:
 	/// <param name="pDevice">デバイス</param>
 	/// <param name="pPool">ディスクリプタプール</param>
 	/// <param name="pDesc">構成設定</param>
+	/// <param name="isSRGB">sRGBフォーマットにするか</param>
 	/// <param name="isCube">キューブマップかどうか</param>
 	/// <returns></returns>
 	bool Init(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
 		const D3D12_RESOURCE_DESC* pDesc,
+		bool isSRGB,
 		bool isCube);
 
 	/// <summary>

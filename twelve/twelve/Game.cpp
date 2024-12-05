@@ -42,10 +42,18 @@ bool Game::Initialize()
 
 	// TODO: 適切な場所に移す
 	// 描画処理の初期化
-	if (!m_pD3D12->InitializeGraphicsPipeline())
+	/*if (!m_pD3D12->InitializeGraphicsPipeline())
+	{
+		return false;
+	}*/
+
+	if (!m_pD3D12->InitHDR())
 	{
 		return false;
 	}
+
+	// 初期化直後にHDRのサポートチェックを実行
+	CheckSupportHDR();
 
 	// 入力管理の初期化
 	m_pInputSystem = std::make_shared<InputSystem>();
@@ -83,7 +91,9 @@ void Game::RunLoop()
 void Game::Terminate()
 {
 	// 描画リソースの解放
-	m_pD3D12->ReleaseGraphicsResources();
+	//m_pD3D12->ReleaseGraphicsResources();
+
+	m_pD3D12->TermHDR();
 
 	// D3D12の終了処理
 	m_pD3D12->Terminate();
@@ -118,6 +128,8 @@ void Game::ProcessInput()
 	{
 		PostQuitMessage(0);
 	}
+
+	m_pD3D12->ProcessInput(state);
 }
 
 void Game::UpdateGame()
@@ -182,7 +194,7 @@ bool Game::InitWind()
 		nullptr,
 		nullptr,
 		m_hInst,
-		nullptr);
+		this);
 
 	if (m_hWnd == nullptr)
 	{
@@ -243,18 +255,12 @@ LRESULT Game::WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
 
 		case WM_MOVE:
 		{
-			if (instance != nullptr)
-			{
-				instance->CheckSupportHDR();
-			}
+			instance->CheckSupportHDR();
 		} break;
 
 		case WM_DISPLAYCHANGE:
 		{
-			if (instance != nullptr)
-			{
-				instance->CheckSupportHDR();
-			}
+			instance->CheckSupportHDR();
 		} break;
 
 		default:

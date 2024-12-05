@@ -5,6 +5,49 @@
 #include "DescriptorPool.h"
 #include "Logger.h"
 
+namespace
+{
+	DXGI_FORMAT ConvertToSRGB(DXGI_FORMAT format)
+	{
+		DXGI_FORMAT result = format;
+		switch (format)
+		{
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			{ result = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC1_UNORM:
+			{ result = DXGI_FORMAT_BC1_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC2_UNORM:
+			{ result = DXGI_FORMAT_BC2_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC3_UNORM:
+			{ result = DXGI_FORMAT_BC3_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			{ result = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_B8G8R8X8_UNORM:
+			{ result = DXGI_FORMAT_B8G8R8X8_UNORM_SRGB; }
+			break;
+
+			case DXGI_FORMAT_BC7_UNORM:
+			{ result = DXGI_FORMAT_BC7_UNORM_SRGB; }
+			break;
+
+			default:
+				break;
+		}
+
+		return result;
+	}
+}
+
 Texture::Texture()
 	: m_pTex(nullptr)
 	, m_pHandle(nullptr)
@@ -17,7 +60,7 @@ Texture::~Texture()
 	Term();
 }
 
-bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, DirectX::ResourceUploadBatch& batch)
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, bool isSRGB, DirectX::ResourceUploadBatch& batch)
 {
 	if (pDevice == nullptr || pPool == nullptr || filename == nullptr)
 	{
@@ -42,7 +85,22 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 
 	// ファイルからテクスチャを生成
 	bool isCube = false;
-	auto hr = DirectX::CreateDDSTextureFromFile(pDevice, batch, filename, m_pTex.GetAddressOf(), true, 0, nullptr, &isCube);
+	auto flag = DirectX::DDS_LOADER_MIP_AUTOGEN;
+	if (isSRGB)
+	{
+		flag |= DirectX::DDS_LOADER_FORCE_SRGB;
+	}
+
+	auto hr = DirectX::CreateDDSTextureFromFileEx(
+		pDevice,
+		batch,
+		filename,
+		0,
+		D3D12_RESOURCE_FLAG_NONE,
+		flag,
+		m_pTex.GetAddressOf(),
+		nullptr,
+		&isCube);
 	if (FAILED(hr))
 	{
 		ELOG("Error : DirectX::CreateDDSTextureFromFile() Failed. filename = %ls, retcode = 0x%x", filename, hr);
@@ -58,7 +116,7 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 	return true;
 }
 
-bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, bool isCube)
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, bool isSRGB, bool isCube)
 {
 	if (pDevice == nullptr || pPool == nullptr || pDesc == nullptr)
 	{
@@ -103,6 +161,12 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RES
 
 	// シェーダーリソースビューの設定を取得
 	auto viewDesc = GetViewDesc(isCube);
+
+	// SRGBフォーマットに変換
+	if (isSRGB)
+	{
+		viewDesc.Format = ConvertToSRGB(viewDesc.Format);
+	}
 
 	// シェーダーリソースビューを生成
 	pDevice->CreateShaderResourceView(m_pTex.Get(), &viewDesc, m_pHandle->HandleCPU);

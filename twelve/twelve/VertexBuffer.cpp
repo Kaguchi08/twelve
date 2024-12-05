@@ -87,7 +87,7 @@ void VertexBuffer::Term()
 	memset(&m_View, 0, sizeof(m_View));
 }
 
-void* VertexBuffer::Map()
+void* VertexBuffer::Map() const
 {
 	void* ptr = nullptr;
 	auto hr = m_pBuffer->Map(0, nullptr, &ptr);

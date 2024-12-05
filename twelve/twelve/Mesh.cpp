@@ -21,13 +21,13 @@ bool Mesh::Init(ID3D12Device* pDevice, const ResMesh& resourse)
 		return false;
 	}
 
-	if (!m_VB.Init(pDevice, sizeof(MeshVertex) * resourse.Vertices.size(), resourse.Vertices.data()))
+	if (!m_VB.Init<MeshVertex>(pDevice, resourse.Vertices.size(), resourse.Vertices.data()))
 	{
 		ELOG("Error : VertexBuffer::Init() Failed.");
 		return false;
 	}
 
-	if (!m_IB.Init(pDevice, sizeof(uint32_t) * resourse.Indices.size(), resourse.Indices.data()))
+	if (!m_IB.Init(pDevice, resourse.Indices.size(), resourse.Indices.data()))
 	{
 		ELOG("Error : IndexBuffer::Init() Failed.");
 		return false;
