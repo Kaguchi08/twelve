@@ -79,6 +79,7 @@ private:
 	VertexBuffer                        m_WallVB;
 	VertexBuffer	                    m_FloorVB;
 	ConstantBuffer                      m_TonemapCB[Constants::FrameCount];
+	ConstantBuffer					    m_DirectionalLightCB[Constants::FrameCount];
 	ConstantBuffer                      m_LightCB[Constants::FrameCount];
 	ConstantBuffer                      m_CameraCB[Constants::FrameCount];
 	ConstantBuffer                      m_TransformCB[Constants::FrameCount];

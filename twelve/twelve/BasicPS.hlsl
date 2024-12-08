@@ -17,13 +17,20 @@ struct PSOutput
     float4 Color : SV_TARGET0;
 };
 
+cbuffer DirectionalLight : register(b0)
+{
+    float3 DirectionalLightColor : packoffset(c0);
+    float DirectionalLightIntensity : packoffset(c0.w);
+    float3 DirectionalLightForward : packoffset(c1);
+};
+
 cbuffer CbLight : register(b1)
 {
     float3 LightPosition : packoffset(c0);
     float LightInvSqrRadius : packoffset(c0.w);
     float3 LightColor : packoffset(c1);
     float LightIntensity : packoffset(c1.w);
-    float3 LightFoward : packoffset(c2);
+    float3 LightForward : packoffset(c2);
     float LightAngleScale : packoffset(c2.w);
     float LightAngleOffset : packoffset(c3);
     int LightType : packoffset(c3.y);
@@ -176,68 +183,94 @@ float3 EvaluateSpotLightLagarde
 PSOutput main(VSOutput input)
 {
     PSOutput output = (PSOutput) 0;
-
-    float3 L = normalize(LightPosition - input.WorldPos);
-    float3 V = normalize(CameraPosition - input.WorldPos);
-    float3 H = normalize(V + L);
+    
     float3 N = NormalMap.Sample(NormalSmp, input.TexCoord).xyz * 2.0f - 1.0f;
+    float3 V = normalize(CameraPosition - input.WorldPos);
     N = mul(input.InvTangentBasis, N);
-
-    float NV = saturate(dot(N, V));
-    float NH = saturate(dot(N, H));
-    float NL = saturate(dot(N, L));
 
     float3 baseColor = BaseColorMap.Sample(BaseColorSmp, input.TexCoord).rgb;
     float metallic = MetallicMap.Sample(MetallicSmp, input.TexCoord).r;
     float roughness = RoughnessMap.Sample(RoughnessSmp, input.TexCoord).r;
-
+    
     float3 Kd = baseColor * (1.0f - metallic);
     float3 diffuse = ComputeLambert(Kd);
 
     float3 Ks = baseColor * metallic;
-    float3 specular = ComputeGGX(Ks, roughness, NH, NV, NL);
-
-    float3 BRDF = (diffuse + specular);
-    float3 lit = 0;
     
-    if (LightType == 0)
+    float NV = saturate(dot(N, V));
+    
+    float3 color = 0;
+    
     {
-        lit = EvaluateSpotLight(
+        float3 L = normalize(LightPosition - input.WorldPos);
+        float3 H = normalize(V + L);
+
+        float NH = saturate(dot(N, H));
+        float NL = saturate(dot(N, L));
+
+        float3 specular = ComputeGGX(Ks, roughness, NH, NV, NL);
+
+        float3 BRDF = (diffuse + specular);
+        float3 lit = 0;
+    
+        if (LightType == 0)
+        {
+            lit = EvaluateSpotLight(
                 N,
                 input.WorldPos,
                 LightPosition,
                 LightInvSqrRadius,
-                LightFoward,
+                LightForward,
                 LightColor,
                 LightAngleScale,
                 LightAngleOffset) * LightIntensity;
+        }
+        else if (LightType == 1)
+        {
+            lit = EvaluateSpotLightKaris(
+                N,
+                input.WorldPos,
+                LightPosition,
+                LightInvSqrRadius,
+                LightForward,
+                LightColor,
+                LightAngleScale,
+                LightAngleOffset) * LightIntensity;
+        }
+        else
+        {
+            lit = EvaluateSpotLightLagarde(
+                N,
+                input.WorldPos,
+                LightPosition,
+                LightInvSqrRadius,
+                LightForward,
+                LightColor,
+                LightAngleScale,
+                LightAngleOffset) * LightIntensity;
+        }
+        
+        color += lit * BRDF;
     }
-    else if (LightType == 1)
+    
+    
+    // Directional Light
     {
-        lit = EvaluateSpotLightKaris(
-                N,
-                input.WorldPos,
-                LightPosition,
-                LightInvSqrRadius,
-                LightFoward,
-                LightColor,
-                LightAngleScale,
-                LightAngleOffset) * LightIntensity;
-    }
-    else
-    {
-        lit = EvaluateSpotLightLagarde(
-                N,
-                input.WorldPos,
-                LightPosition,
-                LightInvSqrRadius,
-                LightFoward,
-                LightColor,
-                LightAngleScale,
-                LightAngleOffset) * LightIntensity;
+        float3 L = normalize(DirectionalLightForward);
+        float3 H = normalize(V + L);
+        
+        float NH = saturate(dot(N, H));
+        float NL = saturate(dot(N, L));
+        
+        float3 specular = ComputeGGX(Ks, roughness, NH, NV, NL);
+
+        float3 BRDF = (diffuse + specular);
+        float3 lit = NL * DirectionalLightColor.rgb * DirectionalLightIntensity;
+        
+        color += lit * BRDF;
     }
 
-    output.Color.rgb = lit * BRDF;
+    output.Color.rgb = color;
     output.Color.a = 1.0f;
 
     return output;

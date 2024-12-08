@@ -38,8 +38,10 @@ float D_GGX(float a, float NH)
 float G2_Smith(float NL, float NV, float a)
 {
     float a2 = a * a;
-    float NL2 = NL * NL;
-    float NV2 = NV * NV;
+    
+    float epsilon = max(1e-6f, a2 * 1e-6f);
+    float NL2 = max(NL * NL, epsilon);
+    float NV2 = max(NV * NV, epsilon);
 
     float Lambda_V = (-1.0f + sqrt(a2 * (1.0f - NL2) / NL2 + 1.0f)) * 0.5f;
     float Lambda_L = (-1.0f + sqrt(a2 * (1.0f - NV2) / NV2 + 1.0f)) * 0.5f;
@@ -79,6 +81,13 @@ float3 ComputeGGX
     float NdotL
 )
 {
+    // 分母がゼロの場合を回避するためのチェック
+    float epsilon = 1e-6f;
+    if (NdotV < epsilon || NdotL < epsilon)
+    {
+        return float3(0.0f, 0.0f, 0.0f); // BRDFはゼロ
+    }
+    
     float a = roughness * roughness;
     float D = D_GGX(a, NdotH);
     float G = G2_Smith(NdotL, NdotV, a);

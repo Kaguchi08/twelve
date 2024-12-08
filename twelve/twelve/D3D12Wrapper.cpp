@@ -64,6 +64,13 @@ namespace
 		Matrix Proj; // 射影行列
 	};
 
+	struct alignas(256) CbDirectionalLight
+	{
+		Vector3 LightColor;			// ライトの色
+		float   LightIntensity;		// ライトの強度
+		Vector3 LightForward;		// ライトの照射方向
+	};
+
 	struct alignas(256) CbLight
 	{
 		Vector3 LightPosition;		// ライトの位置
@@ -691,6 +698,16 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 	// ライトバッファの設定
 	{
+		// ディレクショナルライト
+		for (auto i = 0; i < Constants::FrameCount; ++i)
+		{
+			if (!m_DirectionalLightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbDirectionalLight)))
+			{
+				ELOG("Error : ConstantBuffer::Init() Failed.");
+				return false;
+			}
+		}
+
 		for (auto i = 0; i < Constants::FrameCount; ++i)
 		{
 			if (!m_LightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbLight)))
@@ -751,19 +768,20 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 	// シーン用ルートシグネチャの生成
 	{
 		RootSignature::Desc desc;
-		desc.Begin(8)
-			.SetCBV(ShaderStage::VS, 0, 0)
-			.SetCBV(ShaderStage::VS, 1, 1)
-			.SetCBV(ShaderStage::PS, 2, 1)
-			.SetCBV(ShaderStage::PS, 3, 2)
-			.SetSRV(ShaderStage::PS, 4, 0)
-			.SetSRV(ShaderStage::PS, 5, 1)
-			.SetSRV(ShaderStage::PS, 6, 2)
-			.SetSRV(ShaderStage::PS, 7, 3)
-			.AddStaticSmp(ShaderStage::PS, 0, SamplerState::LinearClamp)
-			.AddStaticSmp(ShaderStage::PS, 1, SamplerState::LinearClamp)
-			.AddStaticSmp(ShaderStage::PS, 2, SamplerState::LinearClamp)
-			.AddStaticSmp(ShaderStage::PS, 3, SamplerState::LinearClamp)
+		desc.Begin(9)
+			.SetCBV(ShaderStage::VS, 0, 0) // 変換行列
+			.SetCBV(ShaderStage::VS, 1, 1) // メッシュのワールド行列
+			.SetCBV(ShaderStage::PS, 8, 0) // ディレクショナルライト
+			.SetCBV(ShaderStage::PS, 2, 1) // ライト
+			.SetCBV(ShaderStage::PS, 3, 2) // カメラ
+			.SetSRV(ShaderStage::PS, 4, 0) // ベースカラーマップ
+			.SetSRV(ShaderStage::PS, 5, 1) // 金属度マップ
+			.SetSRV(ShaderStage::PS, 6, 2) // 粗さマップ
+			.SetSRV(ShaderStage::PS, 7, 3) // 法線マップ
+			.AddStaticSmp(ShaderStage::PS, 0, SamplerState::LinearClamp) // ベースカラーマップ
+			.AddStaticSmp(ShaderStage::PS, 1, SamplerState::LinearClamp) // 金属度マップ
+			.AddStaticSmp(ShaderStage::PS, 2, SamplerState::LinearClamp) // 粗さマップ
+			.AddStaticSmp(ShaderStage::PS, 3, SamplerState::LinearClamp) // 法線マップ
 			.AllowIL()
 			.End();
 
@@ -1077,6 +1095,7 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 	for (auto i = 0; i < Constants::FrameCount; ++i)
 	{
 		m_TonemapCB[i].Term();
+		m_DirectionalLightCB[i].Term();
 		m_LightCB[i].Term();
 		m_CameraCB[i].Term();
 		m_TransformCB[i].Term();
@@ -1371,6 +1390,18 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 	auto dt = float(std::chrono::duration_cast<std::chrono::milliseconds>(currTime - m_StartTime).count()) / 1000.0f;
 	auto lightColor = CalcLightColor(dt * 0.25f);
 
+	// ディレクショナルライトの更新
+	{
+		auto matrix = Matrix::CreateRotationY(m_RotateAngle);
+
+		auto ptr = m_DirectionalLightCB[m_FrameIndex].GetPtr<CbDirectionalLight>();
+		ptr->LightColor = Vector3(1.0f, 1.0f, 1.0f);
+		ptr->LightForward = Vector3::TransformNormal(Vector3(0.0f, 1.0f, 1.0f), matrix);
+		ptr->LightIntensity = 2.0f;
+
+		m_RotateAngle += 0.01f;
+	}
+
 	// ライトバッファの更新
 	{
 		auto pos = Vector3(-1.5f, 0.0f, 1.5f);
@@ -1413,6 +1444,7 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 
 	pCmdList->SetGraphicsRootSignature(m_SceneRootSignature.GetPtr());
 	pCmdList->SetGraphicsRootDescriptorTable(0, m_TransformCB[m_FrameIndex].GetHandleGPU());
+	pCmdList->SetGraphicsRootDescriptorTable(8, m_DirectionalLightCB[m_FrameIndex].GetHandleGPU());
 	pCmdList->SetGraphicsRootDescriptorTable(2, m_LightCB[m_FrameIndex].GetHandleGPU());
 	pCmdList->SetGraphicsRootDescriptorTable(3, m_CameraCB[m_FrameIndex].GetHandleGPU());
 	pCmdList->SetPipelineState(m_pScenePSO.Get());
