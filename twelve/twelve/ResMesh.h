@@ -21,6 +21,10 @@ struct ResMaterial
 	float Roughness;					// 粗さ
 	std::wstring BaseColorMap;			// ベースカラーマップファイルパス
 	std::wstring MetallicRoughnessMap;	// 金属度・粗さマップファイルパス
+
+	// TODO: 後で削除
+	std::wstring MetallicMap;
+	std::wstring RoughnessMap;
 };
 
 class MeshVertex

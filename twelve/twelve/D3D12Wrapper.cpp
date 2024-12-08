@@ -70,6 +70,11 @@ namespace
 		float   LightInvSqrRadius;	// ライトの逆二乗半径
 		Vector3 LightColor;			// ライトの色
 		float   LightIntensity;		// ライトの強度
+		Vector3 LightForward;		// ライトの照射方向
+		float   LightAngleScale;	// ライトの照射角度スケール( 1.0f / (cosInner - cosOuter) )
+		float	LightAngleOffset;	// ライトの照射角度オフセット( -cosOuter * LightAngleScale )
+		int		LightType;			// ライトの種類
+		float   Padding[2];			// パディング
 	};
 
 	struct alignas(256) CbCamera
@@ -97,6 +102,34 @@ namespace
 		result.LightInvSqrRadius = 1.0f / (radius * radius);
 		result.LightColor = color;
 		result.LightIntensity = intensity;
+
+		return result;
+	}
+
+	CbLight ComputeSpotLight
+	(
+		int lightType,
+		const Vector3& dir,
+		const Vector3& pos,
+		float radius,
+		const Vector3& color,
+		float intensity,
+		float innerAngle,
+		float outerAngle
+	)
+	{
+		auto cosInnerAngle = cosf(innerAngle);
+		auto cosOuterAngle = cosf(outerAngle);
+
+		CbLight result;
+		result.LightPosition = pos;
+		result.LightInvSqrRadius = 1.0f / (radius * radius);
+		result.LightColor = color;
+		result.LightIntensity = intensity;
+		result.LightForward = dir;
+		result.LightAngleScale = 1.0f / DirectX::XMMax(0.001f, (cosInnerAngle - cosOuterAngle));
+		result.LightAngleOffset = -cosOuterAngle * result.LightAngleScale;
+		result.LightType = lightType;
 
 		return result;
 	}
@@ -141,6 +174,7 @@ D3D12Wrapper::D3D12Wrapper()
 	, m_BaseLuminance(100.0f)
 	, m_MaxLuminance(100.0f)
 	, m_Exposure(1.0f)
+	, m_LightType(0)
 {
 }
 
@@ -528,6 +562,28 @@ void D3D12Wrapper::ProcessInput(const InputState& state)
 	{
 		m_TonemapType = TONEMAP_GT;
 	}
+
+	// スポットライトの計算手法の切り替え
+	if (state.keyboard.GetKeyState('L') == ButtonState::Pressed)
+	{
+		m_LightType = (m_LightType + 1) % 3;
+
+		// 距離減衰なし
+		if (m_LightType == 0)
+		{
+			printf_s("SpotLight : Default\n");
+		}
+		// [Karis 2013] Brian Karis, "Real Shading in Unreal Engine4", SIGGRAPH 2013 Course: Physically Based Shading in Theory and Parctice.
+		else if (m_LightType == 1)
+		{
+			printf_s("SpotLight : [Karis 2013]\n");
+		}
+		// [Lagarde, Rousiers 2014] Sébastien Lagarde, Charles de Reousiers, "Moving Frostbite to Physically Based Rendering 2.0", SIGGRAPH 2014 Course: Physically Based Shading in Theory and Practice.
+		else if (m_LightType == 2)
+		{
+			printf_s("SpotLight : [Lagarde, Rousiers 2014]\n");
+		}
+	}
 }
 
 bool D3D12Wrapper::InitializeGraphicsPipeline()
@@ -536,6 +592,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 	{
 		std::wstring path;
 		if (!SearchFilePath(L"Assets/material_test/material_test.obj", path))
+			//if (!SearchFilePath(L"Assets/sponza/glTF/Sponza_modified.gltf", path))
 		{
 			ELOG("Error : File Not Found.");
 			return false;
@@ -597,20 +654,20 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		batch.Begin();
 
 		// テクスチャとマテリアルを設定
-		/*for (size_t i = 0; i < resMaterial.size(); ++i)
+		for (size_t i = 0; i < resMaterial.size(); ++i)
 		{
-			auto ptr = m_Material.GetBufferPtr<CbMaterial>(i);
-			ptr->BaseColor = resMaterial[i].Diffuse;
-			ptr->Alpha = resMaterial[i].Alpha;
-			ptr->Metalic = 0.5f;
-			ptr->Shininess = resMaterial[i].Shininess;
-
-			std::wstring path = dir + resMaterial[i].DiffuseMap;
-			m_Material.SetTexture(i, TU_DIFFUSE, path, batch);
+			/*std::wstring path = dir + resMaterial[i].BaseColorMap;
+			m_Material.SetTexture(i, TU_BASE_COLOR, path, batch);
 
 			path = dir + resMaterial[i].NormalMap;
 			m_Material.SetTexture(i, TU_NORMAL, path, batch);
-		}*/
+
+			path = dir + resMaterial[i].MetallicMap;
+			m_Material.SetTexture(i, TU_METALLIC, path, batch);
+
+			path = dir + resMaterial[i].RoughnessMap;
+			m_Material.SetTexture(i, TU_ROUGHNESS, path, batch);*/
+		}
 
 		{
 			/* ここではマテリアルが決め打ちであることを前提にハードコーディングしています. */
@@ -641,9 +698,6 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 				ELOG("Error : ConstantBuffer::Init() Failed.");
 				return false;
 			}
-
-			auto ptr = m_LightCB[i].GetPtr<CbLight>();
-			*ptr = ComputePointLight(Vector3(0.0f, 1.0f, 1.5f), 1.0f, Vector3(1.0f, 0.5f, 0.0f), 10.0f);
 		}
 	}
 
@@ -1311,7 +1365,7 @@ void D3D12Wrapper::ChangeDisplayMode(bool hdr)
 
 void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 {
-	auto cameraPos = Vector3(-4.0f, 1.0f, 2.5f);
+	auto cameraPos = Vector3(1.0f, 5.5f, 3.0f);
 
 	auto currTime = std::chrono::system_clock::now();
 	auto dt = float(std::chrono::duration_cast<std::chrono::milliseconds>(currTime - m_StartTime).count()) / 1000.0f;
@@ -1319,13 +1373,20 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 
 	// ライトバッファの更新
 	{
-		auto matrix = Matrix::CreateRotationY(m_RotateAngle);
-		auto pos = Vector3::Transform(Vector3(0.0f, 0.25f, 0.75f), matrix);
+		auto pos = Vector3(-1.5f, 0.0f, 1.5f);
+		auto dir = Vector3(1.0f, -0.1f, -1.0f);
+		dir.Normalize();
 
 		auto ptr = m_LightCB[m_FrameIndex].GetPtr<CbLight>();
-		*ptr = ComputePointLight(pos, 2.0f, lightColor, 100.0f);
-
-		m_RotateAngle += 0.025f;
+		*ptr = ComputeSpotLight(
+			m_LightType,
+			dir,
+			pos,
+			3.0f,
+			lightColor,
+			810.0f,
+			DirectX::XMConvertToRadians(5.0f),
+			DirectX::XMConvertToRadians(20.0f));
 	}
 
 	// カメラバッファの更新

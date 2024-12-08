@@ -349,6 +349,33 @@ namespace
 				dstMaterial.MetallicRoughnessMap.clear();
 			}
 		}
+
+
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.MetallicMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.MetallicMap.clear();
+			}
+		}
+
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.RoughnessMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.RoughnessMap.clear();
+			}
+		}
 	}
 }
 

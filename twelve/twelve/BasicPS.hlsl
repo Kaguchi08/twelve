@@ -1,64 +1,39 @@
-//-----------------------------------------------------------------------------
-// File : BasicPS.hlsl
-// Desc : Pixel Shader.
-// Copyright(c) Pocol. All right reserved.
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Includes
-//-----------------------------------------------------------------------------
 #include "BRDF.hlsli"
 
 #ifndef MIN_DIST
 #define MIN_DIST (0.01)
 #endif//MIN_DIST
 
-#ifndef OPTIMIZATION
-#define OPTIMIZATION (1)
-#endif//OPTIMIZATION
-
-
-///////////////////////////////////////////////////////////////////////////////
-// VSOutput structure
-///////////////////////////////////////////////////////////////////////////////
 struct VSOutput
 {
-    float4 Position : SV_POSITION; // 位置座標です.
-    float2 TexCoord : TEXCOORD; // テクスチャ座標です.
-    float3 WorldPos : WORLD_POS; // ワールド空間の位置座標です.
-    float3x3 InvTangentBasis : INV_TANGENT_BASIS; // 接線空間への基底変換行列の逆行列です.
+    float4 Position : SV_POSITION;
+    float2 TexCoord : TEXCOORD;
+    float3 WorldPos : WORLD_POS;
+    float3x3 InvTangentBasis : INV_TANGENT_BASIS;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// PSOutput structure
-///////////////////////////////////////////////////////////////////////////////
 struct PSOutput
 {
-    float4 Color : SV_TARGET0; // 出力カラーです.
+    float4 Color : SV_TARGET0;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// CbLight constant buffer.
-///////////////////////////////////////////////////////////////////////////////
 cbuffer CbLight : register(b1)
 {
     float3 LightPosition : packoffset(c0);
     float LightInvSqrRadius : packoffset(c0.w);
     float3 LightColor : packoffset(c1);
     float LightIntensity : packoffset(c1.w);
+    float3 LightFoward : packoffset(c2);
+    float LightAngleScale : packoffset(c2.w);
+    float LightAngleOffset : packoffset(c3);
+    int LightType : packoffset(c3.y);
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// CameraBuffer
-///////////////////////////////////////////////////////////////////////////////
 cbuffer CbCamera : register(b2)
 {
     float3 CameraPosition : packoffset(c0); // カメラ位置です.
 }
 
-//-----------------------------------------------------------------------------
-// Textures and Samplers
-//-----------------------------------------------------------------------------
 Texture2D BaseColorMap : register(t0);
 SamplerState BaseColorSmp : register(s0);
 
@@ -72,13 +47,10 @@ Texture2D NormalMap : register(t3);
 SamplerState NormalSmp : register(s3);
 
 
-//-----------------------------------------------------------------------------
-//      距離を元に滑らかに減衰させます.
-//-----------------------------------------------------------------------------
 float SmoothDistanceAttenuation
 (
-    float squaredDistance, // ライトへの距離の2乗.
-    float invSqrAttRadius // ライト半径の2乗の逆数.
+    float squaredDistance, // ライトへの距離の2乗
+    float invSqrAttRadius // ライト半径の2乗の逆数
 )
 {
     float factor = squaredDistance * invSqrAttRadius;
@@ -86,72 +58,117 @@ float SmoothDistanceAttenuation
     return smoothFactor * smoothFactor;
 }
 
-#ifndef OPTIMIZATION
-//-----------------------------------------------------------------------------
-//      距離減衰を求めます.
-//-----------------------------------------------------------------------------
-float GetDistanceAttenuation(float3 unnormalizedLightVector)
-{
-    float sqrDist = dot(unnormalizedLightVector, unnormalizedLightVector);
-    float attenuation = 1.0f / (max(sqrDist, MIN_DIST * MIN_DIST));
-    return attenuation;
-}
-
-//-----------------------------------------------------------------------------
-//      ポイントライトを評価します.
-//-----------------------------------------------------------------------------
-float3 EvaluatePointLight
-(
-    float3      N,                      // 法線ベクトル.
-    float3      worldPos,               // ワールド空間のオブジェクト位置.
-    float3      lightPos,               // ライトの位置.
-    float3      lightColor              // ライトカラー.
-)
-{
-    float3 dif = lightPos - worldPos;
-    float3 L = normalize(dif);
-    float  att = GetDistanceAttenuation(dif);
-
-    return saturate(dot(N, L)) * lightColor * att / (4.0f * F_PI);
-}
-#else
-//-----------------------------------------------------------------------------
-//      距離減衰を求めます.
-//-----------------------------------------------------------------------------
 float GetDistanceAttenuation
 (
-    float3 unnormalizedLightVector, // ライト位置とオブジェクト位置の差分ベクトル.
-    float invSqrAttRadius // ライト半径の2乗の逆数.
+    float3 unnormalizedLightVector, // ライト位置とオブジェクト位置の差分ベクトル
+    float invSqrAttRadius // ライト半径の2乗の逆数
 )
 {
     float sqrDist = dot(unnormalizedLightVector, unnormalizedLightVector);
     float attenuation = 1.0f / (max(sqrDist, MIN_DIST * MIN_DIST));
 
-    // 窓関数によって滑らかにゼロとなるようにする
     attenuation *= SmoothDistanceAttenuation(sqrDist, invSqrAttRadius);
 
     return attenuation;
 }
 
-//-----------------------------------------------------------------------------
-//      ポイントライトを評価します.
-//-----------------------------------------------------------------------------
 float3 EvaluatePointLight
 (
-    float3 N, // 法線ベクトル.
-    float3 worldPos, // ワールド空間のオブジェクト位置.
-    float3 lightPos, // ライトの位置.
-    float lightInvRadiusSq, // ライト半径の2乗の逆数.
-    float3 lightColor // ライトカラー.
+    float3 N, // 法線ベクトル
+    float3 worldPos, // ワールド空間のオブジェクト位置
+    float3 lightPos, // ライトの位置
+    float lightInvRadiusSq, // ライト半径の2乗の逆数
+    float3 lightColor // ライトカラー
 )
 {
     float3 dif = lightPos - worldPos;
     float3 L = normalize(dif);
     float att = GetDistanceAttenuation(dif, lightInvRadiusSq);
 
-    return saturate(dot(N, L)) * lightColor * att / (4.0f * F_PI);
+    return saturate(dot(N, L)) * lightColor * att / 0.25f;
 }
-#endif
+
+float GetAngleAttenuation
+(
+    float3 unnormalizedLightVector, // ライト位置とオブジェクト位置の差分ベクトル
+    float3 lightDir, // 正規化済みのライトベクトル(ライトに向かう方向)
+    float lightAngleScale, // スポットライトの角度減衰スケール
+    float lightAngleOffset // スポットライトの角度オフセット
+)
+{
+    float cd = dot(lightDir, unnormalizedLightVector);
+    float attenuation = saturate(cd * lightAngleScale + lightAngleOffset);
+    
+    // 滑らかに変化させる
+    attenuation *= attenuation;
+    
+    return attenuation;
+}
+
+float3 EvaluateSpotLight
+(
+    float3 N, // 法線ベクトル
+    float3 worldPos, // ワールド空間のオブジェクト位置
+    float3 lightPos, // ライトの位置
+    float lightInvRadiusSq, // ライト半径の2乗の逆数
+    float3 lightForward, // ライトの前方ベクトル
+    float3 lightColor, // ライトカラー
+    float lightAngleScale, // スポットライトの角度減衰スケール
+    float lightAngleOffset // スポットライトの角度オフセット
+)
+{
+    float3 unnormalizedLightVector = lightPos - worldPos;
+    float3 L = normalize(unnormalizedLightVector);
+    float sqrDist = dot(unnormalizedLightVector, unnormalizedLightVector);
+    float att = 1.0f / (max(sqrDist, MIN_DIST * MIN_DIST));
+    att *= GetAngleAttenuation(-L, lightForward, lightAngleScale, lightAngleOffset);
+
+    return saturate(dot(N, L)) * lightColor * att / F_PI;
+}
+
+float3 EvaluateSpotLightKaris
+(
+    float3 N,
+    float3 worldPos,
+    float3 lightPos,
+    float lightInvRadiusSq,
+    float3 lightForward,
+    float3 lightColor,
+    float lightAngleScale,
+    float lightAngleOffset
+)
+{
+    float3 unnormalizedLightVector = lightPos - worldPos;
+    float3 L = normalize(unnormalizedLightVector);
+    float sqrDist = dot(unnormalizedLightVector, unnormalizedLightVector);
+    float att = 1.0f;
+    att *= SmoothDistanceAttenuation(sqrDist, lightInvRadiusSq);
+    att /= (sqrDist + 1.0f);
+    att *= GetAngleAttenuation(-L, lightForward, lightAngleScale, lightAngleOffset);
+
+    return saturate(dot(N, L)) * lightColor * att / F_PI;
+}
+
+float3 EvaluateSpotLightLagarde
+(
+    float3 N,
+    float3 worldPos,
+    float3 lightPos,
+    float lightInvRadiusSq,
+    float3 lightForward,
+    float3 lightColor,
+    float lightAngleScale,
+    float lightAngleOffset
+)
+{
+    float3 unnormalizedLightVector = lightPos - worldPos;
+    float3 L = normalize(unnormalizedLightVector);
+    float att = 1.0f;
+    att *= GetDistanceAttenuation(unnormalizedLightVector, lightInvRadiusSq);
+    att *= GetAngleAttenuation(-L, lightForward, lightAngleScale, lightAngleOffset);
+
+    return saturate(dot(N, L)) * lightColor * att / F_PI;
+}
 
 //-----------------------------------------------------------------------------
 //      ピクセルシェーダのメインエントリーポイントです.
@@ -181,11 +198,44 @@ PSOutput main(VSOutput input)
     float3 specular = ComputeGGX(Ks, roughness, NH, NV, NL);
 
     float3 BRDF = (diffuse + specular);
-#ifndef OPTIMIZATION
-    float3 lit  = EvaluatePointLight(N, input.WorldPos, LightPosition, LightColor) * LightIntensity;
-#else
-    float3 lit = EvaluatePointLight(N, input.WorldPos, LightPosition, LightInvSqrRadius, LightColor) * LightIntensity;
-#endif
+    float3 lit = 0;
+    
+    if (LightType == 0)
+    {
+        lit = EvaluateSpotLight(
+                N,
+                input.WorldPos,
+                LightPosition,
+                LightInvSqrRadius,
+                LightFoward,
+                LightColor,
+                LightAngleScale,
+                LightAngleOffset) * LightIntensity;
+    }
+    else if (LightType == 1)
+    {
+        lit = EvaluateSpotLightKaris(
+                N,
+                input.WorldPos,
+                LightPosition,
+                LightInvSqrRadius,
+                LightFoward,
+                LightColor,
+                LightAngleScale,
+                LightAngleOffset) * LightIntensity;
+    }
+    else
+    {
+        lit = EvaluateSpotLightLagarde(
+                N,
+                input.WorldPos,
+                LightPosition,
+                LightInvSqrRadius,
+                LightFoward,
+                LightColor,
+                LightAngleScale,
+                LightAngleOffset) * LightIntensity;
+    }
 
     output.Color.rgb = lit * BRDF;
     output.Color.a = 1.0f;
