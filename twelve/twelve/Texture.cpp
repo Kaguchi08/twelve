@@ -83,27 +83,67 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 		return false;
 	}
 
-	// ファイルからテクスチャを生成
-	bool isCube = false;
-	auto flag = DirectX::DDS_LOADER_MIP_AUTOGEN;
-	if (isSRGB)
+	// ファイル拡張子からDDSかどうかを判定
+	std::wstring path(filename);
+	bool isDDS = false;
 	{
-		flag |= DirectX::DDS_LOADER_FORCE_SRGB;
+		size_t pos = path.find_last_of(L'.');
+		if (pos != std::wstring::npos)
+		{
+			std::wstring ext = path.substr(pos + 1);
+			for (auto& c : ext) { c = towlower(c); }
+			if (ext == L"dds")
+			{
+				isDDS = true;
+			}
+		}
 	}
 
-	auto hr = DirectX::CreateDDSTextureFromFileEx(
-		pDevice,
-		batch,
-		filename,
-		0,
-		D3D12_RESOURCE_FLAG_NONE,
-		flag,
-		m_pTex.GetAddressOf(),
-		nullptr,
-		&isCube);
+	bool isCube = false;
+	HRESULT hr = S_OK;
+
+	if (isDDS)
+	{
+		// DDSの場合
+		auto flag = DirectX::DDS_LOADER_MIP_AUTOGEN;
+		if (isSRGB)
+		{
+			flag |= DirectX::DDS_LOADER_FORCE_SRGB;
+		}
+
+		hr = DirectX::CreateDDSTextureFromFileEx(
+			pDevice,
+			batch,
+			filename,
+			0,
+			D3D12_RESOURCE_FLAG_NONE,
+			flag,
+			m_pTex.GetAddressOf(),
+			nullptr,
+			&isCube);
+	}
+	else
+	{
+		// DDS以外のフォーマット（png, jpgなど）にはWICを使用
+		auto flag = DirectX::WIC_LOADER_MIP_AUTOGEN;
+		if (isSRGB)
+		{
+			flag |= DirectX::WIC_LOADER_FORCE_SRGB;
+		}
+
+		hr = DirectX::CreateWICTextureFromFileEx(
+			pDevice,
+			batch,
+			filename,
+			0,
+			D3D12_RESOURCE_FLAG_NONE,
+			flag,
+			m_pTex.GetAddressOf());
+	}
+
 	if (FAILED(hr))
 	{
-		ELOG("Error : DirectX::CreateDDSTextureFromFile() Failed. filename = %ls, retcode = 0x%x", filename, hr);
+		ELOG("Error : Texture Load Failed. filename = %ls, retcode = 0x%x", filename, hr);
 		return false;
 	}
 

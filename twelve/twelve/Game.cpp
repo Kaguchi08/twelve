@@ -42,15 +42,11 @@ bool Game::Initialize()
 
 	// TODO: 適切な場所に移す
 	// 描画処理の初期化
-	/*if (!m_pD3D12->InitializeGraphicsPipeline())
-	{
-		return false;
-	}*/
-
-	if (!m_pD3D12->InitHDR())
+	if (!m_pD3D12->InitializeGraphicsPipeline())
 	{
 		return false;
 	}
+
 
 	// 初期化直後にHDRのサポートチェックを実行
 	CheckSupportHDR();
@@ -91,9 +87,7 @@ void Game::RunLoop()
 void Game::Terminate()
 {
 	// 描画リソースの解放
-	//m_pD3D12->ReleaseGraphicsResources();
-
-	m_pD3D12->TermHDR();
+	m_pD3D12->ReleaseGraphicsResources();
 
 	// D3D12の終了処理
 	m_pD3D12->Terminate();
