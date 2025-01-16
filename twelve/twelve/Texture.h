@@ -53,6 +53,8 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetHandleCPU() const;
 	D3D12_GPU_DESCRIPTOR_HANDLE GetHandleGPU() const;
+	ComPtr<ID3D12Resource>& GetComPtr();
+	D3D12_RESOURCE_DESC GetDesc() const;
 
 private:
 	ComPtr<ID3D12Resource> m_pTex;

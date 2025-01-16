@@ -1,6 +1,7 @@
 ﻿#include "Texture.h"
 
 #include <DDSTextureLoader.h>
+#include <WICTextureLoader.h>
 
 #include "DescriptorPool.h"
 #include "Logger.h"
@@ -251,6 +252,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE Texture::GetHandleGPU() const
 	}
 
 	return D3D12_GPU_DESCRIPTOR_HANDLE();
+}
+
+ComPtr<ID3D12Resource>& Texture::GetComPtr()
+{
+	return m_pTex;
+}
+
+D3D12_RESOURCE_DESC Texture::GetDesc() const
+{
+	if (m_pTex != nullptr)
+	{
+		return m_pTex->GetDesc();
+	}
+
+	return D3D12_RESOURCE_DESC();
+
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetViewDesc(bool isCube)

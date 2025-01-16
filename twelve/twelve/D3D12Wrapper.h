@@ -21,6 +21,8 @@
 #include "Material.h"
 #include "RootSignature.h"
 #include "InlineUtil.h"
+#include "SphereMapConverter.h"
+#include "IBLBaker.h"
 
 struct InputState;
 
@@ -71,7 +73,7 @@ private:
 
 	ComPtr<ID3D12PipelineState>         m_pScenePSO;
 	RootSignature                       m_SceneRootSignature;
-	ComPtr < ID3D12PipelineState>       m_pTonemapPSO;
+	ComPtr<ID3D12PipelineState>         m_pTonemapPSO;
 	RootSignature                       m_TonemapRootSignature;
 	ColorTarget						    m_SceneColorTarget;
 	DepthTarget							m_SceneDepthTarget;
@@ -98,6 +100,10 @@ private:
 	float								m_MaxLuminance;			// 最大輝度値
 	float								m_Exposure;				// 露光値
 	int                                 m_LightType;            // ライトの種類
+
+	Texture								m_SphereMap;
+	SphereMapConverter					m_SphereMapConverter;
+	IBLBaker							m_IBLBaker;
 
 	std::chrono::system_clock::time_point m_StartTime;
 

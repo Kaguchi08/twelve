@@ -598,8 +598,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 	// メッシュをロード
 	{
 		std::wstring path;
+		// "Assets\ABeautifulGame\glTF\ABeautifulGame.gltf"
 		if (!SearchFilePath(L"Assets/material_test/material_test.obj", path))
-			//if (!SearchFilePath(L"Assets/sponza/glTF/Sponza_modified.gltf", path))
+			//if (!SearchFilePath(L"Assets/sponza/glTF/Sponza.gltf", path))
 		{
 			ELOG("Error : File Not Found.");
 			return false;
@@ -661,9 +662,9 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		batch.Begin();
 
 		// テクスチャとマテリアルを設定
-		for (size_t i = 0; i < resMaterial.size(); ++i)
+		/*for (size_t i = 0; i < resMaterial.size(); ++i)
 		{
-			/*std::wstring path = dir + resMaterial[i].BaseColorMap;
+			std::wstring path = dir + resMaterial[i].BaseColorMap;
 			m_Material.SetTexture(i, TU_BASE_COLOR, path, batch);
 
 			path = dir + resMaterial[i].NormalMap;
@@ -673,8 +674,8 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 			m_Material.SetTexture(i, TU_METALLIC, path, batch);
 
 			path = dir + resMaterial[i].RoughnessMap;
-			m_Material.SetTexture(i, TU_ROUGHNESS, path, batch);*/
-		}
+			m_Material.SetTexture(i, TU_ROUGHNESS, path, batch);
+		}*/
 
 		{
 			/* ここではマテリアルが決め打ちであることを前提にハードコーディングしています. */
@@ -1082,6 +1083,92 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		}
 	}
 
+	// IBLベイク処理の初期化
+	{
+		if (!m_IBLBaker.Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], m_pPool[POOL_TYPE_RTV]))
+		{
+			ELOG("Error : IBLBaker::Init() Failed.");
+			return false;
+		}
+	}
+
+	// テクスチャのロード
+	{
+		DirectX::ResourceUploadBatch batch(m_pDevice.Get());
+
+		// バッチ開始.
+		batch.Begin();
+
+		// スフィアマップ読み込み.
+		{
+			std::wstring sphereMapPath;
+			if (!SearchFilePathW(L"Assets/Textures/hdr014.dds", sphereMapPath))
+			{
+				ELOG("Error : File Not Found.");
+				return false;
+			}
+
+			// テクスチャ初期化.
+			if (!m_SphereMap.Init(
+				m_pDevice.Get(),
+				m_pPool[POOL_TYPE_RES],
+				sphereMapPath.c_str(),
+				false,
+				batch))
+			{
+				ELOG("Error : Texture::Init() Failed.");
+				return false;
+			}
+		}
+
+		// バッチ終了.
+		auto future = batch.End(m_pQueue.Get());
+
+		// 完了を待機.
+		future.wait();
+	}
+
+	// スフィアマップコンバーター初期化
+	if (!m_SphereMapConverter.Init(
+		m_pDevice.Get(),
+		m_pPool[POOL_TYPE_RTV],
+		m_pPool[POOL_TYPE_RES],
+		m_SphereMap.GetComPtr().Get()->GetDesc()))
+	{
+		ELOG("Error : SphereMapConverter::Init() Failed.");
+		return false;
+	}
+
+	// ベイク処理を実行
+	{
+		auto pCmd = m_CommandList.Reset();
+
+		ID3D12DescriptorHeap* const pHeaps[] = {
+			m_pPool[POOL_TYPE_RES]->GetHeap(),
+		};
+
+		pCmd->SetDescriptorHeaps(1, pHeaps);
+
+		// キューブマップに変換
+		m_SphereMapConverter.DrawToCube(pCmd, m_SphereMap.GetHandleGPU());
+
+		auto desc = m_SphereMapConverter.GetCubeMapDesc();
+		auto handle = m_SphereMapConverter.GetCubeMapHandleGPU();
+
+		// DFG項を積分
+		m_IBLBaker.IntegrateDFG(pCmd);
+		// LD項を積分
+		m_IBLBaker.IntegrateLD(pCmd, uint32_t(desc.Width), desc.MipLevels, handle);
+
+		pCmd->Close();
+
+		ID3D12CommandList* ppCmdLists[] = { pCmd };
+		m_pQueue->ExecuteCommandLists(1, ppCmdLists);
+
+		// 完了待ち
+		m_Fence.Sync(m_pQueue.Get());
+	}
+
 	// 開始時間を記録
 	m_StartTime = std::chrono::system_clock::now();
 
@@ -1126,6 +1213,10 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 
 	m_pTonemapPSO.Reset();
 	m_TonemapRootSignature.Term();
+
+	m_IBLBaker.Term();
+	m_SphereMapConverter.Term();
+	m_SphereMap.Term();
 }
 
 void D3D12Wrapper::CheckSupportHDR()
@@ -1384,7 +1475,7 @@ void D3D12Wrapper::ChangeDisplayMode(bool hdr)
 
 void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 {
-	auto cameraPos = Vector3(1.0f, 5.5f, 3.0f);
+	auto cameraPos = Vector3(1.0f, 0.5f, 3.0f);
 
 	auto currTime = std::chrono::system_clock::now();
 	auto dt = float(std::chrono::duration_cast<std::chrono::milliseconds>(currTime - m_StartTime).count()) / 1000.0f;
@@ -1396,8 +1487,9 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 
 		auto ptr = m_DirectionalLightCB[m_FrameIndex].GetPtr<CbDirectionalLight>();
 		ptr->LightColor = Vector3(1.0f, 1.0f, 1.0f);
-		ptr->LightForward = Vector3::TransformNormal(Vector3(0.0f, 1.0f, 1.0f), matrix);
-		ptr->LightIntensity = 2.0f;
+		//ptr->LightForward = Vector3::TransformNormal(Vector3(0.0f, 1.0f, 1.0f), matrix);
+		ptr->LightForward = Vector3(1.0f, 1.0f, 1.0f);
+		ptr->LightIntensity = 3.0f;
 
 		m_RotateAngle += 0.01f;
 	}
