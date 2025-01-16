@@ -83,6 +83,7 @@ private:
 	ConstantBuffer                      m_TonemapCB[Constants::FrameCount];
 	ConstantBuffer					    m_DirectionalLightCB[Constants::FrameCount];
 	ConstantBuffer                      m_LightCB[Constants::FrameCount];
+	ConstantBuffer					    m_IBLCB[Constants::FrameCount];
 	ConstantBuffer                      m_CameraCB[Constants::FrameCount];
 	ConstantBuffer                      m_TransformCB[Constants::FrameCount];
 	ConstantBuffer                      m_MeshCB[Constants::FrameCount];
@@ -113,6 +114,7 @@ private:
 	void ChangeDisplayMode(bool hdr);
 
 	void DrawScene(ID3D12GraphicsCommandList* pCmdList);
+	void DrawIBL(ID3D12GraphicsCommandList* pCmdList);
 	void DrawMesh(ID3D12GraphicsCommandList* pCmdList);
 	void DrawTonemap(ID3D12GraphicsCommandList* pCmdList);
 };

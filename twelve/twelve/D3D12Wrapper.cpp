@@ -64,6 +64,15 @@ namespace
 		Matrix Proj; // 射影行列
 	};
 
+	struct alignas(256) CbIBL
+	{
+		float TextureSize;
+		float MipCount;
+		float LightIntensity;
+		float Padding;
+		Vector3 LightDirection;
+	};
+
 	struct alignas(256) CbDirectionalLight
 	{
 		Vector3 LightColor;			// ライトの色
@@ -485,7 +494,12 @@ void D3D12Wrapper::Render()
 		m_SceneColorTarget.ClearView(pCmd);
 		m_SceneDepthTarget.ClearView(pCmd);
 
-		DrawScene(pCmd);
+		// ビューポート設定
+		pCmd->RSSetViewports(1, &m_Viewport);
+		pCmd->RSSetScissorRects(1, &m_Scissor);
+
+		//DrawScene(pCmd);
+		DrawIBL(pCmd);
 
 		// 読み込み用リソースバリアを設定
 		DirectX::TransitionResource(
@@ -599,7 +613,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 	{
 		std::wstring path;
 		// "Assets\ABeautifulGame\glTF\ABeautifulGame.gltf"
-		if (!SearchFilePath(L"Assets/material_test/material_test.obj", path))
+		if (!SearchFilePath(L"Assets/matball/matball.obj", path))
 			//if (!SearchFilePath(L"Assets/sponza/glTF/Sponza.gltf", path))
 		{
 			ELOG("Error : File Not Found.");
@@ -679,15 +693,15 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 		{
 			/* ここではマテリアルが決め打ちであることを前提にハードコーディングしています. */
-			m_Material.SetTexture(0, TU_BASE_COLOR, dir + L"wall_bc.dds", batch);
+			/*m_Material.SetTexture(0, TU_BASE_COLOR, dir + L"wall_bc.dds", batch);
 			m_Material.SetTexture(0, TU_METALLIC, dir + L"wall_m.dds", batch);
 			m_Material.SetTexture(0, TU_ROUGHNESS, dir + L"wall_r.dds", batch);
-			m_Material.SetTexture(0, TU_NORMAL, dir + L"wall_n.dds", batch);
+			m_Material.SetTexture(0, TU_NORMAL, dir + L"wall_n.dds", batch);*/
 
-			m_Material.SetTexture(1, TU_BASE_COLOR, dir + L"matball_bc.dds", batch);
-			m_Material.SetTexture(1, TU_METALLIC, dir + L"matball_m.dds", batch);
-			m_Material.SetTexture(1, TU_ROUGHNESS, dir + L"matball_r.dds", batch);
-			m_Material.SetTexture(1, TU_NORMAL, dir + L"matball_n.dds", batch);
+			m_Material.SetTexture(0, TU_BASE_COLOR, L"Assets/matball/gold_bc.dds", batch);
+			m_Material.SetTexture(0, TU_METALLIC, L"Assets/matball/gold_m.dds", batch);
+			m_Material.SetTexture(0, TU_ROUGHNESS, L"Assets/matball/gold_r.dds", batch);
+			m_Material.SetTexture(0, TU_NORMAL, L"Assets/matball/gold_n.dds", batch);
 		}
 
 		// バッチ終了
@@ -699,19 +713,29 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 
 	// ライトバッファの設定
 	{
-		// ディレクショナルライト
-		for (auto i = 0; i < Constants::FrameCount; ++i)
-		{
-			if (!m_DirectionalLightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbDirectionalLight)))
-			{
-				ELOG("Error : ConstantBuffer::Init() Failed.");
-				return false;
-			}
-		}
+		//// ディレクショナルライト
+		//for (auto i = 0; i < Constants::FrameCount; ++i)
+		//{
+		//	if (!m_DirectionalLightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbDirectionalLight)))
+		//	{
+		//		ELOG("Error : ConstantBuffer::Init() Failed.");
+		//		return false;
+		//	}
+		//}
 
+		//for (auto i = 0; i < Constants::FrameCount; ++i)
+		//{
+		//	if (!m_LightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbLight)))
+		//	{
+		//		ELOG("Error : ConstantBuffer::Init() Failed.");
+		//		return false;
+		//	}
+		//}
+
+		// IBL
 		for (auto i = 0; i < Constants::FrameCount; ++i)
 		{
-			if (!m_LightCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbLight)))
+			if (!m_IBLCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbIBL)))
 			{
 				ELOG("Error : ConstantBuffer::Init() Failed.");
 				return false;
@@ -769,20 +793,42 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 	// シーン用ルートシグネチャの生成
 	{
 		RootSignature::Desc desc;
-		desc.Begin(9)
-			.SetCBV(ShaderStage::VS, 0, 0) // 変換行列
-			.SetCBV(ShaderStage::VS, 1, 1) // メッシュのワールド行列
-			.SetCBV(ShaderStage::PS, 8, 0) // ディレクショナルライト
-			.SetCBV(ShaderStage::PS, 2, 1) // ライト
-			.SetCBV(ShaderStage::PS, 3, 2) // カメラ
-			.SetSRV(ShaderStage::PS, 4, 0) // ベースカラーマップ
-			.SetSRV(ShaderStage::PS, 5, 1) // 金属度マップ
-			.SetSRV(ShaderStage::PS, 6, 2) // 粗さマップ
-			.SetSRV(ShaderStage::PS, 7, 3) // 法線マップ
-			.AddStaticSmp(ShaderStage::PS, 0, SamplerState::LinearClamp) // ベースカラーマップ
-			.AddStaticSmp(ShaderStage::PS, 1, SamplerState::LinearClamp) // 金属度マップ
-			.AddStaticSmp(ShaderStage::PS, 2, SamplerState::LinearClamp) // 粗さマップ
-			.AddStaticSmp(ShaderStage::PS, 3, SamplerState::LinearClamp) // 法線マップ
+		//desc.Begin(9)
+		//	.SetCBV(ShaderStage::VS, 0, 0) // 変換行列
+		//	.SetCBV(ShaderStage::VS, 1, 1) // メッシュのワールド行列
+		//	.SetCBV(ShaderStage::PS, 8, 0) // ディレクショナルライト
+		//	.SetCBV(ShaderStage::PS, 2, 1) // ライト
+		//	.SetCBV(ShaderStage::PS, 3, 2) // カメラ
+		//	.SetSRV(ShaderStage::PS, 4, 0) // ベースカラーマップ
+		//	.SetSRV(ShaderStage::PS, 5, 1) // 金属度マップ
+		//	.SetSRV(ShaderStage::PS, 6, 2) // 粗さマップ
+		//	.SetSRV(ShaderStage::PS, 7, 3) // 法線マップ
+		//	.AddStaticSmp(ShaderStage::PS, 0, SamplerState::LinearClamp) // ベースカラーマップ
+		//	.AddStaticSmp(ShaderStage::PS, 1, SamplerState::LinearClamp) // 金属度マップ
+		//	.AddStaticSmp(ShaderStage::PS, 2, SamplerState::LinearClamp) // 粗さマップ
+		//	.AddStaticSmp(ShaderStage::PS, 3, SamplerState::LinearClamp) // 法線マップ
+		//	.AllowIL()
+		//	.End();
+
+		desc.Begin(11)
+			.SetCBV(ShaderStage::VS, 0, 0)
+			.SetCBV(ShaderStage::VS, 1, 1)
+			.SetCBV(ShaderStage::PS, 2, 1)
+			.SetCBV(ShaderStage::PS, 3, 2)
+			.SetSRV(ShaderStage::PS, 4, 0)
+			.SetSRV(ShaderStage::PS, 5, 1)
+			.SetSRV(ShaderStage::PS, 6, 2)
+			.SetSRV(ShaderStage::PS, 7, 3)
+			.SetSRV(ShaderStage::PS, 8, 4)
+			.SetSRV(ShaderStage::PS, 9, 5)
+			.SetSRV(ShaderStage::PS, 10, 6)
+			.AddStaticSmp(ShaderStage::PS, 0, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 1, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 2, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 3, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 4, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 5, SamplerState::LinearWrap)
+			.AddStaticSmp(ShaderStage::PS, 6, SamplerState::LinearWrap)
 			.AllowIL()
 			.End();
 
@@ -806,7 +852,13 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		}
 
 		// ピクセルシェーダーを検索
-		if (!SearchFilePath(L"BasicPS.cso", psPath))
+		/*if (!SearchFilePath(L"BasicPS.cso", psPath))
+		{
+			ELOG("Error : Pixel Shader Not Found.");
+			return false;
+		}*/
+
+		if (!SearchFilePath(L"IBLPS.cso", psPath))
 		{
 			ELOG("Error : Pixel Shader Not Found.");
 			return false;
@@ -1550,6 +1602,57 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 	}
 }
 
+void D3D12Wrapper::DrawIBL(ID3D12GraphicsCommandList* pCmdList)
+{
+	auto cameraPos = Vector3(1.0f, 0.5f, 3.0f);
+
+	// ライトバッファの更新
+	{
+		auto ptr = m_IBLCB[m_FrameIndex].GetPtr<CbIBL>();
+		ptr->TextureSize = m_IBLBaker.LDTextureSize;
+		ptr->MipCount = m_IBLBaker.MipCount;
+		ptr->LightDirection = Vector3(0.0f, -1.0f, 0.0f);
+		ptr->LightIntensity = 0.004f;
+	}
+
+	// カメラバッファの更新
+	{
+		auto ptr = m_CameraCB[m_FrameIndex].GetPtr<CbCamera>();
+		ptr->CameraPosition = cameraPos;
+	}
+
+	// 変換パラメータの更新
+	{
+		auto fovY = DirectX::XMConvertToRadians(37.5f);
+		auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
+
+		auto ptr = m_TransformCB[m_FrameIndex].GetPtr<CbTransform>();
+		ptr->View = Matrix::CreateLookAt(cameraPos, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f));
+		ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+	}
+
+	// メッシュのワールド行列の更新
+	{
+		auto ptr = m_MeshCB[m_FrameIndex].GetPtr<CbMesh>();
+		ptr->World = Matrix::Identity;
+	}
+
+	pCmdList->SetGraphicsRootSignature(m_SceneRootSignature.GetPtr());
+	pCmdList->SetGraphicsRootDescriptorTable(0, m_TransformCB[m_FrameIndex].GetHandleGPU());
+	pCmdList->SetGraphicsRootDescriptorTable(2, m_IBLCB[m_FrameIndex].GetHandleGPU());
+	pCmdList->SetGraphicsRootDescriptorTable(3, m_CameraCB[m_FrameIndex].GetHandleGPU());
+	pCmdList->SetGraphicsRootDescriptorTable(4, m_IBLBaker.GetHandleGPU_DFG());
+	pCmdList->SetGraphicsRootDescriptorTable(5, m_IBLBaker.GetHandleGPU_DiffuseLD());
+	pCmdList->SetGraphicsRootDescriptorTable(6, m_IBLBaker.GetHandleGPU_SpecularLD());
+	pCmdList->SetPipelineState(m_pScenePSO.Get());
+
+	// 描画
+	{
+		pCmdList->SetGraphicsRootDescriptorTable(1, m_MeshCB[m_FrameIndex].GetHandleGPU());
+		DrawMesh(pCmdList);
+	}
+}
+
 void D3D12Wrapper::DrawMesh(ID3D12GraphicsCommandList* pCmdList)
 {
 	for (size_t i = 0; i < m_pMeshes.size(); ++i)
@@ -1558,10 +1661,10 @@ void D3D12Wrapper::DrawMesh(ID3D12GraphicsCommandList* pCmdList)
 		auto id = m_pMeshes[i]->GetMaterialId();
 
 		// テクスチャを設定
-		pCmdList->SetGraphicsRootDescriptorTable(4, m_Material.GetTextureHandle(id, TU_BASE_COLOR));
-		pCmdList->SetGraphicsRootDescriptorTable(5, m_Material.GetTextureHandle(id, TU_METALLIC));
-		pCmdList->SetGraphicsRootDescriptorTable(6, m_Material.GetTextureHandle(id, TU_ROUGHNESS));
-		pCmdList->SetGraphicsRootDescriptorTable(7, m_Material.GetTextureHandle(id, TU_NORMAL));
+		pCmdList->SetGraphicsRootDescriptorTable(7, m_Material.GetTextureHandle(id, TU_BASE_COLOR));
+		pCmdList->SetGraphicsRootDescriptorTable(8, m_Material.GetTextureHandle(id, TU_METALLIC));
+		pCmdList->SetGraphicsRootDescriptorTable(9, m_Material.GetTextureHandle(id, TU_ROUGHNESS));
+		pCmdList->SetGraphicsRootDescriptorTable(10, m_Material.GetTextureHandle(id, TU_NORMAL));
 
 		// メッシュを描画
 		m_pMeshes[i]->Draw(pCmdList);
