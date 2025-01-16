@@ -23,6 +23,7 @@
 #include "InlineUtil.h"
 #include "SphereMapConverter.h"
 #include "IBLBaker.h"
+#include "SkyBox.h"
 
 struct InputState;
 
@@ -105,6 +106,11 @@ private:
 	Texture								m_SphereMap;
 	SphereMapConverter					m_SphereMapConverter;
 	IBLBaker							m_IBLBaker;
+	SkyBox								m_SkyBox;
+
+	DirectX::SimpleMath::Matrix			m_View;
+	DirectX::SimpleMath::Matrix			m_Proj;
+	DirectX::SimpleMath::Vector3		m_CameraPos;
 
 	std::chrono::system_clock::time_point m_StartTime;
 

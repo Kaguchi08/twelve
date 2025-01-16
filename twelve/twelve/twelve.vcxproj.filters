@@ -219,6 +219,9 @@
     <ClCompile Include="IBLBaker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="SkyBox.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="FBXVertexShader.hlsl">
@@ -291,6 +294,12 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="IBLPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxPS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>
@@ -498,6 +507,9 @@
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
     <ClInclude Include="IBLBaker.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyBox.h">
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
   </ItemGroup>

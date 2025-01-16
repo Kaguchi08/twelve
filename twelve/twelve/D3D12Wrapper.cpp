@@ -466,6 +466,17 @@ void D3D12Wrapper::Terminate()
 
 void D3D12Wrapper::Render()
 {
+	// カメラ更新
+	{
+		auto m_CameraPos = Vector3(1.0f, 0.5f, 2.0f);
+
+		auto fovY = DirectX::XMConvertToRadians(37.5f);
+		auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
+
+		m_View = Matrix::CreateLookAt(m_CameraPos, Vector3::Zero, Vector3::UnitY);
+		m_Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+	}
+
 	// コマンドの記録を開始
 	auto pCmd = m_CommandList.Reset();
 
@@ -497,6 +508,9 @@ void D3D12Wrapper::Render()
 		// ビューポート設定
 		pCmd->RSSetViewports(1, &m_Viewport);
 		pCmd->RSSetScissorRects(1, &m_Scissor);
+
+		// 背景描画
+		//m_SkyBox.Draw(pCmd, m_SphereMapConverter.GetCubeMapHandleGPU(), m_View, m_Proj, 100.0f);
 
 		//DrawScene(pCmd);
 		DrawIBL(pCmd);
@@ -1029,59 +1043,6 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		m_QuadVB.Unmap();
 	}
 
-	// 壁用頂点バッファの生成.
-	{
-		struct BasicVertex
-		{
-			Vector3 Position;
-			Vector3 Normal;
-			Vector2 TexCoord;
-			Vector3 Tangent;
-		};
-
-		if (!m_WallVB.Init<BasicVertex>(m_pDevice.Get(), 6))
-		{
-			ELOG("Error : VertexBuffer::Init() Failed.");
-			return false;
-		}
-
-		auto size = 10.0f;
-		auto ptr = m_WallVB.Map<BasicVertex>();
-		assert(ptr != nullptr);
-
-		ptr[0].Position = Vector3(-size, size, 0.0f);
-		ptr[0].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[0].TexCoord = Vector2(0.0f, 1.0f);
-		ptr[0].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		ptr[1].Position = Vector3(size, size, 0.0f);
-		ptr[1].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[1].TexCoord = Vector2(1.0f, 1.0f);
-		ptr[1].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		ptr[2].Position = Vector3(size, -size, 0.0f);
-		ptr[2].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[2].TexCoord = Vector2(1.0f, 0.0f);
-		ptr[2].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		ptr[3].Position = Vector3(-size, size, 0.0f);
-		ptr[3].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[3].TexCoord = Vector2(0.0f, 1.0f);
-		ptr[3].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		ptr[4].Position = Vector3(size, -size, 0.0f);
-		ptr[4].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[4].TexCoord = Vector2(1.0f, 0.0f);
-		ptr[4].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		ptr[5].Position = Vector3(-size, -size, 0.0f);
-		ptr[5].Normal = Vector3(0.0f, 0.0f, 1.0f);
-		ptr[5].TexCoord = Vector2(0.0f, 0.0f);
-		ptr[5].Tangent = Vector3(1.0f, 0.0f, 0.0f);
-
-		m_WallVB.Unmap();
-	}
-
 	for (auto i = 0; i < Constants::FrameCount; ++i)
 	{
 		if (!m_TonemapCB[i].Init(m_pDevice.Get(), m_pPool[POOL_TYPE_RES], sizeof(CbTonemap)))
@@ -1191,6 +1152,17 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		return false;
 	}
 
+	// スカイボックス初期化
+	if (!m_SkyBox.Init(
+		m_pDevice.Get(),
+		m_pPool[POOL_TYPE_RES],
+		DXGI_FORMAT_R10G10B10A2_UNORM,
+		DXGI_FORMAT_D32_FLOAT))
+	{
+		ELOG("Error : SkyBox::Init() Failed.");
+		return false;
+	}
+
 	// ベイク処理を実行
 	{
 		auto pCmd = m_CommandList.Reset();
@@ -1269,6 +1241,7 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 	m_IBLBaker.Term();
 	m_SphereMapConverter.Term();
 	m_SphereMap.Term();
+	m_SkyBox.Term();
 }
 
 void D3D12Wrapper::CheckSupportHDR()
@@ -1527,8 +1500,6 @@ void D3D12Wrapper::ChangeDisplayMode(bool hdr)
 
 void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 {
-	auto cameraPos = Vector3(1.0f, 0.5f, 3.0f);
-
 	auto currTime = std::chrono::system_clock::now();
 	auto dt = float(std::chrono::duration_cast<std::chrono::milliseconds>(currTime - m_StartTime).count()) / 1000.0f;
 	auto lightColor = CalcLightColor(dt * 0.25f);
@@ -1567,7 +1538,7 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 	// カメラバッファの更新
 	{
 		auto ptr = m_CameraCB[m_FrameIndex].GetPtr<CbCamera>();
-		ptr->CameraPosition = cameraPos;
+		ptr->CameraPosition = m_CameraPos;
 	}
 
 	// メッシュのワールド行列の更新
@@ -1578,12 +1549,9 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 
 	// 変換パラメータの更新
 	{
-		auto fovY = DirectX::XMConvertToRadians(37.5f);
-		auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
-
 		auto ptr = m_TransformCB[m_FrameIndex].GetPtr<CbTransform>();
-		ptr->View = Matrix::CreateLookAt(cameraPos, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f));
-		ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+		ptr->View = m_View;
+		ptr->Proj = m_Proj;
 	}
 
 	pCmdList->SetGraphicsRootSignature(m_SceneRootSignature.GetPtr());
@@ -1604,31 +1572,26 @@ void D3D12Wrapper::DrawScene(ID3D12GraphicsCommandList* pCmdList)
 
 void D3D12Wrapper::DrawIBL(ID3D12GraphicsCommandList* pCmdList)
 {
-	auto cameraPos = Vector3(1.0f, 0.5f, 3.0f);
-
 	// ライトバッファの更新
 	{
 		auto ptr = m_IBLCB[m_FrameIndex].GetPtr<CbIBL>();
 		ptr->TextureSize = m_IBLBaker.LDTextureSize;
 		ptr->MipCount = m_IBLBaker.MipCount;
 		ptr->LightDirection = Vector3(0.0f, -1.0f, 0.0f);
-		ptr->LightIntensity = 0.004f;
+		ptr->LightIntensity = 1.0f;
 	}
 
 	// カメラバッファの更新
 	{
 		auto ptr = m_CameraCB[m_FrameIndex].GetPtr<CbCamera>();
-		ptr->CameraPosition = cameraPos;
+		ptr->CameraPosition = m_CameraPos;
 	}
 
 	// 変換パラメータの更新
 	{
-		auto fovY = DirectX::XMConvertToRadians(37.5f);
-		auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
-
 		auto ptr = m_TransformCB[m_FrameIndex].GetPtr<CbTransform>();
-		ptr->View = Matrix::CreateLookAt(cameraPos, Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 1.0f, 0.0f));
-		ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+		ptr->View = m_View;
+		ptr->Proj = m_Proj;
 	}
 
 	// メッシュのワールド行列の更新
