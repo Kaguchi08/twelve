@@ -43,7 +43,7 @@ void Mesh::Term()
 {
 	m_VB.Term();
 	m_IB.Term();
-	m_MaterialId = INT32_MAX;
+	m_MaterialId = UINT32_MAX;
 	m_IndexCount = 0;
 }
 

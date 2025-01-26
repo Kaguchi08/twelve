@@ -14,15 +14,12 @@ public:
 	Texture();
 	~Texture();
 
-	/// <summary>
-	/// 初期化処理
-	/// </summary>
-	/// <param name="pDevice">デバイス</param>
-	/// <param name="pPool">ディスクリプタプール</param>
-	/// <param name="filename">ファイル名</param>
-	/// <param name="isSRGB">sRGBフォーマットにするか</param>
-	/// <param name="batch">更新バッチ</param>
-	/// <returns></returns>
+	bool Init(
+		ID3D12Device* pDevice,
+		DescriptorPool* pPool,
+		const wchar_t* filename,
+		DirectX::ResourceUploadBatch& batch);
+
 	bool Init(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
@@ -30,25 +27,21 @@ public:
 		bool isSRGB,
 		DirectX::ResourceUploadBatch& batch);
 
-	/// <summary>
-	/// 初期化処理
-	/// </summary>
-	/// <param name="pDevice">デバイス</param>
-	/// <param name="pPool">ディスクリプタプール</param>
-	/// <param name="pDesc">構成設定</param>
-	/// <param name="isSRGB">sRGBフォーマットにするか</param>
-	/// <param name="isCube">キューブマップかどうか</param>
-	/// <returns></returns>
 	bool Init(
 		ID3D12Device* pDevice,
 		DescriptorPool* pPool,
 		const D3D12_RESOURCE_DESC* pDesc,
-		bool isSRGB,
+		D3D12_RESOURCE_STATES initState,
 		bool isCube);
 
-	/// <summary>
-	/// 終了処理
-	/// </summary>
+	bool Init(
+		ID3D12Device* pDevice,
+		DescriptorPool* pPool,
+		const D3D12_RESOURCE_DESC* pDesc,
+		D3D12_RESOURCE_STATES initState,
+		bool isCube,
+		bool isSRGB);
+
 	void Term();
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetHandleCPU() const;

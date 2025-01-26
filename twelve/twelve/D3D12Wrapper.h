@@ -111,6 +111,9 @@ private:
 	DirectX::SimpleMath::Matrix			m_View;
 	DirectX::SimpleMath::Matrix			m_Proj;
 	DirectX::SimpleMath::Vector3		m_CameraPos;
+	float								m_CameraRotateY;
+	float								m_CameraRotateX;
+	float								m_CameraDistance;
 
 	std::chrono::system_clock::time_point m_StartTime;
 

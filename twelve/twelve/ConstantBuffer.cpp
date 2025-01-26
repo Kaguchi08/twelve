@@ -27,6 +27,9 @@ bool ConstantBuffer::Init(ID3D12Device* pDevice, DescriptorPool* pPool, size_t s
 	assert(m_pCB == nullptr);
 	assert(m_pHandle == nullptr);
 
+	m_pPool = pPool;
+	m_pPool->AddRef();
+
 	size_t align = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
 	UINT64 sizeAligned = (size + (align - 1)) & ~(align - 1);
 

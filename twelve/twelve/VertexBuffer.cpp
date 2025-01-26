@@ -33,7 +33,7 @@ bool VertexBuffer::Init(ID3D12Device* pDevice, size_t size, size_t stride, const
 	D3D12_RESOURCE_DESC desc = {};
 	desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	desc.Alignment = 0;
-	desc.Width = size;
+	desc.Width = UINT64(size);
 	desc.Height = 1;
 	desc.DepthOrArraySize = 1;
 	desc.MipLevels = 1;

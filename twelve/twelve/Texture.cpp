@@ -61,6 +61,11 @@ Texture::~Texture()
 	Term();
 }
 
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, DirectX::ResourceUploadBatch& batch)
+{
+	return Init(pDevice, pPool, filename, false, batch);
+}
+
 bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, bool isSRGB, DirectX::ResourceUploadBatch& batch)
 {
 	if (pDevice == nullptr || pPool == nullptr || filename == nullptr)
@@ -106,20 +111,13 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 	if (isDDS)
 	{
 		// DDSの場合
-		auto flag = DirectX::DDS_LOADER_MIP_AUTOGEN;
-		if (isSRGB)
-		{
-			flag |= DirectX::DDS_LOADER_FORCE_SRGB;
-		}
-
-		hr = DirectX::CreateDDSTextureFromFileEx(
+		hr = hr = DirectX::CreateDDSTextureFromFile(
 			pDevice,
 			batch,
 			filename,
-			0,
-			D3D12_RESOURCE_FLAG_NONE,
-			flag,
 			m_pTex.GetAddressOf(),
+			true,
+			0,
 			nullptr,
 			&isCube);
 	}
@@ -151,13 +149,24 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 	// シェーダーリソースビューの設定を取得
 	auto viewDesc = GetViewDesc(isCube);
 
+	// SRGBフォーマットに変換します
+	if (isSRGB)
+	{
+		viewDesc.Format = ConvertToSRGB(viewDesc.Format);
+	}
+
 	// シェーダーリソースビューを生成
 	pDevice->CreateShaderResourceView(m_pTex.Get(), &viewDesc, m_pHandle->HandleCPU);
 
 	return true;
 }
 
-bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, bool isSRGB, bool isCube)
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES initState, bool isCube)
+{
+	return Init(pDevice, pPool, pDesc, initState, isCube, false);
+}
+
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES initState, bool isCube, bool isSRGB)
 {
 	if (pDevice == nullptr || pPool == nullptr || pDesc == nullptr)
 	{
@@ -191,7 +200,7 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RES
 		&prop,
 		D3D12_HEAP_FLAG_NONE,
 		pDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		initState,
 		nullptr,
 		IID_PPV_ARGS(m_pTex.GetAddressOf()));
 	if (FAILED(hr))

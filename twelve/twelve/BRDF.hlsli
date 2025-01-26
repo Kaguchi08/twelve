@@ -28,7 +28,8 @@ float3 SchlickFresnel(float3 specular, float VH)
 float D_GGX(float a, float NH)
 {
     float a2 = a * a;
-    float f = (NH * NH) * (a2 - 1) + 1;
+    float NH2 = NH * NH;
+    float f = (NH2 * ((a2 - 1) * NH + 1));
     return a2 / (F_PI * f * f);
 }
 
@@ -38,14 +39,14 @@ float D_GGX(float a, float NH)
 float G2_Smith(float NL, float NV, float a)
 {
     float a2 = a * a;
-    
-    float epsilon = max(1e-6f, a2 * 1e-6f);
-    float NL2 = max(NL * NL, epsilon);
-    float NV2 = max(NV * NV, epsilon);
 
-    float Lambda_V = (-1.0f + sqrt(a2 * (1.0f - NL2) / NL2 + 1.0f)) * 0.5f;
-    float Lambda_L = (-1.0f + sqrt(a2 * (1.0f - NV2) / NV2 + 1.0f)) * 0.5f;
-    return 1.0f / (1.0f + Lambda_V + Lambda_V);
+    float NL2 = NL * NL;
+    float NV2 = NV * NV;
+
+    float lambda_v = (-1.0f + sqrt(a2 * (1.0f - NL2) / max(NL2, 1e-8f) + 1.0f)) * 0.5f;
+    float lambda_l = (-1.0f + sqrt(a2 * (1.0f - NV2) / max(NV2, 1e-8f) + 1.0f)) * 0.5f;
+
+    return 1.0f / max(1.0f + lambda_v + lambda_l, 1e-8f);
 }
 
 //-----------------------------------------------------------------------------

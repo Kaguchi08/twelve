@@ -185,12 +185,16 @@ D3D12Wrapper::D3D12Wrapper()
 	, m_pSwapChain(nullptr)
 	, m_FrameIndex(0)
 	, m_BackBufferFormat(DXGI_FORMAT_R10G10B10A2_UNORM)
-	, m_TonemapType(TONEMAP_NONE)
+	, m_TonemapType(TONEMAP_GT)
 	, m_ColorSpace(COLOR_SPACE_BT709)
 	, m_BaseLuminance(100.0f)
 	, m_MaxLuminance(100.0f)
 	, m_Exposure(1.0f)
 	, m_LightType(0)
+	, m_CameraRotateX(0.0f)
+	, m_CameraRotateY(4.8f)
+	, m_CameraDistance(1.0f)
+	, m_RotateAngle(0.0f)
 {
 }
 
@@ -468,13 +472,18 @@ void D3D12Wrapper::Render()
 {
 	// カメラ更新
 	{
-		auto m_CameraPos = Vector3(1.0f, 0.5f, 2.0f);
+		auto r = m_CameraDistance;
+		auto x = r * sinf(m_CameraRotateY) * cosf(m_CameraRotateX);
+		auto y = r * sinf(m_CameraRotateX);
+		auto z = r * cosf(m_CameraRotateY) * cosf(m_CameraRotateX);
+
+		m_CameraPos = Vector3(x, y, z);
 
 		auto fovY = DirectX::XMConvertToRadians(37.5f);
 		auto aspect = static_cast<float>(Constants::WindowWidth) / static_cast<float>(Constants::WindowHeight);
 
 		m_View = Matrix::CreateLookAt(m_CameraPos, Vector3::Zero, Vector3::UnitY);
-		m_Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+		m_Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 0.1f, 1000.0f);
 	}
 
 	// コマンドの記録を開始
@@ -510,7 +519,7 @@ void D3D12Wrapper::Render()
 		pCmd->RSSetScissorRects(1, &m_Scissor);
 
 		// 背景描画
-		//m_SkyBox.Draw(pCmd, m_SphereMapConverter.GetCubeMapHandleGPU(), m_View, m_Proj, 100.0f);
+		m_SkyBox.Draw(pCmd, m_SphereMapConverter.GetCubeMapHandleGPU(), m_View, m_Proj, 100.0f);
 
 		//DrawScene(pCmd);
 		DrawIBL(pCmd);
@@ -617,6 +626,44 @@ void D3D12Wrapper::ProcessInput(const InputState& state)
 		else if (m_LightType == 2)
 		{
 			printf_s("SpotLight : [Lagarde, Rousiers 2014]\n");
+		}
+	}
+
+	if (state.keyboard.GetKeyDown(VK_RIGHT))
+	{
+		m_CameraRotateY += DirectX::XMConvertToRadians(1.0f);
+		if (m_CameraRotateY > DirectX::XM_2PI)
+		{
+			m_CameraRotateY -= DirectX::XM_2PI;
+		}
+	}
+
+	if (state.keyboard.GetKeyDown(VK_LEFT))
+	{
+		m_CameraRotateY -= DirectX::XMConvertToRadians(1.0f);
+		if (m_CameraRotateY < DirectX::XM_2PI)
+		{
+			m_CameraRotateY += DirectX::XM_2PI;
+		}
+	}
+
+	if (state.keyboard.GetKeyDown(VK_UP))
+	{
+		auto maxRadX = DirectX::XMConvertToRadians(89.9f);
+		m_CameraRotateX += DirectX::XMConvertToRadians(1.0f);
+		if (m_CameraRotateX >= maxRadX)
+		{
+			m_CameraRotateX = maxRadX;
+		}
+	}
+
+	if (state.keyboard.GetKeyDown(VK_DOWN))
+	{
+		auto maxRadX = -DirectX::XMConvertToRadians(89.9f);
+		m_CameraRotateX -= DirectX::XMConvertToRadians(1.0f);
+		if (m_CameraRotateX <= maxRadX)
+		{
+			m_CameraRotateX = maxRadX;
 		}
 	}
 }
@@ -1064,7 +1111,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 			}
 
 			// カメラ設定.
-			auto eyePos = Vector3(0.0f, 1.0f, 2.0f);
+			auto eyePos = Vector3(0.0f, 0.0f, 1.0f);
 			auto targetPos = Vector3::Zero;
 			auto upward = Vector3::UnitY;
 
@@ -1075,7 +1122,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 			// 変換行列を設定.
 			auto ptr = m_TransformCB[i].GetPtr<CbTransform>();
 			ptr->View = Matrix::CreateLookAt(eyePos, targetPos, upward);
-			ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 1.0f, 1000.0f);
+			ptr->Proj = Matrix::CreatePerspectiveFieldOfView(fovY, aspect, 0.1f, 1000.0f);
 		}
 
 		m_RotateAngle = DirectX::XMConvertToRadians(-60.0f);
