@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <cstdint>
 #include <memory>
+#include "PlatformWindow.h"
 
 class D3D12Wrapper;
 class InputSystem;
@@ -25,15 +26,11 @@ public:
 	void Terminate();
 
 	State GetState() const { return m_state; }
-	HWND GetWindowHandle() const { return m_hWnd; }
-
 
 private:
 	// Window
-	HINSTANCE m_hInst;
-	HWND m_hWnd;
-	uint32_t m_width;
-	uint32_t m_height;
+	Platform::Window m_Window;
+
 
 	std::shared_ptr<D3D12Wrapper> m_pD3D12;
 	std::shared_ptr<InputSystem> m_pInputSystem;
@@ -44,11 +41,4 @@ private:
 	void ProcessInput();
 	void UpdateGame();
 	void GenerateOutput();
-
-	bool InitWind();
-	void TermWind();
-
-	void CheckSupportHDR();
-
-	static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp);
 };

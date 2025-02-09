@@ -11,7 +11,7 @@
 #include "ComPtr.h"
 #include "Constants.h"
 #include "DescriptorPool.h"
-#include "RenderTarget.h"
+#include "ColorTarget.h"
 #include "DepthTarget.h"
 #include "CommandList.h"
 #include "Fence.h"
@@ -19,7 +19,11 @@
 #include "ConstantBuffer.h"
 #include "Texture.h"
 #include "Material.h"
+#include "RootSignature.h"
 #include "InlineUtil.h"
+#include "SphereMapConverter.h"
+#include "IBLBaker.h"
+#include "SkyBox.h"
 
 struct InputState;
 
@@ -38,10 +42,8 @@ public:
 	bool InitializeGraphicsPipeline();
 	void ReleaseGraphicsResources();
 
-	bool InitHDR();
-	void TermHDR();
-
-	void CheckSupportHDR();
+	void SetHDRSupport(bool support);
+	void SetDisplayLuminance(float max, float min);
 
 private:
 	enum POOL_TYPE
@@ -60,24 +62,35 @@ private:
 	ComPtr<ID3D12Device>                m_pDevice;
 	ComPtr<ID3D12CommandQueue>          m_pQueue;
 	ComPtr<IDXGISwapChain4>             m_pSwapChain;
-
-	RenderTarget						m_RenderTarget[Constants::FrameCount];
+	ColorTarget						    m_RenderTarget[Constants::FrameCount];
 	DepthTarget							m_DepthTarget;
 	DescriptorPool* m_pPool[POOL_COUNT];
 	CommandList							m_CommandList;
 	Fence								m_Fence;
-
 	uint32_t                            m_FrameIndex;
 	D3D12_VIEWPORT						m_Viewport;
 	D3D12_RECT							m_Scissor;
 	DXGI_FORMAT							m_BackBufferFormat;
 
+
+	ComPtr<ID3D12PipelineState>         m_pScenePSO;
+	RootSignature                       m_SceneRootSignature;
+	ComPtr<ID3D12PipelineState>         m_pTonemapPSO;
+	RootSignature                       m_TonemapRootSignature;
+	ColorTarget						    m_SceneColorTarget;
+	DepthTarget							m_SceneDepthTarget;
+	VertexBuffer					    m_QuadVB;
+	VertexBuffer                        m_WallVB;
+	VertexBuffer	                    m_FloorVB;
+	ConstantBuffer                      m_TonemapCB[Constants::FrameCount];
+	ConstantBuffer					    m_DirectionalLightCB[Constants::FrameCount];
+	ConstantBuffer                      m_LightCB[Constants::FrameCount];
+	ConstantBuffer					    m_IBLCB[Constants::FrameCount];
+	ConstantBuffer                      m_CameraCB[Constants::FrameCount];
+	ConstantBuffer                      m_TransformCB[Constants::FrameCount];
+	ConstantBuffer                      m_MeshCB[Constants::FrameCount];
 	std::vector<Mesh*>					m_pMeshes;
-	std::vector<ConstantBuffer*>		m_pTransforms;
-	ConstantBuffer* m_pLight;
 	Material							m_Material;
-	ComPtr<ID3D12PipelineState>			m_pPSO;
-	ComPtr<ID3D12RootSignature>         m_pRootSignature;
 
 	float								m_RotateAngle;
 
@@ -89,14 +102,29 @@ private:
 	float								m_BaseLuminance;		// 基準輝度値
 	float								m_MaxLuminance;			// 最大輝度値
 	float								m_Exposure;				// 露光値
+	int                                 m_LightType;            // ライトの種類
 
-	// HDRテスト
-	VertexBuffer m_VB;
-	ConstantBuffer m_CB[Constants::FrameCount];
-	Texture m_Texture;
+	Texture								m_SphereMap;
+	SphereMapConverter					m_SphereMapConverter;
+	IBLBaker							m_IBLBaker;
+	SkyBox								m_SkyBox;
+
+	DirectX::SimpleMath::Matrix			m_View;
+	DirectX::SimpleMath::Matrix			m_Proj;
+	DirectX::SimpleMath::Vector3		m_CameraPos;
+	float								m_CameraRotateY;
+	float								m_CameraRotateX;
+	float								m_CameraDistance;
+
+	std::chrono::system_clock::time_point m_StartTime;
 
 	void InitializeDebug();
 	void Present(uint32_t interval);
 
 	void ChangeDisplayMode(bool hdr);
+
+	void DrawScene(ID3D12GraphicsCommandList* pCmdList);
+	void DrawIBL(ID3D12GraphicsCommandList* pCmdList);
+	void DrawMesh(ID3D12GraphicsCommandList* pCmdList);
+	void DrawTonemap(ID3D12GraphicsCommandList* pCmdList);
 };

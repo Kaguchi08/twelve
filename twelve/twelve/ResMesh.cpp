@@ -279,6 +279,103 @@ namespace
 				}
 			}
 		}
+
+		// ベースカラー
+		{
+			aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
+
+			if (pSrcMaterial->Get(AI_MATKEY_BASE_COLOR, color) == AI_SUCCESS)
+			{
+				dstMaterial.BaseColor = DirectX::XMFLOAT4(color.r, color.g, color.b, color.a);
+			}
+			else
+			{
+				dstMaterial.BaseColor = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+			}
+		}
+
+		// 金属度
+		{
+			auto metallic = 0.0f;
+
+			if (pSrcMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+			{
+				dstMaterial.Metallic = metallic;
+			}
+			else
+			{
+				dstMaterial.Metallic = 0.0f;
+			}
+		}
+
+		// 粗さ
+		{
+			auto roughness = 0.0f;
+
+			if (pSrcMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
+			{
+				dstMaterial.Roughness = roughness;
+			}
+			else
+			{
+				dstMaterial.Roughness = 0.0f;
+			}
+		}
+
+		// ベースカラーマップ
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.BaseColorMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.BaseColorMap.clear();
+			}
+		}
+
+		// 金属度・粗さマップ
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.MetallicRoughnessMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.MetallicRoughnessMap.clear();
+			}
+		}
+
+
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.MetallicMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.MetallicMap.clear();
+			}
+		}
+
+		{
+			aiString path;
+
+			if (pSrcMaterial->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &path) == AI_SUCCESS)
+			{
+				dstMaterial.RoughnessMap = Convert(path);
+			}
+			else
+			{
+				dstMaterial.RoughnessMap.clear();
+			}
+		}
 	}
 }
 

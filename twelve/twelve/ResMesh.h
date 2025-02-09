@@ -7,14 +7,24 @@
 
 struct ResMaterial
 {
-	DirectX::XMFLOAT3 Diffuse;  // 拡散反射成分
-	DirectX::XMFLOAT3 Specular; // 鏡面反射成分
-	float Alpha;				// 透過成分
-	float Shininess;			// 鏡面反射強度
-	std::wstring DiffuseMap;	// ディフーズマップファイルパス
-	std::wstring SpecularMap;	// スペキュラーマップファイルパス
-	std::wstring ShininessMap;	// シャイネスマップファイルパス
-	std::wstring NormalMap;		// 法線マップファイルパス
+	DirectX::XMFLOAT3 Diffuse;			// 拡散反射成分
+	DirectX::XMFLOAT3 Specular;			// 鏡面反射成分
+	float Alpha;						// 透過成分
+	float Shininess;					// 鏡面反射強度
+	std::wstring DiffuseMap;			// ディフーズマップファイルパス
+	std::wstring SpecularMap;			// スペキュラーマップファイルパス
+	std::wstring ShininessMap;			// シャイネスマップファイルパス
+	std::wstring NormalMap;				// 法線マップファイルパス
+
+	DirectX::XMFLOAT4 BaseColor;		// ベースカラー
+	float Metallic;						// 金属度
+	float Roughness;					// 粗さ
+	std::wstring BaseColorMap;			// ベースカラーマップファイルパス
+	std::wstring MetallicRoughnessMap;	// 金属度・粗さマップファイルパス
+
+	// TODO: 後で削除
+	std::wstring MetallicMap;
+	std::wstring RoughnessMap;
 };
 
 class MeshVertex

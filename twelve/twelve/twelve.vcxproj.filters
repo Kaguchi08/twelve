@@ -49,6 +49,12 @@
     <Filter Include="ヘッダー ファイル\D3D12Framework">
       <UniqueIdentifier>{ce2645e1-0e4b-435f-994c-a3deb8846694}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Platform">
+      <UniqueIdentifier>{5efecd71-a3a4-4dd8-ba37-d1bdb7534200}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Platform">
+      <UniqueIdentifier>{7b87c825-8f59-4ab5-859e-462d0889fcd2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -177,9 +183,6 @@
     <ClCompile Include="ConstantBuffer.cpp">
       <Filter>ソース ファイル\D3D12Framework</Filter>
     </ClCompile>
-    <ClCompile Include="RenderTarget.cpp">
-      <Filter>ソース ファイル\D3D12Framework</Filter>
-    </ClCompile>
     <ClCompile Include="D3D12Wrapper.cpp">
       <Filter>ソース ファイル\D3D12Framework</Filter>
     </ClCompile>
@@ -208,6 +211,27 @@
       <Filter>ソース ファイル\D3D12Framework</Filter>
     </ClCompile>
     <ClCompile Include="Game.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorTarget.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="RootSignature.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="SphereMapConverter.cpp">
+      <Filter>ソース ファイル\D3D12Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="IBLBaker.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyBox.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PlatformWindow.cpp">
+      <Filter>ソース ファイル\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplayManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -257,6 +281,39 @@
     <FxCompile Include="TonemapPS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
+    <FxCompile Include="BasicPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="BasicVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SphereToCubeVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SphereToCubePS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="IntegrateDFG_PS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="QuadVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="IntegrateSpecularLD_PS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="IntegrateDiffuseLD_PS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="IBLPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SkyBoxPS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
@@ -270,6 +327,12 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="packages.config" />
+    <None Include="BRDF.hlsli">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="BakeUtil.hlsli">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dx12Wrapper.h">
@@ -413,9 +476,6 @@
     <ClInclude Include="ConstantBuffer.h">
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
-    <ClInclude Include="RenderTarget.h">
-      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
-    </ClInclude>
     <ClInclude Include="D3D12Wrapper.h">
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
     </ClInclude>
@@ -448,6 +508,27 @@
     </ClInclude>
     <ClInclude Include="Game.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorTarget.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereMapConverter.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="RootSignature.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="IBLBaker.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="SkyBox.h">
+      <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="PlatformWindow.h">
+      <Filter>ヘッダー ファイル\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayManager.h">
+      <Filter>ヘッダー ファイル\Platform</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

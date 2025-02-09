@@ -53,7 +53,7 @@ bool InputSystem::Initialize(HWND hWind)
 
 	SetCursorPos(m_state.mouse.m_center.x, m_state.mouse.m_center.y);
 	// カーソルは表示しない
-	ShowCursor(false);
+	//ShowCursor(false);
 
 	// リセット
 	memset(m_state.keyboard.m_prevState, 0x00, 256);
@@ -76,6 +76,6 @@ void InputSystem::Update(enum State state)
 	if (state == State::Play)
 	{
 		// 中央に戻す
-		SetCursorPos(m_state.mouse.m_center.x, m_state.mouse.m_center.y);
+		//SetCursorPos(m_state.mouse.m_center.x, m_state.mouse.m_center.y);
 	}
 }

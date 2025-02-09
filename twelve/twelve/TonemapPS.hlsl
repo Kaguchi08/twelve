@@ -104,8 +104,6 @@ float3 GtTonemap(float3 color)
 
     float3 x = color.rgb;
     float l0 = ((P - m) * l) / a;
-    float L0 = m - (m / a);
-    float L1 = m + ((1.0f - m) / a);
 
     float S0 = m + l0;
     float S1 = m + a * l0;

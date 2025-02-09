@@ -33,7 +33,7 @@ bool IndexBuffer::Init(ID3D12Device* pDevice, uint32_t count, const uint32_t* pI
 	D3D12_RESOURCE_DESC desc = {};
 	desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	desc.Alignment = 0;
-	desc.Width = UINT64(sizeof(uint32_t) * count);
+	desc.Width = UINT64(count * sizeof(uint32_t));
 	desc.Height = 1;
 	desc.DepthOrArraySize = 1;
 	desc.MipLevels = 1;

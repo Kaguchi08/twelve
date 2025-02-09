@@ -1,6 +1,7 @@
 ﻿#include "Texture.h"
 
 #include <DDSTextureLoader.h>
+#include <WICTextureLoader.h>
 
 #include "DescriptorPool.h"
 #include "Logger.h"
@@ -60,6 +61,11 @@ Texture::~Texture()
 	Term();
 }
 
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, DirectX::ResourceUploadBatch& batch)
+{
+	return Init(pDevice, pPool, filename, false, batch);
+}
+
 bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* filename, bool isSRGB, DirectX::ResourceUploadBatch& batch)
 {
 	if (pDevice == nullptr || pPool == nullptr || filename == nullptr)
@@ -83,32 +89,71 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 		return false;
 	}
 
-	// ファイルからテクスチャを生成
-	bool isCube = false;
-	auto flag = DirectX::DDS_LOADER_MIP_AUTOGEN;
-	if (isSRGB)
+	// ファイル拡張子からDDSかどうかを判定
+	std::wstring path(filename);
+	bool isDDS = false;
 	{
-		flag |= DirectX::DDS_LOADER_FORCE_SRGB;
+		size_t pos = path.find_last_of(L'.');
+		if (pos != std::wstring::npos)
+		{
+			std::wstring ext = path.substr(pos + 1);
+			for (auto& c : ext) { c = towlower(c); }
+			if (ext == L"dds")
+			{
+				isDDS = true;
+			}
+		}
 	}
 
-	auto hr = DirectX::CreateDDSTextureFromFileEx(
-		pDevice,
-		batch,
-		filename,
-		0,
-		D3D12_RESOURCE_FLAG_NONE,
-		flag,
-		m_pTex.GetAddressOf(),
-		nullptr,
-		&isCube);
+	bool isCube = false;
+	HRESULT hr = S_OK;
+
+	if (isDDS)
+	{
+		// DDSの場合
+		hr = hr = DirectX::CreateDDSTextureFromFile(
+			pDevice,
+			batch,
+			filename,
+			m_pTex.GetAddressOf(),
+			true,
+			0,
+			nullptr,
+			&isCube);
+	}
+	else
+	{
+		// DDS以外のフォーマット（png, jpgなど）にはWICを使用
+		auto flag = DirectX::WIC_LOADER_MIP_AUTOGEN;
+		if (isSRGB)
+		{
+			flag |= DirectX::WIC_LOADER_FORCE_SRGB;
+		}
+
+		hr = DirectX::CreateWICTextureFromFileEx(
+			pDevice,
+			batch,
+			filename,
+			0,
+			D3D12_RESOURCE_FLAG_NONE,
+			flag,
+			m_pTex.GetAddressOf());
+	}
+
 	if (FAILED(hr))
 	{
-		ELOG("Error : DirectX::CreateDDSTextureFromFile() Failed. filename = %ls, retcode = 0x%x", filename, hr);
+		ELOG("Error : Texture Load Failed. filename = %ls, retcode = 0x%x", filename, hr);
 		return false;
 	}
 
 	// シェーダーリソースビューの設定を取得
 	auto viewDesc = GetViewDesc(isCube);
+
+	// SRGBフォーマットに変換します
+	if (isSRGB)
+	{
+		viewDesc.Format = ConvertToSRGB(viewDesc.Format);
+	}
 
 	// シェーダーリソースビューを生成
 	pDevice->CreateShaderResourceView(m_pTex.Get(), &viewDesc, m_pHandle->HandleCPU);
@@ -116,7 +161,12 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const wchar_t* 
 	return true;
 }
 
-bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, bool isSRGB, bool isCube)
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES initState, bool isCube)
+{
+	return Init(pDevice, pPool, pDesc, initState, isCube, false);
+}
+
+bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES initState, bool isCube, bool isSRGB)
 {
 	if (pDevice == nullptr || pPool == nullptr || pDesc == nullptr)
 	{
@@ -150,7 +200,7 @@ bool Texture::Init(ID3D12Device* pDevice, DescriptorPool* pPool, const D3D12_RES
 		&prop,
 		D3D12_HEAP_FLAG_NONE,
 		pDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		initState,
 		nullptr,
 		IID_PPV_ARGS(m_pTex.GetAddressOf()));
 	if (FAILED(hr))
@@ -211,6 +261,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE Texture::GetHandleGPU() const
 	}
 
 	return D3D12_GPU_DESCRIPTOR_HANDLE();
+}
+
+ComPtr<ID3D12Resource>& Texture::GetComPtr()
+{
+	return m_pTex;
+}
+
+D3D12_RESOURCE_DESC Texture::GetDesc() const
+{
+	if (m_pTex != nullptr)
+	{
+		return m_pTex->GetDesc();
+	}
+
+	return D3D12_RESOURCE_DESC();
+
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetViewDesc(bool isCube)
