@@ -154,11 +154,7 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AABBComponent.cpp" />
     <ClCompile Include="Actor.cpp" />
-    <ClCompile Include="CameraComponent.cpp" />
-    <ClCompile Include="Checkerboard.cpp" />
-    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="CommandList.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="ConstantBuffer.cpp" />
@@ -166,14 +162,9 @@
     <ClCompile Include="DepthTarget.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
     <ClCompile Include="DisplayManager.cpp" />
-    <ClCompile Include="Dx12Wrapper.cpp" />
-    <ClCompile Include="FBXActor.cpp" />
-    <ClCompile Include="FBXComponent.cpp" />
     <ClCompile Include="Fence.cpp" />
     <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="Game.cpp" />
-    <ClCompile Include="Game2.cpp" />
-    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Helper.cpp" />
     <ClCompile Include="IBLBaker.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -190,22 +181,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Mesh2.cpp" />
-    <ClCompile Include="ModelComponent.cpp" />
-    <ClCompile Include="ModelLoader.cpp" />
-    <ClCompile Include="ModelMoveComponent.cpp" />
     <ClCompile Include="MoveComponent.cpp" />
-    <ClCompile Include="OrbitCameraComponent.cpp" />
-    <ClCompile Include="Plane.cpp" />
-    <ClCompile Include="PlaneActor.cpp" />
     <ClCompile Include="PlatformWindow.cpp" />
-    <ClCompile Include="PlayerActor.cpp" />
-    <ClCompile Include="Primitive.cpp" />
-    <ClCompile Include="PrimitiveComponent.cpp" />
-    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ColorTarget.cpp" />
     <ClCompile Include="ResMesh.cpp" />
-    <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="RootSignature.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SkyBox.cpp" />
@@ -414,11 +393,7 @@
     <None Include="PrimitiveHeader.hlsli" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AABBComponent.h" />
     <ClInclude Include="Actor.h" />
-    <ClInclude Include="CameraComponent.h" />
-    <ClInclude Include="Checkerboard.h" />
-    <ClInclude Include="Collision.h" />
     <ClInclude Include="CommandList.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="ComPtr.h" />
@@ -428,14 +403,9 @@
     <ClInclude Include="DepthTarget.h" />
     <ClInclude Include="DescriptorPool.h" />
     <ClInclude Include="DisplayManager.h" />
-    <ClInclude Include="Dx12Wrapper.h" />
-    <ClInclude Include="FBXActor.h" />
-    <ClInclude Include="FBXComponent.h" />
     <ClInclude Include="Fence.h" />
     <ClInclude Include="FileUtil.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="Game2.h" />
-    <ClInclude Include="GameScene.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="IBLBaker.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -453,23 +423,10 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Mesh2.h" />
-    <ClInclude Include="Model.h" />
-    <ClInclude Include="ModelComponent.h" />
-    <ClInclude Include="ModelLoader.h" />
-    <ClInclude Include="ModelMoveComponent.h" />
     <ClInclude Include="MoveComponent.h" />
-    <ClInclude Include="OrbitCameraComponent.h" />
-    <ClInclude Include="Plane.h" />
-    <ClInclude Include="PlaneActor.h" />
-    <ClInclude Include="PlayerActor.h" />
     <ClInclude Include="Pool.h" />
-    <ClInclude Include="Primitive.h" />
-    <ClInclude Include="PrimitiveComponent.h" />
-    <ClInclude Include="Renderer.h" />
     <ClInclude Include="ColorTarget.h" />
     <ClInclude Include="ResMesh.h" />
-    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="RootSignature.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SkyBox.h" />
