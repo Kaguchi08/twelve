@@ -42,7 +42,8 @@ public:
 	bool InitializeGraphicsPipeline();
 	void ReleaseGraphicsResources();
 
-	void CheckSupportHDR();
+	void SetHDRSupport(bool support);
+	void SetDisplayLuminance(float max, float min);
 
 private:
 	enum POOL_TYPE

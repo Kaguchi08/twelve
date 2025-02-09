@@ -1162,7 +1162,7 @@ bool D3D12Wrapper::InitializeGraphicsPipeline()
 		// スフィアマップ読み込み.
 		{
 			std::wstring sphereMapPath;
-			if (!SearchFilePathW(L"Assets/Textures/hdr014.dds", sphereMapPath))
+			if (!SearchFilePathW(L"Assets/Textures/venice_sunset_1k.dds", sphereMapPath))
 			{
 				ELOG("Error : File Not Found.");
 				return false;
@@ -1291,93 +1291,15 @@ void D3D12Wrapper::ReleaseGraphicsResources()
 	m_SkyBox.Term();
 }
 
-void D3D12Wrapper::CheckSupportHDR()
+void D3D12Wrapper::SetHDRSupport(bool support)
 {
-	if (m_pSwapChain == nullptr || m_pFactory == nullptr || m_pDevice == nullptr)
-	{
-		return;
-	}
+	m_SupportHDR = support;
+}
 
-	HRESULT hr = S_OK;
-
-	// ウィンドウ領域を取得
-	RECT rect = {};
-	GetWindowRect(m_hWnd, &rect);
-
-	if (m_pFactory->IsCurrent() == false)
-	{
-		m_pFactory.Reset();
-		hr = CreateDXGIFactory2(0, IID_PPV_ARGS(m_pFactory.GetAddressOf()));
-		if (FAILED(hr))
-		{
-			return;
-		}
-	}
-
-	ComPtr<IDXGIAdapter1> pAdapter;
-	hr = m_pFactory->EnumAdapters1(0, pAdapter.GetAddressOf());
-	if (FAILED(hr))
-	{
-		return;
-	}
-
-	UINT i = 0;
-	ComPtr<IDXGIOutput> pCurrentOutput;
-	ComPtr<IDXGIOutput> pBestOutput;
-	int bestIntersectArea = -1;
-
-	// 各ディスプレイを調べる
-	while (pAdapter->EnumOutputs(i, &pCurrentOutput) != DXGI_ERROR_NOT_FOUND)
-	{
-		auto ax1 = rect.left;
-		auto ay1 = rect.top;
-		auto ax2 = rect.right;
-		auto ay2 = rect.bottom;
-
-		// ディスプレイの設定を取得
-		DXGI_OUTPUT_DESC desc;
-		hr = pCurrentOutput->GetDesc(&desc);
-		if (FAILED(hr))
-		{
-			return;
-		}
-
-		auto bx1 = desc.DesktopCoordinates.left;
-		auto by1 = desc.DesktopCoordinates.top;
-		auto bx2 = desc.DesktopCoordinates.right;
-		auto by2 = desc.DesktopCoordinates.bottom;
-
-		// 領域が一致するかどうか調べる
-		int intersectArea = ComputeIntersectionArea(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
-		if (intersectArea > bestIntersectArea)
-		{
-			pBestOutput = pCurrentOutput;
-			bestIntersectArea = intersectArea;
-		}
-
-		i++;
-	}
-
-	// 一番適しているディスプレイ
-	ComPtr<IDXGIOutput6> pOutput6;
-	hr = pBestOutput.As(&pOutput6);
-	if (FAILED(hr))
-	{
-		return;
-	}
-
-	// 出力設定を取得
-	DXGI_OUTPUT_DESC1 desc1;
-	hr = pOutput6->GetDesc1(&desc1);
-	if (FAILED(hr))
-	{
-		return;
-	}
-
-	// 色空間が ITU-R BT.2100 PQ をサポートしているかどうかチェック
-	m_SupportHDR = (desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
-	m_MaxDisplayLuminance = desc1.MaxLuminance;
-	m_MinDisplayLuminance = desc1.MinLuminance;
+void D3D12Wrapper::SetDisplayLuminance(float max, float min)
+{
+	m_MaxDisplayLuminance = max;
+	m_MinDisplayLuminance = min;
 }
 
 void D3D12Wrapper::InitializeDebug()

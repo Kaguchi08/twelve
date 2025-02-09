@@ -49,6 +49,12 @@
     <Filter Include="ヘッダー ファイル\D3D12Framework">
       <UniqueIdentifier>{ce2645e1-0e4b-435f-994c-a3deb8846694}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Platform">
+      <UniqueIdentifier>{5efecd71-a3a4-4dd8-ba37-d1bdb7534200}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Platform">
+      <UniqueIdentifier>{7b87c825-8f59-4ab5-859e-462d0889fcd2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -220,6 +226,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="SkyBox.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PlatformWindow.cpp">
+      <Filter>ソース ファイル\Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="DisplayManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -511,6 +523,12 @@
     </ClInclude>
     <ClInclude Include="SkyBox.h">
       <Filter>ヘッダー ファイル\D3D12Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="PlatformWindow.h">
+      <Filter>ヘッダー ファイル\Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="DisplayManager.h">
+      <Filter>ヘッダー ファイル\Platform</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

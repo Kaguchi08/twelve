@@ -165,6 +165,7 @@
     <ClCompile Include="D3D12Wrapper.cpp" />
     <ClCompile Include="DepthTarget.cpp" />
     <ClCompile Include="DescriptorPool.cpp" />
+    <ClCompile Include="DisplayManager.cpp" />
     <ClCompile Include="Dx12Wrapper.cpp" />
     <ClCompile Include="FBXActor.cpp" />
     <ClCompile Include="FBXComponent.cpp" />
@@ -197,6 +198,7 @@
     <ClCompile Include="OrbitCameraComponent.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="PlaneActor.cpp" />
+    <ClCompile Include="PlatformWindow.cpp" />
     <ClCompile Include="PlayerActor.cpp" />
     <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="PrimitiveComponent.cpp" />
@@ -425,6 +427,7 @@
     <ClInclude Include="D3D12Wrapper.h" />
     <ClInclude Include="DepthTarget.h" />
     <ClInclude Include="DescriptorPool.h" />
+    <ClInclude Include="DisplayManager.h" />
     <ClInclude Include="Dx12Wrapper.h" />
     <ClInclude Include="FBXActor.h" />
     <ClInclude Include="FBXComponent.h" />
@@ -474,6 +477,7 @@
     <ClInclude Include="TestScene.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="VertexBuffer.h" />
+    <ClInclude Include="PlatformWindow.h" />
     <ClInclude Include="XMFLOAT_Helper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
